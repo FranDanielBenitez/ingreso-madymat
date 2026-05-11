@@ -16,6 +16,12 @@ export default function Navbar() {
             Nuevo Rollizos
           </Link>
           <Link
+            href="/ingresos/materiales"
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-800 focus:bg-slate-800 focus:outline-none"
+          >
+            Nuevo Materiales
+          </Link>
+          <Link
             href="/registros"
             className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-800 focus:bg-slate-800 focus:outline-none"
           >

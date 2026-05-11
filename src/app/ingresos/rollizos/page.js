@@ -445,7 +445,7 @@ export default function IngresoRollizosPage() {
                 <option value="">Seleccionar proveedor</option>
                 {proveedores.map((item) => (
                   <option key={item.Codigo} value={item.Codigo}>
-                    {item.RazonSocial}
+                    {item.Codigo} - {item.RazonSocial}
                   </option>
                 ))}
               </select>
@@ -518,7 +518,7 @@ export default function IngresoRollizosPage() {
                 <option value="">Seleccionar servicio</option>
                 {servicios.map((item) => (
                   <option key={item.Codigo} value={item.Codigo}>
-                    {item.RazonSocial}
+                    {item.Codigo} - {item.RazonSocial}
                   </option>
                 ))}
               </select>
