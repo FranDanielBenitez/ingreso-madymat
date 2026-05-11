@@ -120,6 +120,7 @@ model Ingreso {
   updatedAt                 DateTime               @updatedAt @map("updated_at")
   articulos                 IngresoArticulo[]
   logs                      IngresoLog[]
+  fotos                     IngresoFoto[]
   categoriaFormulario       CategoriaFormulario?   @relation(fields: [categoriaFormularioId], references: [id])
   registradoPor             UsuarioApp?            @relation("IngresoRegistradoPor", fields: [registradoPorId], references: [id])
   tipoIngreso               TipoIngreso            @relation(fields: [tipoIngresoId], references: [id])
@@ -162,6 +163,22 @@ model IngresoLog {
   @@map("ingreso_logs")
 }
 
+model IngresoFoto {
+  id             Int             @id @default(autoincrement())
+  ingresoId      Int             @map("ingreso_id")
+  tipoFoto       TipoFotoIngreso @map("tipo_foto")
+  nombreOriginal String?         @map("nombre_original")
+  nombreArchivo  String          @map("nombre_archivo")
+  rutaRelativa   String          @map("ruta_relativa")
+  mimeType       String?         @map("mime_type")
+  sizeBytes      Int?            @map("size_bytes")
+  observacion    String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+  ingreso        Ingreso         @relation(fields: [ingresoId], references: [id])
+
+  @@map("ingreso_fotos")
+}
+
 enum RolUsuario {
   ADMIN
   PORTERIA
@@ -194,4 +211,11 @@ enum TipoServicioLogistico {
 enum TipoChofer {
   INTERNO
   EXTERNO
+}
+
+enum TipoFotoIngreso {
+  CAMION_PATENTE
+  MATERIAL_CARGADO
+  REMITO_FISICO
+  ADICIONAL
 }

@@ -219,78 +219,107 @@ export default function IngresoRollizosPage() {
   }, [fotoCamionPatente, fotoMaterialCargado, fotoRemitoFisico, fotoAdicional])
 
   async function onSubmit(values) {
-  try {
-    setGuardando(true)
+    try {
+      const fotoCamionPatenteFile = values.fotoCamionPatente?.[0]
+      const fotoMaterialCargadoFile = values.fotoMaterialCargado?.[0]
+      const fotoRemitoFisicoFile = values.fotoRemitoFisico?.[0]
+      const fotoAdicionalFile = values.fotoAdicional?.[0]
 
-    const ingresoPreparado = {
-      ...values,
+      if (!fotoCamionPatenteFile) {
+        toast.error("La foto del camión / patente es obligatoria")
+        return
+      }
 
-      proveedorSeleccionado,
-      articuloSeleccionado,
-      servicioSeleccionado,
-      hachadorSeleccionado,
-      choferSeleccionado: tipoChofer === "INTERNO" ? choferSeleccionado : null,
-      porteroSeleccionado,
+      if (!fotoMaterialCargadoFile) {
+        toast.error("La foto del material cargado es obligatoria")
+        return
+      }
 
-      fotosRegistro: {
-        camionPatente: values.fotoCamionPatente?.[0]
-          ? {
-              nombre: values.fotoCamionPatente[0].name,
-              tipo: values.fotoCamionPatente[0].type,
-              tamanio: values.fotoCamionPatente[0].size,
-            }
-          : null,
-        materialCargado: values.fotoMaterialCargado?.[0]
-          ? {
-              nombre: values.fotoMaterialCargado[0].name,
-              tipo: values.fotoMaterialCargado[0].type,
-              tamanio: values.fotoMaterialCargado[0].size,
-            }
-          : null,
-        remitoFisico: values.fotoRemitoFisico?.[0]
-          ? {
-              nombre: values.fotoRemitoFisico[0].name,
-              tipo: values.fotoRemitoFisico[0].type,
-              tamanio: values.fotoRemitoFisico[0].size,
-            }
-          : null,
-        adicional: values.fotoAdicional?.[0]
-          ? {
-              nombre: values.fotoAdicional[0].name,
-              tipo: values.fotoAdicional[0].type,
-              tamanio: values.fotoAdicional[0].size,
-            }
-          : null,
-      },
+      setGuardando(true)
+
+      const {
+        fotoCamionPatente,
+        fotoMaterialCargado,
+        fotoRemitoFisico,
+        fotoAdicional,
+        ...datosIngreso
+      } = values
+
+      const ingresoPreparado = {
+        ...datosIngreso,
+
+        proveedorSeleccionado,
+        articuloSeleccionado,
+        servicioSeleccionado,
+        hachadorSeleccionado,
+        choferSeleccionado:
+          tipoChofer === "INTERNO" ? choferSeleccionado : null,
+        porteroSeleccionado,
+
+        fotosRegistro: {
+          camionPatente: {
+            nombre: fotoCamionPatenteFile.name,
+            tipo: fotoCamionPatenteFile.type,
+            tamanio: fotoCamionPatenteFile.size,
+          },
+          materialCargado: {
+            nombre: fotoMaterialCargadoFile.name,
+            tipo: fotoMaterialCargadoFile.type,
+            tamanio: fotoMaterialCargadoFile.size,
+          },
+          remitoFisico: fotoRemitoFisicoFile
+            ? {
+                nombre: fotoRemitoFisicoFile.name,
+                tipo: fotoRemitoFisicoFile.type,
+                tamanio: fotoRemitoFisicoFile.size,
+              }
+            : null,
+          adicional: fotoAdicionalFile
+            ? {
+                nombre: fotoAdicionalFile.name,
+                tipo: fotoAdicionalFile.type,
+                tamanio: fotoAdicionalFile.size,
+              }
+            : null,
+        },
+      }
+
+      const formData = new FormData()
+      formData.append("payload", JSON.stringify(ingresoPreparado))
+      formData.append("fotoCamionPatente", fotoCamionPatenteFile)
+      formData.append("fotoMaterialCargado", fotoMaterialCargadoFile)
+
+      if (fotoRemitoFisicoFile) {
+        formData.append("fotoRemitoFisico", fotoRemitoFisicoFile)
+      }
+
+      if (fotoAdicionalFile) {
+        formData.append("fotoAdicional", fotoAdicionalFile)
+      }
+
+      console.log("Ingreso preparado:", ingresoPreparado)
+
+      const response = await fetch("/api/ingresos/rollizos", {
+        method: "POST",
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "No se pudo guardar el ingreso")
+      }
+
+      console.log("Ingreso guardado:", result.ingreso)
+
+      toast.success("Ingreso guardado correctamente")
+    } catch (error) {
+      console.error("Error guardando ingreso:", error)
+      toast.error(error.message || "Error guardando ingreso")
+    } finally {
+      setGuardando(false)
     }
-
-    console.log("Ingreso preparado:", ingresoPreparado)
-
-    const response = await fetch("/api/ingresos/rollizos", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(ingresoPreparado),
-    })
-
-    const result = await response.json()
-
-    if (!response.ok || !result.ok) {
-      throw new Error(result.message || "No se pudo guardar el ingreso")
-    }
-
-    console.log("Ingreso guardado:", result.ingreso)
-
-    toast.success("Ingreso guardado correctamente")
-
-  } catch (error) {
-    console.error("Error guardando ingreso:", error)
-    toast.error(error.message || "Error guardando ingreso")
-  } finally {
-    setGuardando(false)
   }
-}
 
   function limpiarFormulario() {
     reset({

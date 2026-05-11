@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { mkdir, writeFile } from "node:fs/promises"
+import path from "node:path"
 
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
@@ -18,6 +20,65 @@ function limpiarTexto(value) {
   const texto = String(value).trim()
 
   return texto === "" ? null : texto
+}
+
+function esArchivoValido(file) {
+  return file && typeof file.arrayBuffer === "function" && file.size > 0
+}
+
+function obtenerExtension(nombreOriginal) {
+  const extension = path.extname(nombreOriginal || "").toLowerCase()
+
+  if (!extension || !/^\.[a-z0-9]+$/.test(extension)) {
+    return ".jpg"
+  }
+
+  return extension
+}
+
+async function guardarFotoIngreso({
+  file,
+  ingreso,
+  tipoFoto,
+  nombreBase,
+  uploadRoot,
+}) {
+  const fecha = ingreso.fechaIngreso || new Date()
+  const anio = String(fecha.getFullYear())
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0")
+  const nombreArchivo = `${nombreBase}${obtenerExtension(file.name)}`
+  const rutaRelativa = path.posix.join(
+    "ingresos",
+    "rollizos",
+    anio,
+    mes,
+    `ingreso-${ingreso.id}`,
+    nombreArchivo
+  )
+  const carpetaDestino = path.join(
+    uploadRoot,
+    "ingresos",
+    "rollizos",
+    anio,
+    mes,
+    `ingreso-${ingreso.id}`
+  )
+  const rutaDestino = path.join(carpetaDestino, nombreArchivo)
+  const bytes = await file.arrayBuffer()
+  const buffer = Buffer.from(bytes)
+
+  await mkdir(carpetaDestino, { recursive: true })
+  await writeFile(rutaDestino, buffer)
+
+  return {
+    ingresoId: ingreso.id,
+    tipoFoto,
+    nombreOriginal: limpiarTexto(file.name),
+    nombreArchivo,
+    rutaRelativa,
+    mimeType: limpiarTexto(file.type),
+    sizeBytes: file.size || null,
+  }
 }
 
 async function obtenerUsuarioPortero(porteroSeleccionado) {
@@ -52,7 +113,47 @@ async function obtenerUsuarioPortero(porteroSeleccionado) {
 
 export async function POST(request) {
   try {
-    const body = await request.json()
+    const formData = await request.formData()
+    const payloadRaw = formData.get("payload")
+
+    if (!payloadRaw) {
+      return NextResponse.json(
+        { ok: false, message: "Debe enviarse el payload del ingreso" },
+        { status: 400 }
+      )
+    }
+
+    let body
+
+    try {
+      body = JSON.parse(String(payloadRaw))
+    } catch {
+      return NextResponse.json(
+        { ok: false, message: "El payload del ingreso no es un JSON valido" },
+        { status: 400 }
+      )
+    }
+
+    const archivos = {
+      fotoCamionPatente: formData.get("fotoCamionPatente"),
+      fotoMaterialCargado: formData.get("fotoMaterialCargado"),
+      fotoRemitoFisico: formData.get("fotoRemitoFisico"),
+      fotoAdicional: formData.get("fotoAdicional"),
+    }
+
+    if (!esArchivoValido(archivos.fotoCamionPatente)) {
+      return NextResponse.json(
+        { ok: false, message: "La foto del camion / patente es obligatoria" },
+        { status: 400 }
+      )
+    }
+
+    if (!esArchivoValido(archivos.fotoMaterialCargado)) {
+      return NextResponse.json(
+        { ok: false, message: "La foto del material cargado es obligatoria" },
+        { status: 400 }
+      )
+    }
 
     const tipoIngreso = await prisma.tipoIngreso.findUnique({
       where: { codigo: "ROLLIZOS" },
@@ -234,10 +335,77 @@ export async function POST(request) {
       },
     })
 
+    let fotos = []
+
+    try {
+      const uploadRoot =
+        process.env.UPLOADS_DIR || path.join(process.cwd(), "uploads")
+      const fotosParaGuardar = []
+      const definicionesFotos = [
+        {
+          file: archivos.fotoCamionPatente,
+          tipoFoto: "CAMION_PATENTE",
+          nombreBase: "camion-patente",
+        },
+        {
+          file: archivos.fotoMaterialCargado,
+          tipoFoto: "MATERIAL_CARGADO",
+          nombreBase: "material-cargado",
+        },
+        {
+          file: archivos.fotoRemitoFisico,
+          tipoFoto: "REMITO_FISICO",
+          nombreBase: "remito-fisico",
+        },
+        {
+          file: archivos.fotoAdicional,
+          tipoFoto: "ADICIONAL",
+          nombreBase: "adicional",
+        },
+      ]
+
+      for (const definicion of definicionesFotos) {
+        if (!esArchivoValido(definicion.file)) continue
+
+        const foto = await guardarFotoIngreso({
+          ...definicion,
+          ingreso,
+          uploadRoot,
+        })
+
+        fotosParaGuardar.push(foto)
+      }
+
+      if (fotosParaGuardar.length > 0) {
+        await prisma.ingresoFoto.createMany({
+          data: fotosParaGuardar,
+        })
+
+        fotos = await prisma.ingresoFoto.findMany({
+          where: { ingresoId: ingreso.id },
+          orderBy: { id: "asc" },
+        })
+      }
+    } catch (errorFotos) {
+      console.error("Error guardando fotos de ingreso de rollizos:", errorFotos)
+
+      return NextResponse.json(
+        {
+          ok: false,
+          message:
+            "El ingreso fue creado, pero ocurrio un error guardando las fotos",
+          error: errorFotos.message,
+          ingreso,
+        },
+        { status: 500 }
+      )
+    }
+
     return NextResponse.json({
       ok: true,
       message: "Ingreso de rollizos guardado correctamente",
       ingreso,
+      fotos,
     })
   } catch (error) {
     console.error("Error guardando ingreso de rollizos:", error)
@@ -245,7 +413,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         ok: false,
-        message: "Error guardando ingreso de rollizos",
+        message: error.message || "Error guardando ingreso de rollizos",
         error: error.message,
       },
       { status: 500 }
