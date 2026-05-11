@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  ADMIN
+  PORTERIA
+  PROVEEDORES
+  SISTEMAS
+}
+
+enum EstadoIngreso {
+  BORRADOR
+  REGISTRADO
+  PENDIENTE_VALIDACION_PROVEEDOR
+  VALIDADO_PROVEEDORES
+  PDF_GENERADO
+  ENVIADO_FEX
+  FINALIZADO
+  ANULADO
+}
+
+enum OrigenDato {
+  BEJERMAN
+  SJALA
+  MANUAL
+}
+
+enum TipoServicioLogistico {
+  FLETERO
+  TRANSPORTE
+}
+
+enum TipoChofer {
+  INTERNO
+  EXTERNO
+}
+
+model UsuarioApp {
+  id           Int        @id @default(autoincrement())
+  nombre       String
+  email        String     @unique
+  passwordHash String?    @map("password_hash")
+  rol          RolUsuario @default(PORTERIA)
+  activo       Boolean    @default(true)
+
+  legajoSjala  Int?       @map("legajo_sjala")
+  nombreSjala  String?    @map("nombre_sjala")
+  seccionSjala String?    @map("seccion_sjala")
+
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  ingresosRegistrados Ingreso[] @relation("IngresoRegistradoPor")
+  ingresosValidados   Ingreso[] @relation("IngresoValidadoPor")
+  logs                IngresoLog[]
+
+  @@map("usuarios_app")
+}
+
+model TipoIngreso {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  ingresos    Ingreso[]
+
+  @@map("tipos_ingreso")
+}
+
+model CategoriaFormulario {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  ingresos    Ingreso[]
+
+  @@map("categorias_formulario")
+}
+
+model Ingreso {
+  id                    Int           @id @default(autoincrement())
+
+  fechaIngreso          DateTime      @default(now()) @map("fecha_ingreso")
+  estado                EstadoIngreso @default(REGISTRADO)
+
+  tipoIngresoId         Int           @map("tipo_ingreso_id")
+  categoriaFormularioId Int?          @map("categoria_formulario_id")
+
+  remitoProveedor       String?       @map("remito_proveedor")
+  observaciones         String?
+
+  // Proveedor principal del material/madera
+  proveedorOrigenDato          OrigenDato @default(BEJERMAN) @map("proveedor_origen_dato")
+  proveedorCodigoBejerman      String?    @map("proveedor_codigo_bejerman")
+  proveedorNombreCargado       String     @map("proveedor_nombre_cargado")
+  proveedorCuitCargado         String?    @map("proveedor_cuit_cargado")
+  proveedorGrupoBejerman       String?    @map("proveedor_grupo_bejerman")
+  proveedorSubgrupoBejerman    String?    @map("proveedor_subgrupo_bejerman")
+  proveedorFueraSugerido       Boolean    @default(false) @map("proveedor_fuera_sugerido")
+  proveedorCargaManual         Boolean    @default(false) @map("proveedor_carga_manual")
+
+  proveedorCodigoValidado      String?    @map("proveedor_codigo_validado")
+  proveedorNombreValidado      String?    @map("proveedor_nombre_validado")
+  proveedorCuitValidado        String?    @map("proveedor_cuit_validado")
+  proveedorValidado            Boolean    @default(false) @map("proveedor_validado")
+
+  // Servicio logístico: puede ser fletero o transporte
+  tipoServicioLogistico        TipoServicioLogistico? @map("tipo_servicio_logistico")
+
+  servicioOrigenDato           OrigenDato? @map("servicio_origen_dato")
+  servicioCodigoBejerman       String?     @map("servicio_codigo_bejerman")
+  servicioNombreCargado        String?     @map("servicio_nombre_cargado")
+  servicioCuitCargado          String?     @map("servicio_cuit_cargado")
+  servicioGrupoBejerman        String?     @map("servicio_grupo_bejerman")
+  servicioSubgrupoBejerman     String?     @map("servicio_subgrupo_bejerman")
+  servicioFueraSugerido        Boolean     @default(false) @map("servicio_fuera_sugerido")
+  servicioCargaManual          Boolean     @default(false) @map("servicio_carga_manual")
+
+  servicioCodigoValidado       String?     @map("servicio_codigo_validado")
+  servicioNombreValidado       String?     @map("servicio_nombre_validado")
+  servicioCuitValidado         String?     @map("servicio_cuit_validado")
+  servicioValidado             Boolean     @default(false) @map("servicio_validado")
+
+  // Chofer
+tipoChofer                  TipoChofer? @map("tipo_chofer")
+choferOrigenDato             OrigenDato? @map("chofer_origen_dato")
+choferLegajoSjala            Int?        @map("chofer_legajo_sjala")
+choferNombreCargado          String?     @map("chofer_nombre_cargado")
+choferDocumentoCargado       String?     @map("chofer_documento_cargado")
+choferCargaManual            Boolean     @default(false) @map("chofer_carga_manual")
+
+choferLegajoValidado         Int?        @map("chofer_legajo_validado")
+choferNombreValidado         String?     @map("chofer_nombre_validado")
+choferValidado               Boolean     @default(false) @map("chofer_validado")
+
+  // Datos del vehículo
+  patenteCamion                String?     @map("patente_camion")
+  patenteAcoplado              String?     @map("patente_acoplado")
+
+  // Hachador: solo aplica cuando el ingreso corresponde a rollizos
+  hachadorAplica               Boolean     @default(false) @map("hachador_aplica")
+  hachadorOrigenDato           OrigenDato? @map("hachador_origen_dato")
+  hachadorCodigoBejerman       String?     @map("hachador_codigo_bejerman")
+  hachadorNombreCargado        String?     @map("hachador_nombre_cargado")
+  hachadorCuitCargado          String?     @map("hachador_cuit_cargado")
+  hachadorGrupoBejerman        String?     @map("hachador_grupo_bejerman")
+  hachadorSubgrupoBejerman     String?     @map("hachador_subgrupo_bejerman")
+  hachadorFueraSugerido        Boolean     @default(false) @map("hachador_fuera_sugerido")
+  hachadorCargaManual          Boolean     @default(false) @map("hachador_carga_manual")
+
+  hachadorCodigoValidado       String?     @map("hachador_codigo_validado")
+  hachadorNombreValidado       String?     @map("hachador_nombre_validado")
+  hachadorCuitValidado         String?     @map("hachador_cuit_validado")
+  hachadorValidado             Boolean     @default(false) @map("hachador_validado")
+
+  // Marcas generales del ingreso
+  tieneCargaManual             Boolean     @default(false) @map("tiene_carga_manual")
+  tieneFueraSugerido           Boolean     @default(false) @map("tiene_fuera_sugerido")
+
+  pdfGenerado                  Boolean     @default(false) @map("pdf_generado")
+  rutaPdf                      String?     @map("ruta_pdf")
+
+  registradoPorId              Int?        @map("registrado_por_id")
+  validadoPorId                Int?        @map("validado_por_id")
+  validadoEn                   DateTime?   @map("validado_en")
+
+  createdAt                    DateTime    @default(now()) @map("created_at")
+  updatedAt                    DateTime    @updatedAt @map("updated_at")
+
+  tipoIngreso                  TipoIngreso          @relation(fields: [tipoIngresoId], references: [id])
+  categoriaFormulario          CategoriaFormulario? @relation(fields: [categoriaFormularioId], references: [id])
+
+  registradoPor                UsuarioApp? @relation("IngresoRegistradoPor", fields: [registradoPorId], references: [id])
+  validadoPor                  UsuarioApp? @relation("IngresoValidadoPor", fields: [validadoPorId], references: [id])
+
+  articulos                    IngresoArticulo[]
+  logs                         IngresoLog[]
+
+  @@map("ingresos")
+}
+
+model IngresoArticulo {
+  id                     Int        @id @default(autoincrement())
+  ingresoId              Int        @map("ingreso_id")
+
+  origenDato             OrigenDato @default(BEJERMAN) @map("origen_dato")
+
+  articuloGen            String?    @map("articulo_gen")
+  articuloCodigo         String?    @map("articulo_codigo")
+  articuloClase          String?    @map("articulo_clase")
+  articuloDescripcion    String?    @map("articulo_descripcion")
+  articuloProceso        String?    @map("articulo_proceso")
+  articuloGrupo          String?    @map("articulo_grupo")
+  articuloSubgrupo       String?    @map("articulo_subgrupo")
+
+  categoriaFormulario    String?    @map("categoria_formulario")
+
+  cantidad               Decimal    @db.Decimal(12, 3)
+  unidad                 String
+
+  createdAt              DateTime   @default(now()) @map("created_at")
+  updatedAt              DateTime   @updatedAt @map("updated_at")
+
+  ingreso                Ingreso    @relation(fields: [ingresoId], references: [id])
+
+  @@map("ingreso_articulos")
+}
+
+model IngresoLog {
+  id           Int      @id @default(autoincrement())
+  ingresoId    Int      @map("ingreso_id")
+  usuarioId    Int?     @map("usuario_id")
+
+  estado       String
+  detalle      String?
+
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  ingreso      Ingreso     @relation(fields: [ingresoId], references: [id])
+  usuario      UsuarioApp? @relation(fields: [usuarioId], references: [id])
+
+  @@map("ingreso_logs")
+}
