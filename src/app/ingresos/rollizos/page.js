@@ -51,6 +51,7 @@ export default function IngresoRollizosPage() {
   const [error, setError] = useState("")
   const [guardando, setGuardando] = useState(false)
   const [ingresoGuardadoId, setIngresoGuardadoId] = useState(null)
+
   const [proveedores, setProveedores] = useState([])
   const [articulos, setArticulos] = useState([])
   const [servicios, setServicios] = useState([])
@@ -249,7 +250,6 @@ export default function IngresoRollizosPage() {
 
       const ingresoPreparado = {
         ...datosIngreso,
-
         proveedorSeleccionado,
         articuloSeleccionado,
         servicioSeleccionado,
@@ -257,7 +257,6 @@ export default function IngresoRollizosPage() {
         choferSeleccionado:
           tipoChofer === "INTERNO" ? choferSeleccionado : null,
         porteroSeleccionado,
-
         fotosRegistro: {
           camionPatente: {
             nombre: fotoCamionPatenteFile.name,
