@@ -49,6 +49,7 @@ async function fetchDimensionSegura(url) {
 export default function IngresoRollizosPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [guardando, setGuardando] = useState(false)
   const [proveedores, setProveedores] = useState([])
   const [articulos, setArticulos] = useState([])
   const [servicios, setServicios] = useState([])
@@ -217,28 +218,79 @@ export default function IngresoRollizosPage() {
     }
   }, [fotoCamionPatente, fotoMaterialCargado, fotoRemitoFisico, fotoAdicional])
 
-  function onSubmit(values) {
-    const fotosRegistro = {
-      camionPatente: values.fotoCamionPatente?.[0] || null,
-      materialCargado: values.fotoMaterialCargado?.[0] || null,
-      remitoFisico: values.fotoRemitoFisico?.[0] || null,
-      adicional: values.fotoAdicional?.[0] || null,
-    }
+  async function onSubmit(values) {
+  try {
+    setGuardando(true)
 
     const ingresoPreparado = {
       ...values,
+
       proveedorSeleccionado,
       articuloSeleccionado,
       servicioSeleccionado,
       hachadorSeleccionado,
       choferSeleccionado: tipoChofer === "INTERNO" ? choferSeleccionado : null,
       porteroSeleccionado,
-      fotosRegistro,
+
+      fotosRegistro: {
+        camionPatente: values.fotoCamionPatente?.[0]
+          ? {
+              nombre: values.fotoCamionPatente[0].name,
+              tipo: values.fotoCamionPatente[0].type,
+              tamanio: values.fotoCamionPatente[0].size,
+            }
+          : null,
+        materialCargado: values.fotoMaterialCargado?.[0]
+          ? {
+              nombre: values.fotoMaterialCargado[0].name,
+              tipo: values.fotoMaterialCargado[0].type,
+              tamanio: values.fotoMaterialCargado[0].size,
+            }
+          : null,
+        remitoFisico: values.fotoRemitoFisico?.[0]
+          ? {
+              nombre: values.fotoRemitoFisico[0].name,
+              tipo: values.fotoRemitoFisico[0].type,
+              tamanio: values.fotoRemitoFisico[0].size,
+            }
+          : null,
+        adicional: values.fotoAdicional?.[0]
+          ? {
+              nombre: values.fotoAdicional[0].name,
+              tipo: values.fotoAdicional[0].type,
+              tamanio: values.fotoAdicional[0].size,
+            }
+          : null,
+      },
     }
 
     console.log("Ingreso preparado:", ingresoPreparado)
-    toast.success("Ingreso preparado correctamente")
+
+    const response = await fetch("/api/ingresos/rollizos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(ingresoPreparado),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.message || "No se pudo guardar el ingreso")
+    }
+
+    console.log("Ingreso guardado:", result.ingreso)
+
+    toast.success("Ingreso guardado correctamente")
+
+  } catch (error) {
+    console.error("Error guardando ingreso:", error)
+    toast.error(error.message || "Error guardando ingreso")
+  } finally {
+    setGuardando(false)
   }
+}
 
   function limpiarFormulario() {
     reset({
@@ -663,9 +715,10 @@ export default function IngresoRollizosPage() {
 
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-5 py-3 font-medium text-white"
+            disabled={guardando}
+            className="rounded-lg bg-slate-900 px-5 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Guardar ingreso
+            {guardando ? "Guardando..." : "Guardar ingreso"}
           </button>
         </div>
       </form>
