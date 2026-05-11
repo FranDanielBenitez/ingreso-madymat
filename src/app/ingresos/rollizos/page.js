@@ -50,6 +50,7 @@ export default function IngresoRollizosPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [guardando, setGuardando] = useState(false)
+  const [ingresoGuardadoId, setIngresoGuardadoId] = useState(null)
   const [proveedores, setProveedores] = useState([])
   const [articulos, setArticulos] = useState([])
   const [servicios, setServicios] = useState([])
@@ -236,6 +237,7 @@ export default function IngresoRollizosPage() {
       }
 
       setGuardando(true)
+      setIngresoGuardadoId(null)
 
       const {
         fotoCamionPatente,
@@ -311,6 +313,7 @@ export default function IngresoRollizosPage() {
       }
 
       console.log("Ingreso guardado:", result.ingreso)
+      setIngresoGuardadoId(result.ingreso?.id || null)
 
       toast.success("Ingreso guardado correctamente")
     } catch (error) {
@@ -329,6 +332,7 @@ export default function IngresoRollizosPage() {
       unidad: "TN",
     })
     setPreviewsFotos({})
+    setIngresoGuardadoId(null)
   }
 
   if (loading) {
@@ -734,6 +738,15 @@ export default function IngresoRollizosPage() {
         </section>
 
         <div className={`flex justify-end gap-3 ${SECTION_CLASS}`}>
+          {ingresoGuardadoId ? (
+            <a
+              href={`/ingresos/rollizos/${ingresoGuardadoId}`}
+              className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-800 focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+            >
+              Ver ingreso registrado
+            </a>
+          ) : null}
+
           <button
             type="button"
             onClick={limpiarFormulario}

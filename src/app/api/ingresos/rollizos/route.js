@@ -339,7 +339,8 @@ export async function POST(request) {
 
     try {
       const uploadRoot =
-        process.env.UPLOADS_DIR || path.join(process.cwd(), "uploads")
+        process.env.UPLOADS_DIR ||
+        path.join(/* turbopackIgnore: true */ process.cwd(), "uploads")
       const fotosParaGuardar = []
       const definicionesFotos = [
         {
