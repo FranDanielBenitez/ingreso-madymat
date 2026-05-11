@@ -120,6 +120,8 @@ export default function IngresoMaterialesPage() {
   const [articulos, setArticulos] = useState([])
   const [servicios, setServicios] = useState([])
   const [previewsFotos, setPreviewsFotos] = useState({})
+  const [guardando, setGuardando] = useState(false)
+  const [ingresoGuardadoId, setIngresoGuardadoId] = useState(null)
 
   const {
     register,
@@ -303,6 +305,7 @@ export default function IngresoMaterialesPage() {
     setArticulos([])
     setServicios([])
     setPreviewsFotos({})
+    setIngresoGuardadoId(null)
   }
 
   function metadataArchivo(file) {
@@ -315,7 +318,7 @@ export default function IngresoMaterialesPage() {
       : null
   }
 
-  function onSubmit(values) {
+  async function onSubmit(values) {
     const fotoCamionPatenteFile = values.fotoCamionPatente?.[0]
     const fotoMaterialCargadoFile = values.fotoMaterialCargado?.[0]
     const fotoRemitoFisicoFile = values.fotoRemitoFisico?.[0]
@@ -331,36 +334,70 @@ export default function IngresoMaterialesPage() {
       return
     }
 
-    const ingresoPreparado = {
-      ...values,
-      categoriaMaterial,
-      proveedorSeleccionado,
-      articuloSeleccionado,
-      servicioSeleccionado,
-      choferSeleccionado: tipoChofer === "INTERNO" ? choferSeleccionado : null,
-      porteroSeleccionado,
-      fotosRegistro: {
-        camionPatente: {
-          metadata: metadataArchivo(fotoCamionPatenteFile),
-          fileList: values.fotoCamionPatente,
-        },
-        materialCargado: {
-          metadata: metadataArchivo(fotoMaterialCargadoFile),
-          fileList: values.fotoMaterialCargado,
-        },
-        remitoFisico: {
-          metadata: metadataArchivo(fotoRemitoFisicoFile),
-          fileList: values.fotoRemitoFisico,
-        },
-        adicional: {
-          metadata: metadataArchivo(fotoAdicionalFile),
-          fileList: values.fotoAdicional,
-        },
-      },
-    }
+    try {
+      setGuardando(true)
+      setIngresoGuardadoId(null)
 
-    console.log("Ingreso de materiales preparado:", ingresoPreparado)
-    toast.success("Ingreso de materiales preparado correctamente")
+      const {
+        fotoCamionPatente,
+        fotoMaterialCargado,
+        fotoRemitoFisico,
+        fotoAdicional,
+        ...datosIngreso
+      } = values
+
+      const ingresoPreparado = {
+        ...datosIngreso,
+        categoriaMaterial,
+        proveedorSeleccionado,
+        articuloSeleccionado,
+        servicioSeleccionado,
+        choferSeleccionado:
+          tipoChofer === "INTERNO" ? choferSeleccionado : null,
+        porteroSeleccionado,
+        fotosRegistro: {
+          camionPatente: metadataArchivo(fotoCamionPatenteFile),
+          materialCargado: metadataArchivo(fotoMaterialCargadoFile),
+          remitoFisico: metadataArchivo(fotoRemitoFisicoFile),
+          adicional: metadataArchivo(fotoAdicionalFile),
+        },
+      }
+
+      const formData = new FormData()
+      formData.append("payload", JSON.stringify(ingresoPreparado))
+      formData.append("fotoCamionPatente", fotoCamionPatenteFile)
+      formData.append("fotoMaterialCargado", fotoMaterialCargadoFile)
+
+      if (fotoRemitoFisicoFile) {
+        formData.append("fotoRemitoFisico", fotoRemitoFisicoFile)
+      }
+
+      if (fotoAdicionalFile) {
+        formData.append("fotoAdicional", fotoAdicionalFile)
+      }
+
+      console.log("Ingreso de materiales preparado:", ingresoPreparado)
+
+      const response = await fetch("/api/ingresos/materiales", {
+        method: "POST",
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "No se pudo guardar el ingreso")
+      }
+
+      console.log("Ingreso de materiales guardado:", result.ingreso)
+      setIngresoGuardadoId(result.ingreso?.id || null)
+      toast.success("Ingreso de materiales guardado correctamente")
+    } catch (error) {
+      console.error("Error guardando ingreso de materiales:", error)
+      toast.error(error.message || "Error guardando ingreso de materiales")
+    } finally {
+      setGuardando(false)
+    }
   }
 
   if (loadingInicial) {
@@ -402,8 +439,8 @@ export default function IngresoMaterialesPage() {
             Ingreso de Materiales
           </h1>
           <p className="mt-2 text-slate-600">
-            Primer formulario funcional para validar pantalla y flujo de
-            materiales. Todavia no guarda en base de datos.
+            Formulario para registrar ingresos de materiales con fotos en
+            porteria.
           </p>
         </header>
 
@@ -680,6 +717,15 @@ export default function IngresoMaterialesPage() {
         </section>
 
         <div className={`flex flex-col justify-end gap-3 sm:flex-row ${SECTION_CLASS}`}>
+          {ingresoGuardadoId ? (
+            <a
+              href={`/ingresos/materiales/${ingresoGuardadoId}`}
+              className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-800 focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+            >
+              Ver ingreso registrado
+            </a>
+          ) : null}
+
           <button
             type="button"
             onClick={limpiarFormulario}
@@ -690,9 +736,10 @@ export default function IngresoMaterialesPage() {
 
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-5 py-3 font-medium text-white"
+            disabled={guardando}
+            className="rounded-lg bg-slate-900 px-5 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Guardar
+            {guardando ? "Guardando..." : "Guardar ingreso"}
           </button>
         </div>
       </form>

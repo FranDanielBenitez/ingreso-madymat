@@ -52,6 +52,10 @@ function detalleHref(registro) {
     return `/ingresos/rollizos/${registro.id}`
   }
 
+  if (registro.tipoIngreso?.codigo === "MATERIALES") {
+    return `/ingresos/materiales/${registro.id}`
+  }
+
   return null
 }
 
