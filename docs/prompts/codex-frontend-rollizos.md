@@ -1,198 +1,122 @@
 Estoy trabajando en una app llamada Ingreso Madymat.
 
-Stack:
-- Next.js con App Router
-- JavaScript, no TypeScript
-- Tailwind CSS
-- React Hook Form
-- Sonner para notificaciones
-- React Icons
-- Prisma ORM con PostgreSQL
-- SQL Server Bejerman solo se consulta mediante APIs internas de Next.js
+Tarea: crear el primer frontend funcional para registrar un Ingreso de Rollizos.
 
-Reglas importantes:
-- No modificar Prisma schema.
-- No modificar conexión a SQL Server.
-- No modificar las APIs existentes.
+Antes de modificar el proyecto, leer AGENTS.md.
+
+Stack del proyecto:
+- Next.js con App Router.
+- JavaScript, no TypeScript.
+- Tailwind CSS.
+- React Hook Form.
+- Sonner.
+- React Icons.
+- APIs internas de Next.js para consultar dimensiones.
+- Prisma y PostgreSQL ya existen, pero no deben modificarse en esta tarea.
+- SQL Server Bejerman ya está conectado mediante APIs internas, pero no debe tocarse en esta tarea.
+
+Reglas para esta tarea:
+- No modificar prisma/schema.prisma.
+- No modificar migraciones.
+- No modificar src/lib/sqlserver.js.
+- No modificar src/lib/prisma.js.
+- No modificar APIs existentes.
 - No crear TypeScript.
-- No instalar paquetes nuevos salvo que sea estrictamente necesario.
-- Trabajar solo sobre frontend y, si hace falta, crear componentes reutilizables.
-- Mantener diseño simple, limpio, profesional y usable para portería.
-- Usar JavaScript.
-- Usar fetch contra las APIs internas ya existentes.
-- No conectar el frontend directamente a SQL Server.
-- No inventar datos hardcodeados si existen APIs.
+- No instalar paquetes nuevos.
+- No conectar frontend directamente a bases de datos.
+- No crear API de guardado todavía.
+- Trabajar solo sobre frontend y componentes reutilizables.
+- Usar fetch contra las APIs internas existentes.
+- Mantener diseño simple, claro y usable para portería.
 
 APIs internas disponibles:
 
-1) Proveedores:
+Proveedores:
 GET /api/dimensiones/proveedores?categoria=ROLLIZOS
-GET /api/dimensiones/proveedores?categoria=ESQUINEROS
-GET /api/dimensiones/proveedores?categoria=MATERIA_PRIMA
-GET /api/dimensiones/proveedores?modo=TODOS
 
-Respuesta:
-{
-  ok: true,
-  categoria,
-  modo,
-  total,
-  data: [
-    {
-      Codigo,
-      RazonSocial,
-      CUIT,
-      Grupo,
-      SubGrupo
-    }
-  ]
-}
-
-2) Artículos:
+Artículos:
 GET /api/dimensiones/articulos?categoria=ROLLIZOS
-GET /api/dimensiones/articulos?categoria=PALLETS
-GET /api/dimensiones/articulos?categoria=TABLAS_ASERRADAS
-GET /api/dimensiones/articulos?categoria=TABLAS_CEPILLADAS
-GET /api/dimensiones/articulos?categoria=TACOS
-GET /api/dimensiones/articulos?categoria=TERCIADO
-GET /api/dimensiones/articulos?categoria=ESQUINEROS
-GET /api/dimensiones/articulos?categoria=FONDOS
-GET /api/dimensiones/articulos?categoria=INTERIOR
 
-Respuesta:
-{
-  ok: true,
-  categoria,
-  total,
-  data: [
-    {
-      ArticuloGen,
-      Codigo,
-      Clase,
-      Descripcion,
-      Proceso,
-      Grupo,
-      SubGrupo
-    }
-  ]
-}
-
-3) Servicios logísticos:
+Servicios logísticos:
 GET /api/dimensiones/servicios-logisticos?categoria=ROLLIZOS
-GET /api/dimensiones/servicios-logisticos?categoria=ESQUINEROS
 GET /api/dimensiones/servicios-logisticos?tipo=TRANSPORTE
 
-Respuesta:
-{
-  ok: true,
-  categoria,
-  tipo,
-  total,
-  data: [
-    {
-      Codigo,
-      RazonSocial,
-      CUIT,
-      Grupo,
-      SubGrupo
-    }
-  ]
-}
-
-4) Hachadores:
+Hachadores:
 GET /api/dimensiones/hachadores?categoria=ROLLIZOS
 
-Respuesta:
-{
-  ok: true,
-  categoria,
-  total,
-  data: [
-    {
-      Codigo,
-      RazonSocial,
-      CUIT,
-      Grupo,
-      SubGrupo
-    }
-  ]
-}
-
-5) Choferes:
+Choferes:
 GET /api/dimensiones/choferes
 
-Respuesta:
-{
-  ok: true,
-  total,
-  data: [
-    {
-      Legajo,
-      NombreCompleto,
-      Seccion
-    }
-  ]
-}
-
-6) Porteros:
+Porteros:
 GET /api/dimensiones/porteros
 
-Respuesta:
-{
-  ok: true,
-  total,
-  data: [
-    {
-      Legajo,
-      NombreCompleto,
-      Seccion
-    }
-  ]
-}
+Crear la página:
 
-Necesito crear el primer frontend funcional para registrar un Ingreso de Rollizos.
-
-Crear una página en:
 src/app/ingresos/rollizos/page.js
 
-La pantalla debe tener:
-- Título: "Ingreso de Rollizos"
-- Formulario ordenado en secciones
-- Fecha de ingreso
-- Portero / usuario que registra
-- Proveedor
-- Remito proveedor
-- Artículo
-- Cantidad
-- Unidad sugerida según Clase del artículo, pero por ahora puede mostrarse como campo editable
-- Tipo de servicio logístico: Fletero o Transporte
-- Servicio logístico:
-  - Si tipo = Fletero, consumir /api/dimensiones/servicios-logisticos?categoria=ROLLIZOS
-  - Si tipo = Transporte, consumir /api/dimensiones/servicios-logisticos?tipo=TRANSPORTE
-- Tipo de chofer: Interno o Externo
-- Si chofer interno, mostrar select desde /api/dimensiones/choferes
-- Si chofer externo, mostrar input Nombre chofer y Documento chofer
-- Patente camión
-- Patente acoplado
-- Hachador desde /api/dimensiones/hachadores?categoria=ROLLIZOS
-- Observaciones
+La pantalla debe tener título:
 
-Comportamiento:
-- Al cargar la página, traer proveedores rollizos, artículos rollizos, hachadores, choferes y porteros.
-- Mostrar loading mientras carga.
+Ingreso de Rollizos
+
+Campos del formulario:
+
+1. Fecha de ingreso.
+2. Portero / usuario que registra.
+3. Proveedor.
+4. Remito proveedor.
+5. Artículo.
+6. Cantidad.
+7. Unidad.
+8. Tipo de servicio logístico: Fletero o Transporte.
+9. Servicio logístico:
+   - Si tipo = Fletero, usar /api/dimensiones/servicios-logisticos?categoria=ROLLIZOS.
+   - Si tipo = Transporte, usar /api/dimensiones/servicios-logisticos?tipo=TRANSPORTE.
+10. Tipo de chofer: Interno o Externo.
+11. Si chofer interno, mostrar select desde /api/dimensiones/choferes.
+12. Si chofer externo, mostrar input Nombre chofer y Documento chofer.
+13. Patente camión.
+14. Patente acoplado.
+15. Hachador.
+16. Observaciones.
+
+Comportamiento esperado:
+
+- Al cargar la página, consumir:
+  - proveedores rollizos
+  - artículos rollizos
+  - hachadores rollizos
+  - choferes
+  - porteros
+  - servicios logísticos rollizos
+- Mostrar estado de loading mientras carga.
 - Mostrar error amigable si alguna API falla.
-- Usar react-hook-form para manejar el formulario.
+- Usar react-hook-form.
+- Usar Sonner para notificaciones.
 - Al presionar Guardar, por ahora NO guardar en base de datos.
-- En su lugar, mostrar por consola el objeto final del formulario y mostrar toast de Sonner: "Ingreso preparado correctamente".
-- El objeto final debe incluir tanto los IDs/códigos seleccionados como el objeto completo seleccionado cuando sea útil, por ejemplo proveedorSeleccionado, articuloSeleccionado, servicioSeleccionado, hachadorSeleccionado.
+- Al presionar Guardar, armar un objeto final del ingreso y mostrarlo por console.log.
+- Mostrar toast: "Ingreso preparado correctamente".
+- El objeto final debe incluir:
+  - valores simples del formulario
+  - proveedorSeleccionado completo
+  - articuloSeleccionado completo
+  - servicioSeleccionado completo
+  - hachadorSeleccionado completo
+  - choferSeleccionado completo si es interno
+  - porteroSeleccionado completo
 - Agregar botón Limpiar formulario.
-- El diseño debe ser claro, con cards/secciones, inputs grandes y fácil de usar para una persona de portería.
+- El formulario debe dividirse en secciones visuales claras.
+- El diseño debe ser profesional, limpio y práctico para portería.
+- Los inputs y selects deben ser cómodos de usar.
+- No guardar todavía en PostgreSQL.
+- No generar PDF todavía.
 
-Crear componentes si ayuda, por ejemplo:
+Componentes sugeridos si ayudan:
+
 src/components/forms/FormSection.js
-src/components/forms/SelectField.js
 src/components/forms/InputField.js
+src/components/forms/SelectField.js
 
-No modificar backend todavía.
-No crear API de guardado todavía.
-Primero quiero validar visualmente y funcionalmente el formulario.
+Al finalizar, indicar:
+- Archivos creados.
+- Archivos modificados.
+- Ruta para probar: /ingresos/rollizos.
