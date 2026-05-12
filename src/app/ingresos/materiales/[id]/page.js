@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Fragment, useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { toast } from "sonner"
 import EditarIngresoPanel from "@/components/forms/EditarIngresoPanel"
@@ -62,6 +62,13 @@ export default function DetalleIngresoMaterialesPage() {
   const [mostrandoEdicion, setMostrandoEdicion] = useState(false)
   const [motivoAnulacion, setMotivoAnulacion] = useState("")
   const [anulando, setAnulando] = useState(false)
+  const [itemEditandoId, setItemEditandoId] = useState(null)
+  const [itemEdicionValues, setItemEdicionValues] = useState({
+    cantidad: "",
+    unidad: "",
+    motivo: "",
+  })
+  const [guardandoItemId, setGuardandoItemId] = useState(null)
 
   const articuloPrincipal = useMemo(
     () => ingreso?.articulos?.[0] || null,
@@ -133,6 +140,168 @@ export default function DetalleIngresoMaterialesPage() {
     } finally {
       setAnulando(false)
     }
+  }
+
+  function abrirEdicionItem(articulo) {
+    setMostrandoEdicion(false)
+    setMostrandoAnulacion(false)
+    setItemEditandoId(articulo.id)
+    setItemEdicionValues({
+      cantidad:
+        articulo.cantidad === null || articulo.cantidad === undefined
+          ? ""
+          : String(articulo.cantidad),
+      unidad: articulo.unidad || "",
+      motivo: "",
+    })
+  }
+
+  function cancelarEdicionItem() {
+    setItemEditandoId(null)
+    setItemEdicionValues({
+      cantidad: "",
+      unidad: "",
+      motivo: "",
+    })
+  }
+
+  function actualizarCampoItem(event) {
+    const { name, value } = event.target
+
+    setItemEdicionValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  async function guardarEdicionItem(articulo) {
+    const cantidad = Number(String(itemEdicionValues.cantidad).replace(",", "."))
+    const unidad = itemEdicionValues.unidad.trim()
+    const motivo = itemEdicionValues.motivo.trim()
+
+    if (!cantidad || cantidad <= 0) {
+      toast.error("La cantidad debe ser mayor a 0")
+      return
+    }
+
+    if (!unidad) {
+      toast.error("La unidad es obligatoria")
+      return
+    }
+
+    if (!motivo) {
+      toast.error("El motivo de edicion es obligatorio")
+      return
+    }
+
+    try {
+      setGuardandoItemId(articulo.id)
+
+      const response = await fetch(
+        `/api/ingresos/materiales/${id}/items/${articulo.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            cantidad: itemEdicionValues.cantidad,
+            unidad,
+            motivo,
+          }),
+        }
+      )
+      const result = await response.json()
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "No se pudo actualizar el item")
+      }
+
+      setIngreso(result.ingreso)
+      cancelarEdicionItem()
+      toast.success("Item actualizado correctamente")
+    } catch (err) {
+      toast.error(err.message || "No se pudo actualizar el item")
+    } finally {
+      setGuardandoItemId(null)
+    }
+  }
+
+  function renderPanelEdicionItem(articulo) {
+    return (
+      <div className="rounded-xl border border-[#CBD5E1] bg-[#F5F7FA] p-4">
+        <div className="grid gap-3 md:grid-cols-3">
+          <Campo
+            label="Categoria"
+            value={articulo.categoriaFormulario || "Sin categoria"}
+          />
+          <Campo label="Articulo" value={articulo.articuloDescripcion} />
+          <Campo label="Codigo" value={articulo.articuloCodigo} />
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <label>
+            <span className="mb-1 block text-sm font-semibold text-[#0F172A]">
+              Cantidad
+            </span>
+            <input
+              type="number"
+              step="0.001"
+              name="cantidad"
+              value={itemEdicionValues.cantidad}
+              onChange={actualizarCampoItem}
+              className="w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+            />
+          </label>
+
+          <label>
+            <span className="mb-1 block text-sm font-semibold text-[#0F172A]">
+              Unidad
+            </span>
+            <input
+              type="text"
+              name="unidad"
+              value={itemEdicionValues.unidad}
+              onChange={actualizarCampoItem}
+              className="w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+            />
+          </label>
+
+          <label className="md:col-span-3">
+            <span className="mb-1 block text-sm font-semibold text-[#0F172A]">
+              Motivo de edicion *
+            </span>
+            <textarea
+              name="motivo"
+              value={itemEdicionValues.motivo}
+              onChange={actualizarCampoItem}
+              className="min-h-24 w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+              placeholder="Ej: Correccion por conteo fisico"
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={cancelarEdicionItem}
+            className="rounded-lg border border-[#CBD5E1] bg-white px-4 py-2 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => guardarEdicionItem(articulo)}
+            disabled={guardandoItemId === articulo.id}
+            className="rounded-lg bg-[#F3171B] px-4 py-2 font-semibold text-white shadow-sm hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {guardandoItemId === articulo.id
+              ? "Guardando..."
+              : "Guardar cambios"}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -226,6 +395,7 @@ export default function DetalleIngresoMaterialesPage() {
                   onClick={() => {
                     setMostrandoEdicion(true)
                     setMostrandoAnulacion(false)
+                    cancelarEdicionItem()
                   }}
                   className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
                 >
@@ -236,6 +406,7 @@ export default function DetalleIngresoMaterialesPage() {
                   onClick={() => {
                     setMostrandoAnulacion(true)
                     setMostrandoEdicion(false)
+                    cancelarEdicionItem()
                   }}
                   className="w-fit rounded-lg border border-red-300 bg-white px-5 py-3 font-medium text-red-700 focus:border-red-700 focus:ring-2 focus:ring-red-100"
                 >
@@ -343,37 +514,60 @@ export default function DetalleIngresoMaterialesPage() {
                       <th className="py-3 pr-4 font-semibold">Cantidad</th>
                       <th className="py-3 pr-4 font-semibold">Unidad</th>
                       <th className="py-3 pr-4 font-semibold">Grupo / Subgrupo</th>
+                      {!ingresoAnulado ? (
+                        <th className="py-3 pr-4 font-semibold">Accion</th>
+                      ) : null}
                     </tr>
                   </thead>
                   <tbody>
                     {ingreso.articulos.map((articulo, index) => (
-                      <tr
-                        key={articulo.id}
-                        className="border-b border-slate-100 text-[#0F172A]"
-                      >
-                        <td className="py-3 pr-4 font-semibold">
-                          {index + 1}
-                        </td>
-                        <td className="py-3 pr-4">
-                          {mostrar(articulo.categoriaFormulario)}
-                        </td>
-                        <td className="py-3 pr-4">
-                          {mostrar(articulo.articuloDescripcion)}
-                        </td>
-                        <td className="py-3 pr-4">
-                          {mostrar(articulo.articuloCodigo)}
-                        </td>
-                        <td className="py-3 pr-4">
-                          {mostrar(articulo.cantidad)}
-                        </td>
-                        <td className="py-3 pr-4">
-                          {mostrar(articulo.unidad)}
-                        </td>
-                        <td className="py-3 pr-4">
-                          {mostrar(articulo.articuloGrupo)} /{" "}
-                          {mostrar(articulo.articuloSubgrupo)}
-                        </td>
-                      </tr>
+                      <Fragment key={articulo.id}>
+                        <tr className="border-b border-slate-100 text-[#0F172A]">
+                          <td className="py-3 pr-4 font-semibold">
+                            {index + 1}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {mostrar(articulo.categoriaFormulario)}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {mostrar(articulo.articuloDescripcion)}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {mostrar(articulo.articuloCodigo)}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {mostrar(articulo.cantidad)}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {mostrar(articulo.unidad)}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {mostrar(articulo.articuloGrupo)} /{" "}
+                            {mostrar(articulo.articuloSubgrupo)}
+                          </td>
+                          {!ingresoAnulado ? (
+                            <td className="py-3 pr-4">
+                              <button
+                                type="button"
+                                onClick={() => abrirEdicionItem(articulo)}
+                                className="rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+                              >
+                                Editar item
+                              </button>
+                            </td>
+                          ) : null}
+                        </tr>
+                        {itemEditandoId === articulo.id ? (
+                          <tr>
+                            <td
+                              colSpan={ingresoAnulado ? 7 : 8}
+                              className="border-b border-slate-100 py-4 pr-4"
+                            >
+                              {renderPanelEdicionItem(articulo)}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -411,6 +605,22 @@ export default function DetalleIngresoMaterialesPage() {
                         )}`}
                       />
                     </div>
+                    {!ingresoAnulado ? (
+                      <div className="mt-4">
+                        <button
+                          type="button"
+                          onClick={() => abrirEdicionItem(articulo)}
+                          className="rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+                        >
+                          Editar item
+                        </button>
+                      </div>
+                    ) : null}
+                    {itemEditandoId === articulo.id ? (
+                      <div className="mt-4">
+                        {renderPanelEdicionItem(articulo)}
+                      </div>
+                    ) : null}
                   </article>
                 ))}
               </div>

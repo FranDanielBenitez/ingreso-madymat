@@ -142,9 +142,7 @@ export async function PATCH(request, context) {
     }
 
     const articulo = ingresoExistente.articulos?.[0]
-    const esMaterialMultiItem =
-      ingresoExistente.tipoIngreso?.codigo === "MATERIALES" &&
-      ingresoExistente.articulos.length > 1
+    const esMateriales = ingresoExistente.tipoIngreso?.codigo === "MATERIALES"
 
     if (!articulo) {
       return NextResponse.json(
@@ -153,20 +151,20 @@ export async function PATCH(request, context) {
       )
     }
 
-    const cantidad = esMaterialMultiItem
+    const cantidad = esMateriales
       ? null
       : normalizarDecimal(body?.cantidad)
 
-    if (!esMaterialMultiItem && (!cantidad || cantidad <= 0)) {
+    if (!esMateriales && (!cantidad || cantidad <= 0)) {
       return NextResponse.json(
         { ok: false, message: "La cantidad debe ser mayor a 0" },
         { status: 400 }
       )
     }
 
-    const unidad = esMaterialMultiItem ? null : limpiarTexto(body?.unidad)
+    const unidad = esMateriales ? null : limpiarTexto(body?.unidad)
 
-    if (!esMaterialMultiItem && !unidad) {
+    if (!esMateriales && !unidad) {
       return NextResponse.json(
         { ok: false, message: "La unidad es obligatoria" },
         { status: 400 }
@@ -233,7 +231,7 @@ export async function PATCH(request, context) {
     }
 
     if (
-      !esMaterialMultiItem &&
+      !esMateriales &&
       numeroComparacion(articulo.cantidad) !== numeroComparacion(cantidad)
     ) {
       articuloData.cantidad = cantidad
@@ -241,7 +239,7 @@ export async function PATCH(request, context) {
     }
 
     if (
-      !esMaterialMultiItem &&
+      !esMateriales &&
       textoComparacion(articulo.unidad) !== textoComparacion(unidad)
     ) {
       articuloData.unidad = unidad

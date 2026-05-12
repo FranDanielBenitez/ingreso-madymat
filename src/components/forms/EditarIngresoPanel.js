@@ -39,9 +39,7 @@ export default function EditarIngresoPanel({
   })
   const [guardando, setGuardando] = useState(false)
   const choferManual = ingreso.choferOrigenDato === "MANUAL"
-  const esMaterialMultiItem =
-    ingreso.tipoIngreso?.codigo === "MATERIALES" &&
-    (ingreso.articulos?.length || 0) > 1
+  const esMateriales = ingreso.tipoIngreso?.codigo === "MATERIALES"
 
   function actualizarCampo(event) {
     const { name, value } = event.target
@@ -61,12 +59,12 @@ export default function EditarIngresoPanel({
       return
     }
 
-    if (!esMaterialMultiItem && (!cantidad || cantidad <= 0)) {
+    if (!esMateriales && (!cantidad || cantidad <= 0)) {
       toast.error("La cantidad debe ser mayor a 0")
       return
     }
 
-    if (!esMaterialMultiItem && !values.unidad.trim()) {
+    if (!esMateriales && !values.unidad.trim()) {
       toast.error("La unidad es obligatoria")
       return
     }
@@ -90,7 +88,7 @@ export default function EditarIngresoPanel({
         motivo,
       }
 
-      if (!esMaterialMultiItem) {
+      if (!esMateriales) {
         payload.cantidad = values.cantidad
         payload.unidad = values.unidad
       }
@@ -127,10 +125,10 @@ export default function EditarIngresoPanel({
         log de auditoria.
       </p>
 
-      {esMaterialMultiItem ? (
+      {esMateriales ? (
         <div className="mt-4 rounded-lg border border-[#CBD5E1] bg-white p-3 text-sm font-semibold text-[#475569]">
-          Este ingreso tiene múltiples ítems. La edición individual de ítems se
-          implementará en una etapa posterior.
+          La cantidad y unidad de Materiales se editan desde cada item del
+          remito.
         </div>
       ) : null}
 
@@ -157,7 +155,7 @@ export default function EditarIngresoPanel({
           />
         </label>
 
-        {!esMaterialMultiItem ? (
+        {!esMateriales ? (
           <>
             <label>
               <span className={LABEL_CLASS}>Cantidad</span>
