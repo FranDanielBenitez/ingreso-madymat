@@ -1,15 +1,17 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
-const SECTION_CLASS = "rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-const LABEL_CLASS = "mb-1 block font-medium text-slate-800"
+const SECTION_CLASS =
+  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
+const LABEL_CLASS = "mb-1 block font-semibold text-[#0F172A]"
 const FIELD_CLASS =
-  "w-full rounded-lg border border-slate-300 bg-white p-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 const TEXTAREA_CLASS =
-  "min-h-28 w-full rounded-lg border border-slate-300 bg-white p-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+  "min-h-28 w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 
 const CATEGORIAS_MATERIALES = [
   { codigo: "PALLETS", nombre: "Pallets" },
@@ -78,7 +80,16 @@ function servicioFleteroUrl(categoria) {
   return `/api/dimensiones/servicios-logisticos?categoria=${categoriaServicio}`
 }
 
-function FotoField({ label, name, register, error, preview, required = false }) {
+function FotoField({
+  label,
+  name,
+  register,
+  error,
+  preview,
+  inputKey,
+  onRemove,
+  required = false,
+}) {
   return (
     <div>
       <label className={LABEL_CLASS}>
@@ -86,6 +97,7 @@ function FotoField({ label, name, register, error, preview, required = false }) 
         {required ? <span className="text-red-600"> *</span> : null}
       </label>
       <input
+        key={inputKey}
         type="file"
         accept="image/*"
         capture="environment"
@@ -98,18 +110,28 @@ function FotoField({ label, name, register, error, preview, required = false }) 
       />
       {error ? <p className="mt-1 text-sm text-red-600">{error.message}</p> : null}
       {preview ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={preview}
-          alt={`Vista previa ${label}`}
-          className="mt-3 h-48 w-full rounded-lg border border-slate-300 object-cover"
-        />
+        <div className="mt-3 overflow-hidden rounded-lg border border-[#CBD5E1] bg-white">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={preview}
+            alt={`Vista previa ${label}`}
+            className="h-48 w-full object-cover"
+          />
+          <button
+            type="button"
+            onClick={onRemove}
+            className="w-full border-t border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:bg-red-50 hover:text-[#D90F14] focus:outline-none focus:ring-2 focus:ring-red-100"
+          >
+            Quitar imagen
+          </button>
+        </div>
       ) : null}
     </div>
   )
 }
 
 export default function IngresoMaterialesPage() {
+  const router = useRouter()
   const [loadingInicial, setLoadingInicial] = useState(true)
   const [loadingCategoria, setLoadingCategoria] = useState(false)
   const [error, setError] = useState("")
@@ -120,8 +142,13 @@ export default function IngresoMaterialesPage() {
   const [articulos, setArticulos] = useState([])
   const [servicios, setServicios] = useState([])
   const [previewsFotos, setPreviewsFotos] = useState({})
+  const [fotoInputKeys, setFotoInputKeys] = useState({
+    fotoCamionPatente: 0,
+    fotoMaterialCargado: 0,
+    fotoRemitoFisico: 0,
+    fotoAdicional: 0,
+  })
   const [guardando, setGuardando] = useState(false)
-  const [ingresoGuardadoId, setIngresoGuardadoId] = useState(null)
 
   const {
     register,
@@ -293,6 +320,23 @@ export default function IngresoMaterialesPage() {
     }
   }, [fotoCamionPatente, fotoMaterialCargado, fotoRemitoFisico, fotoAdicional])
 
+  function quitarFoto(campo) {
+    setValue(campo, undefined, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+    setPreviewsFotos((prev) => {
+      const siguiente = { ...prev }
+      delete siguiente[campo]
+      return siguiente
+    })
+    setFotoInputKeys((prev) => ({
+      ...prev,
+      [campo]: prev[campo] + 1,
+    }))
+  }
+
   function limpiarFormulario() {
     reset({
       fechaIngreso: fechaActual(),
@@ -305,7 +349,12 @@ export default function IngresoMaterialesPage() {
     setArticulos([])
     setServicios([])
     setPreviewsFotos({})
-    setIngresoGuardadoId(null)
+    setFotoInputKeys((prev) => ({
+      fotoCamionPatente: prev.fotoCamionPatente + 1,
+      fotoMaterialCargado: prev.fotoMaterialCargado + 1,
+      fotoRemitoFisico: prev.fotoRemitoFisico + 1,
+      fotoAdicional: prev.fotoAdicional + 1,
+    }))
   }
 
   function metadataArchivo(file) {
@@ -319,6 +368,8 @@ export default function IngresoMaterialesPage() {
   }
 
   async function onSubmit(values) {
+    if (guardando) return
+
     const fotoCamionPatenteFile = values.fotoCamionPatente?.[0]
     const fotoMaterialCargadoFile = values.fotoMaterialCargado?.[0]
     const fotoRemitoFisicoFile = values.fotoRemitoFisico?.[0]
@@ -336,7 +387,6 @@ export default function IngresoMaterialesPage() {
 
     try {
       setGuardando(true)
-      setIngresoGuardadoId(null)
 
       const {
         fotoCamionPatente,
@@ -390,8 +440,14 @@ export default function IngresoMaterialesPage() {
       }
 
       console.log("Ingreso de materiales guardado:", result.ingreso)
-      setIngresoGuardadoId(result.ingreso?.id || null)
+
+      const ingresoId = result.ingreso?.id
+
       toast.success("Ingreso de materiales guardado correctamente")
+
+      if (ingresoId) {
+        router.push(`/ingresos/materiales/${ingresoId}`)
+      }
     } catch (error) {
       console.error("Error guardando ingreso de materiales:", error)
       toast.error(error.message || "Error guardando ingreso de materiales")
@@ -402,12 +458,12 @@ export default function IngresoMaterialesPage() {
 
   if (loadingInicial) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6">
+      <main className="min-h-screen bg-[#F5F7FA] p-6">
         <section className={`mx-auto max-w-5xl ${SECTION_CLASS}`}>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-[#0F172A]">
             Cargando formulario...
           </h1>
-          <p className="mt-3 text-slate-600">
+          <p className="mt-3 text-[#475569]">
             Estamos consultando porteros y choferes.
           </p>
         </section>
@@ -417,35 +473,35 @@ export default function IngresoMaterialesPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6">
+      <main className="min-h-screen bg-[#F5F7FA] p-6">
         <section className={`mx-auto max-w-5xl ${SECTION_CLASS}`}>
           <h1 className="text-2xl font-bold text-red-700">
             Error cargando formulario
           </h1>
-          <p className="mt-3 text-slate-700">{error}</p>
+          <p className="mt-3 text-[#475569]">{error}</p>
         </section>
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen bg-[#F5F7FA] p-6">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="mx-auto max-w-6xl space-y-6"
       >
         <header className={SECTION_CLASS}>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-black text-[#0F172A]">
             Ingreso de Materiales
           </h1>
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-[#475569]">
             Formulario para registrar ingresos de materiales con fotos en
             porteria.
           </p>
         </header>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Datos generales
           </h2>
 
@@ -503,11 +559,11 @@ export default function IngresoMaterialesPage() {
 
         <section className={SECTION_CLASS}>
           <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-xl font-semibold text-slate-900">
+            <h2 className="text-xl font-bold text-[#0F172A]">
               Proveedor y material
             </h2>
             {loadingCategoria ? (
-              <span className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-700">
+              <span className="rounded-full border border-[#CBD5E1] bg-[#F5F7FA] px-3 py-1 text-sm font-semibold text-[#475569]">
                 Cargando datos de categoria...
               </span>
             ) : null}
@@ -575,7 +631,7 @@ export default function IngresoMaterialesPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Logistica y chofer
           </h2>
 
@@ -669,7 +725,7 @@ export default function IngresoMaterialesPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Registro fotografico
           </h2>
 
@@ -680,6 +736,8 @@ export default function IngresoMaterialesPage() {
               register={register}
               error={errors.fotoCamionPatente}
               preview={previewsFotos.fotoCamionPatente}
+              inputKey={fotoInputKeys.fotoCamionPatente}
+              onRemove={() => quitarFoto("fotoCamionPatente")}
               required
             />
             <FotoField
@@ -688,6 +746,8 @@ export default function IngresoMaterialesPage() {
               register={register}
               error={errors.fotoMaterialCargado}
               preview={previewsFotos.fotoMaterialCargado}
+              inputKey={fotoInputKeys.fotoMaterialCargado}
+              onRemove={() => quitarFoto("fotoMaterialCargado")}
               required
             />
             <FotoField
@@ -695,18 +755,22 @@ export default function IngresoMaterialesPage() {
               name="fotoRemitoFisico"
               register={register}
               preview={previewsFotos.fotoRemitoFisico}
+              inputKey={fotoInputKeys.fotoRemitoFisico}
+              onRemove={() => quitarFoto("fotoRemitoFisico")}
             />
             <FotoField
               label="Foto adicional"
               name="fotoAdicional"
               register={register}
               preview={previewsFotos.fotoAdicional}
+              inputKey={fotoInputKeys.fotoAdicional}
+              onRemove={() => quitarFoto("fotoAdicional")}
             />
           </div>
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Observaciones
           </h2>
           <textarea
@@ -717,19 +781,11 @@ export default function IngresoMaterialesPage() {
         </section>
 
         <div className={`flex flex-col justify-end gap-3 sm:flex-row ${SECTION_CLASS}`}>
-          {ingresoGuardadoId ? (
-            <a
-              href={`/ingresos/materiales/${ingresoGuardadoId}`}
-              className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-800 focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
-            >
-              Ver ingreso registrado
-            </a>
-          ) : null}
-
           <button
             type="button"
             onClick={limpiarFormulario}
-            className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-800 focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+            disabled={guardando}
+            className="rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
           >
             Limpiar formulario
           </button>
@@ -737,7 +793,7 @@ export default function IngresoMaterialesPage() {
           <button
             type="submit"
             disabled={guardando}
-            className="rounded-lg bg-slate-900 px-5 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-[#F3171B] px-5 py-3 font-bold text-white shadow-sm hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {guardando ? "Guardando..." : "Guardar ingreso"}
           </button>

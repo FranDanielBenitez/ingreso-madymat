@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f7fa;
+  --foreground: #0f172a;
+  --brand-primary: #f3171b;
+  --brand-primary-hover: #d90f14;
+  --brand-border: #cbd5e1;
+  --brand-muted: #475569;
+  --status-registered: #16a34a;
+  --status-cancelled: #dc2626;
+}
+
+:root.dark {
+  --background: #0b1120;
+  --foreground: #f8fafc;
+  --brand-border: #334155;
+  --brand-muted: #cbd5e1;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -12,15 +26,132 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.dark body {
+  background: #0b1120;
+  color: #f8fafc;
+}
+
+.dark [class*="bg-[#F5F7FA]"],
+.dark [class*="bg-slate-50"] {
+  background-color: #111827 !important;
+}
+
+.dark [class*="bg-white"] {
+  background-color: #1e293b !important;
+}
+
+.dark [class*="bg-white/95"] {
+  background-color: rgb(15 23 42 / 0.96) !important;
+}
+
+.dark [class*="text-[#0F172A]"],
+.dark [class*="text-slate-900"],
+.dark [class*="text-slate-800"],
+.dark [class*="text-slate-700"] {
+  color: #f8fafc !important;
+}
+
+.dark [class*="text-[#475569]"],
+.dark [class*="text-slate-600"],
+.dark [class*="text-slate-500"] {
+  color: #cbd5e1 !important;
+}
+
+.dark [class*="border-[#CBD5E1]"],
+.dark [class*="border-slate-300"],
+.dark [class*="border-slate-200"],
+.dark [class*="border-slate-100"] {
+  border-color: #334155 !important;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.dark table tr:hover {
+  background-color: rgb(127 29 29 / 0.16) !important;
+}
+
+.quick-access-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-access-card:hover {
+  box-shadow:
+    0 14px 30px rgb(15 23 42 / 0.12),
+    0 0 0 1px rgb(243 23 27 / 0.08);
+}
+
+.dark .nav-link:not(.nav-link-active):hover,
+.dark .nav-link:not(.nav-link-active):focus {
+  background-color: rgb(243 23 27 / 0.16) !important;
+  color: #fecaca !important;
+  box-shadow: inset 0 0 0 1px rgb(243 23 27 / 0.28);
+}
+
+.dark .nav-link-active {
+  color: #ffffff !important;
+}
+
+.dark .quick-access-card:hover,
+.dark .quick-access-card:focus {
+  background:
+    linear-gradient(
+      135deg,
+      rgb(243 23 27 / 0.18),
+      rgb(30 41 59 / 0.98) 42%,
+      rgb(17 24 39 / 0.98)
+    ) !important;
+  border-color: rgb(243 23 27 / 0.62) !important;
+  box-shadow:
+    0 18px 36px rgb(0 0 0 / 0.28),
+    0 0 0 1px rgb(243 23 27 / 0.18);
+}
+
+.dark .quick-access-card:hover h3,
+.dark .quick-access-card:focus h3 {
+  color: #fecaca !important;
+}
+
+.dark .quick-access-card:hover p,
+.dark .quick-access-card:focus p {
+  color: #e2e8f0 !important;
+}
+
+.dark .dashboard-danger-card {
+  background-color: rgb(127 29 29 / 0.22) !important;
+  border-color: rgb(153 27 27 / 0.55) !important;
+}
+
+.dark .dashboard-danger-text {
+  color: #fca5a5 !important;
 }

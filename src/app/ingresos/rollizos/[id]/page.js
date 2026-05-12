@@ -5,9 +5,10 @@ import { useParams } from "next/navigation"
 import { toast } from "sonner"
 import EditarIngresoPanel from "@/components/forms/EditarIngresoPanel"
 
-const SECTION_CLASS = "rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-const LABEL_CLASS = "text-sm font-medium text-slate-600"
-const VALUE_CLASS = "mt-1 text-base font-semibold text-slate-900"
+const SECTION_CLASS =
+  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
+const LABEL_CLASS = "text-sm font-semibold text-[#475569]"
+const VALUE_CLASS = "mt-1 text-base font-bold text-[#0F172A]"
 
 const TITULOS_FOTO = {
   CAMION_PATENTE: "Camión / patente",
@@ -68,6 +69,10 @@ export default function DetalleIngresoRollizosPage() {
   )
 
   const ingresoAnulado = ingreso?.estado === "ANULADO"
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
 
   useEffect(() => {
     async function cargarIngreso() {
@@ -132,12 +137,12 @@ export default function DetalleIngresoRollizosPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6">
+      <main className="min-h-screen bg-[#F5F7FA] p-6">
         <section className={`mx-auto max-w-6xl ${SECTION_CLASS}`}>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-[#0F172A]">
             Cargando ingreso...
           </h1>
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-[#475569]">
             Estamos obteniendo el detalle y sus fotos.
           </p>
         </section>
@@ -147,35 +152,37 @@ export default function DetalleIngresoRollizosPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6">
+      <main className="min-h-screen bg-[#F5F7FA] p-6">
         <section className={`mx-auto max-w-6xl ${SECTION_CLASS}`}>
           <h1 className="text-2xl font-bold text-red-700">
             No se pudo cargar el ingreso
           </h1>
-          <p className="mt-2 text-slate-700">{error}</p>
+          <p className="mt-2 text-[#475569]">{error}</p>
         </section>
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen bg-[#F5F7FA] p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <section className={SECTION_CLASS}>
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="text-sm font-bold uppercase tracking-wide text-[#F3171B]">
                 Detalle de ingreso
               </p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-900">
+              <h1 className="mt-1 text-3xl font-black text-[#0F172A]">
                 Ingreso de Rollizos #{ingreso.id}
               </h1>
             </div>
             <span
               className={`w-fit rounded-full border px-4 py-2 text-sm font-semibold ${
                 ingresoAnulado
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : "border-slate-300 bg-slate-50 text-slate-800"
+                  ? "border-red-200 bg-red-50 text-[#DC2626]"
+                  : ingreso.estado === "REGISTRADO"
+                    ? "border-green-200 bg-green-50 text-[#16A34A]"
+                    : "border-slate-300 bg-[#F5F7FA] text-[#475569]"
               }`}
             >
               {ingreso.estado}
@@ -202,10 +209,10 @@ export default function DetalleIngresoRollizosPage() {
           <section className={SECTION_CLASS}>
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">
+                <h2 className="text-xl font-bold text-[#0F172A]">
                   Acciones
                 </h2>
-                <p className="mt-1 text-sm text-slate-600">
+                <p className="mt-1 text-sm text-[#475569]">
                   Edita campos administrativos o anula el ingreso con motivo.
                 </p>
               </div>
@@ -216,7 +223,7 @@ export default function DetalleIngresoRollizosPage() {
                     setMostrandoEdicion(true)
                     setMostrandoAnulacion(false)
                   }}
-                  className="w-fit rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-800 focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+                  className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
                 >
                   Editar ingreso
                 </button>
@@ -253,7 +260,7 @@ export default function DetalleIngresoRollizosPage() {
                 <textarea
                   value={motivoAnulacion}
                   onChange={(event) => setMotivoAnulacion(event.target.value)}
-                  className="mt-2 min-h-28 w-full rounded-lg border border-red-200 bg-white p-3 text-slate-900 outline-none focus:border-red-700 focus:ring-2 focus:ring-red-100"
+                  className="mt-2 min-h-28 w-full rounded-lg border border-red-200 bg-white p-3 text-[#0F172A] outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-red-100"
                   placeholder="Indicar por que se anula este ingreso"
                 />
                 <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:justify-end">
@@ -263,7 +270,7 @@ export default function DetalleIngresoRollizosPage() {
                       setMostrandoAnulacion(false)
                       setMotivoAnulacion("")
                     }}
-                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-800"
+                    className="rounded-lg border border-[#CBD5E1] bg-white px-4 py-2 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
                   >
                     Cancelar
                   </button>
@@ -282,7 +289,7 @@ export default function DetalleIngresoRollizosPage() {
         )}
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+                <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Datos generales
           </h2>
           <div className="grid gap-4 md:grid-cols-3">
@@ -296,7 +303,7 @@ export default function DetalleIngresoRollizosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Proveedor
           </h2>
           <div className="grid gap-4 md:grid-cols-4">
@@ -313,7 +320,7 @@ export default function DetalleIngresoRollizosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Material
           </h2>
           <div className="grid gap-4 md:grid-cols-4">
@@ -325,7 +332,7 @@ export default function DetalleIngresoRollizosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Logística
           </h2>
           <div className="grid gap-4 md:grid-cols-3">
@@ -338,7 +345,7 @@ export default function DetalleIngresoRollizosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Chofer
           </h2>
           <div className="grid gap-4 md:grid-cols-4">
@@ -350,7 +357,7 @@ export default function DetalleIngresoRollizosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Hachador
           </h2>
           <div className="grid gap-4 md:grid-cols-3">
@@ -361,13 +368,13 @@ export default function DetalleIngresoRollizosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">Fotos</h2>
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">Fotos</h2>
           {ingreso.fotos?.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {ingreso.fotos.map((foto) => (
                 <article
                   key={foto.id}
-                  className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                  className="overflow-hidden rounded-2xl border border-[#CBD5E1] bg-white shadow-sm"
                 >
                   <a
                     href={`/api/uploads/fotos/${foto.id}`}
@@ -382,13 +389,13 @@ export default function DetalleIngresoRollizosPage() {
                     />
                   </a>
                   <div className="space-y-1 p-4">
-                    <h3 className="font-semibold text-slate-900">
+                    <h3 className="font-bold text-[#0F172A]">
                       {TITULOS_FOTO[foto.tipoFoto] || foto.tipoFoto}
                     </h3>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-[#475569]">
                       {mostrar(foto.nombreOriginal)}
                     </p>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-[#475569]">
                       {mostrar(foto.mimeType)} · {formatearBytes(foto.sizeBytes)}
                     </p>
                   </div>
@@ -396,31 +403,31 @@ export default function DetalleIngresoRollizosPage() {
               ))}
             </div>
           ) : (
-            <p className="text-slate-600">Este ingreso no tiene fotos registradas.</p>
+            <p className="text-[#475569]">Este ingreso no tiene fotos registradas.</p>
           )}
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">Logs</h2>
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">Logs</h2>
           {ingreso.logs?.length > 0 ? (
             <div className="space-y-3">
               {ingreso.logs.map((log) => (
                 <article
                   key={log.id}
-                  className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                  className="rounded-xl border border-[#CBD5E1] bg-[#F5F7FA] p-4"
                 >
                   <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                    <p className="font-semibold text-slate-900">{log.estado}</p>
-                    <p className="text-sm text-slate-600">
+                    <p className="font-bold text-[#0F172A]">{log.estado}</p>
+                    <p className="text-sm text-[#475569]">
                       {formatearFecha(log.createdAt)}
                     </p>
                   </div>
-                  <p className="mt-2 text-slate-700">{mostrar(log.detalle)}</p>
+                  <p className="mt-2 text-[#475569]">{mostrar(log.detalle)}</p>
                 </article>
               ))}
             </div>
           ) : (
-            <p className="text-slate-600">Este ingreso no tiene logs registrados.</p>
+            <p className="text-[#475569]">Este ingreso no tiene logs registrados.</p>
           )}
         </section>
       </div>

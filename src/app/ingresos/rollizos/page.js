@@ -1,15 +1,17 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
-const SECTION_CLASS = "rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-const LABEL_CLASS = "mb-1 block font-medium text-slate-800"
+const SECTION_CLASS =
+  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
+const LABEL_CLASS = "mb-1 block font-semibold text-[#0F172A]"
 const FIELD_CLASS =
-  "w-full rounded-lg border border-slate-300 bg-white p-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 const TEXTAREA_CLASS =
-  "min-h-28 w-full rounded-lg border border-slate-300 bg-white p-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+  "min-h-28 w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 
 async function fetchDimension(url) {
   const response = await fetch(url)
@@ -47,10 +49,10 @@ async function fetchDimensionSegura(url) {
 }
 
 export default function IngresoRollizosPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [guardando, setGuardando] = useState(false)
-  const [ingresoGuardadoId, setIngresoGuardadoId] = useState(null)
 
   const [proveedores, setProveedores] = useState([])
   const [articulos, setArticulos] = useState([])
@@ -59,6 +61,12 @@ export default function IngresoRollizosPage() {
   const [choferes, setChoferes] = useState([])
   const [porteros, setPorteros] = useState([])
   const [previewsFotos, setPreviewsFotos] = useState({})
+  const [fotoInputKeys, setFotoInputKeys] = useState({
+    fotoCamionPatente: 0,
+    fotoMaterialCargado: 0,
+    fotoRemitoFisico: 0,
+    fotoAdicional: 0,
+  })
 
   const {
     register,
@@ -220,7 +228,26 @@ export default function IngresoRollizosPage() {
     }
   }, [fotoCamionPatente, fotoMaterialCargado, fotoRemitoFisico, fotoAdicional])
 
+  function quitarFoto(campo) {
+    setValue(campo, undefined, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+    setPreviewsFotos((prev) => {
+      const siguiente = { ...prev }
+      delete siguiente[campo]
+      return siguiente
+    })
+    setFotoInputKeys((prev) => ({
+      ...prev,
+      [campo]: prev[campo] + 1,
+    }))
+  }
+
   async function onSubmit(values) {
+    if (guardando) return
+
     try {
       const fotoCamionPatenteFile = values.fotoCamionPatente?.[0]
       const fotoMaterialCargadoFile = values.fotoMaterialCargado?.[0]
@@ -238,7 +265,6 @@ export default function IngresoRollizosPage() {
       }
 
       setGuardando(true)
-      setIngresoGuardadoId(null)
 
       const {
         fotoCamionPatente,
@@ -312,9 +338,14 @@ export default function IngresoRollizosPage() {
       }
 
       console.log("Ingreso guardado:", result.ingreso)
-      setIngresoGuardadoId(result.ingreso?.id || null)
 
-      toast.success("Ingreso guardado correctamente")
+      const ingresoId = result.ingreso?.id
+
+      toast.success("Ingreso de rollizos guardado correctamente")
+
+      if (ingresoId) {
+        router.push(`/ingresos/rollizos/${ingresoId}`)
+      }
     } catch (error) {
       console.error("Error guardando ingreso:", error)
       toast.error(error.message || "Error guardando ingreso")
@@ -331,17 +362,22 @@ export default function IngresoRollizosPage() {
       unidad: "TN",
     })
     setPreviewsFotos({})
-    setIngresoGuardadoId(null)
+    setFotoInputKeys((prev) => ({
+      fotoCamionPatente: prev.fotoCamionPatente + 1,
+      fotoMaterialCargado: prev.fotoMaterialCargado + 1,
+      fotoRemitoFisico: prev.fotoRemitoFisico + 1,
+      fotoAdicional: prev.fotoAdicional + 1,
+    }))
   }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6">
+      <main className="min-h-screen bg-[#F5F7FA] p-6">
         <div className={`mx-auto max-w-5xl ${SECTION_CLASS}`}>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-[#0F172A]">
             Cargando formulario...
           </h1>
-          <p className="mt-3 text-slate-600">
+          <p className="mt-3 text-[#475569]">
             Estamos consultando proveedores, artículos, choferes, porteros y
             hachadores.
           </p>
@@ -352,16 +388,16 @@ export default function IngresoRollizosPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6">
+      <main className="min-h-screen bg-[#F5F7FA] p-6">
         <div className={`mx-auto max-w-5xl ${SECTION_CLASS}`}>
           <h1 className="text-2xl font-bold text-red-700">
             Error cargando formulario
           </h1>
-          <p className="mt-3 text-slate-700">{error}</p>
+          <p className="mt-3 text-[#475569]">{error}</p>
           <button
             type="button"
             onClick={cargarDimensionesIniciales}
-            className="mt-5 rounded-lg bg-slate-900 px-4 py-2 text-white"
+            className="mt-5 rounded-lg bg-[#F3171B] px-4 py-2 font-semibold text-white hover:bg-[#D90F14]"
           >
             Reintentar
           </button>
@@ -371,23 +407,23 @@ export default function IngresoRollizosPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen bg-[#F5F7FA] p-6">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="mx-auto max-w-6xl space-y-6"
       >
         <header className={SECTION_CLASS}>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-black text-[#0F172A]">
             Ingreso de Rollizos
           </h1>
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-[#475569]">
             Formulario inicial para registrar el ingreso de rollizos en
             portería.
           </p>
         </header>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Datos generales
           </h2>
 
@@ -431,7 +467,7 @@ export default function IngresoRollizosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Proveedor y material
           </h2>
 
@@ -489,7 +525,7 @@ export default function IngresoRollizosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Logística y chofer
           </h2>
 
@@ -597,7 +633,7 @@ export default function IngresoRollizosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Registro fotográfico
           </h2>
 
@@ -607,6 +643,7 @@ export default function IngresoRollizosPage() {
                 Foto del camión / patente
               </label>
               <input
+                key={fotoInputKeys.fotoCamionPatente}
                 type="file"
                 accept="image/*"
                 capture="environment"
@@ -630,6 +667,15 @@ export default function IngresoRollizosPage() {
                   className="mt-3 h-48 w-full rounded-lg border object-cover"
                 />
               ) : null}
+              {previewsFotos.fotoCamionPatente ? (
+                <button
+                  type="button"
+                  onClick={() => quitarFoto("fotoCamionPatente")}
+                  className="mt-2 w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:bg-red-50 hover:text-[#D90F14] focus:outline-none focus:ring-2 focus:ring-red-100"
+                >
+                  Quitar imagen
+                </button>
+              ) : null}
             </div>
 
             <div>
@@ -637,6 +683,7 @@ export default function IngresoRollizosPage() {
                 Foto del material cargado
               </label>
               <input
+                key={fotoInputKeys.fotoMaterialCargado}
                 type="file"
                 accept="image/*"
                 capture="environment"
@@ -660,6 +707,15 @@ export default function IngresoRollizosPage() {
                   className="mt-3 h-48 w-full rounded-lg border object-cover"
                 />
               ) : null}
+              {previewsFotos.fotoMaterialCargado ? (
+                <button
+                  type="button"
+                  onClick={() => quitarFoto("fotoMaterialCargado")}
+                  className="mt-2 w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:bg-red-50 hover:text-[#D90F14] focus:outline-none focus:ring-2 focus:ring-red-100"
+                >
+                  Quitar imagen
+                </button>
+              ) : null}
             </div>
 
             <div>
@@ -667,6 +723,7 @@ export default function IngresoRollizosPage() {
                 Foto del remito físico
               </label>
               <input
+                key={fotoInputKeys.fotoRemitoFisico}
                 type="file"
                 accept="image/*"
                 capture="environment"
@@ -681,11 +738,21 @@ export default function IngresoRollizosPage() {
                   className="mt-3 h-48 w-full rounded-lg border object-cover"
                 />
               ) : null}
+              {previewsFotos.fotoRemitoFisico ? (
+                <button
+                  type="button"
+                  onClick={() => quitarFoto("fotoRemitoFisico")}
+                  className="mt-2 w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:bg-red-50 hover:text-[#D90F14] focus:outline-none focus:ring-2 focus:ring-red-100"
+                >
+                  Quitar imagen
+                </button>
+              ) : null}
             </div>
 
             <div>
               <label className={LABEL_CLASS}>Foto adicional</label>
               <input
+                key={fotoInputKeys.fotoAdicional}
                 type="file"
                 accept="image/*"
                 capture="environment"
@@ -700,12 +767,21 @@ export default function IngresoRollizosPage() {
                   className="mt-3 h-48 w-full rounded-lg border object-cover"
                 />
               ) : null}
+              {previewsFotos.fotoAdicional ? (
+                <button
+                  type="button"
+                  onClick={() => quitarFoto("fotoAdicional")}
+                  className="mt-2 w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:bg-red-50 hover:text-[#D90F14] focus:outline-none focus:ring-2 focus:ring-red-100"
+                >
+                  Quitar imagen
+                </button>
+              ) : null}
             </div>
           </div>
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Hachador y observaciones
           </h2>
 
@@ -737,19 +813,11 @@ export default function IngresoRollizosPage() {
         </section>
 
         <div className={`flex justify-end gap-3 ${SECTION_CLASS}`}>
-          {ingresoGuardadoId ? (
-            <a
-              href={`/ingresos/rollizos/${ingresoGuardadoId}`}
-              className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-800 focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
-            >
-              Ver ingreso registrado
-            </a>
-          ) : null}
-
           <button
             type="button"
             onClick={limpiarFormulario}
-            className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-800 focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+            disabled={guardando}
+            className="rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
           >
             Limpiar formulario
           </button>
@@ -757,7 +825,7 @@ export default function IngresoRollizosPage() {
           <button
             type="submit"
             disabled={guardando}
-            className="rounded-lg bg-slate-900 px-5 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-[#F3171B] px-5 py-3 font-bold text-white shadow-sm hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {guardando ? "Guardando..." : "Guardar ingreso"}
           </button>

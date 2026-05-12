@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
-const SECTION_CLASS = "rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+const SECTION_CLASS =
+  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
 
 const ACCESOS = [
   {
@@ -65,8 +66,10 @@ function EstadoBadge({ estado }) {
     <span
       className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
         anulado
-          ? "border-red-200 bg-red-50 text-red-700"
-          : "border-slate-300 bg-slate-50 text-slate-700"
+          ? "border-red-200 bg-red-50 text-[#DC2626]"
+          : estado === "REGISTRADO"
+            ? "border-green-200 bg-green-50 text-[#16A34A]"
+            : "border-slate-300 bg-slate-50 text-[#475569]"
       }`}
     >
       {estado}
@@ -124,12 +127,12 @@ export default function Home() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6">
+      <main className="min-h-screen bg-[#F5F7FA] p-6">
         <section className={`mx-auto max-w-7xl ${SECTION_CLASS}`}>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-[#0F172A]">
             Cargando dashboard...
           </h1>
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-[#475569]">
             Estamos consultando la actividad reciente.
           </p>
         </section>
@@ -139,33 +142,35 @@ export default function Home() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6">
+      <main className="min-h-screen bg-[#F5F7FA] p-6">
         <section className={`mx-auto max-w-7xl ${SECTION_CLASS}`}>
           <h1 className="text-2xl font-bold text-red-700">
             No se pudo cargar el dashboard
           </h1>
-          <p className="mt-2 text-slate-700">{error}</p>
+          <p className="mt-2 text-[#475569]">{error}</p>
         </section>
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen bg-[#F5F7FA] p-6">
       <div className="mx-auto max-w-7xl space-y-6">
         <section className={SECTION_CLASS}>
-          <p className="text-sm font-medium text-slate-600">Inicio</p>
-          <h1 className="mt-1 text-3xl font-bold text-slate-900">
+          <p className="text-sm font-bold uppercase tracking-wide text-[#F3171B]">
+            Inicio
+          </p>
+          <h1 className="mt-1 text-4xl font-black tracking-tight text-[#0F172A]">
             Dashboard Ingreso Madymat
           </h1>
-          <p className="mt-2 max-w-3xl text-slate-600">
+          <p className="mt-3 max-w-3xl text-base leading-7 text-[#475569]">
             Gestion de ingresos de madera y materiales para porteria,
             proveedores y sistemas.
           </p>
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="text-xl font-semibold text-slate-900">
+          <h2 className="text-xl font-bold text-[#0F172A]">
             Accesos rapidos
           </h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -173,12 +178,12 @@ export default function Home() {
               <Link
                 key={acceso.href}
                 href={acceso.href}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-400 hover:bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="quick-access-card group rounded-2xl border border-[#CBD5E1] bg-[#F5F7FA] p-5 hover:-translate-y-0.5 hover:border-[#F3171B] hover:bg-white hover:shadow-md focus:border-[#F3171B] focus:outline-none focus:ring-2 focus:ring-red-100"
               >
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="text-lg font-black text-[#0F172A] group-hover:text-[#D90F14]">
                   {acceso.titulo}
                 </h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-[#475569]">
                   {acceso.descripcion}
                 </p>
               </Link>
@@ -187,7 +192,7 @@ export default function Home() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <h2 className="text-xl font-semibold text-slate-900">
+          <h2 className="text-xl font-bold text-[#0F172A]">
             Indicadores principales
           </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -196,20 +201,20 @@ export default function Home() {
                 key={item.label}
                 className={`rounded-xl border p-5 ${
                   item.danger
-                    ? "border-red-200 bg-red-50"
-                    : "border-slate-200 bg-slate-50"
+                    ? "dashboard-danger-card border-red-200 bg-red-50"
+                    : "border-[#CBD5E1] bg-[#F5F7FA]"
                 }`}
               >
                 <p
                   className={`text-sm font-medium ${
-                    item.danger ? "text-red-700" : "text-slate-600"
+                    item.danger ? "dashboard-danger-text text-[#DC2626]" : "text-[#475569]"
                   }`}
                 >
                   {item.label}
                 </p>
                 <p
                   className={`mt-2 text-3xl font-bold ${
-                    item.danger ? "text-red-800" : "text-slate-900"
+                    item.danger ? "dashboard-danger-text text-[#DC2626]" : "text-[#0F172A]"
                   }`}
                 >
                   {item.value}
@@ -222,29 +227,29 @@ export default function Home() {
         <section className={SECTION_CLASS}>
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-bold text-[#0F172A]">
                 Ultimos ingresos
               </h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-[#475569]">
                 Los 8 registros creados mas recientemente.
               </p>
             </div>
             <Link
               href="/registros"
-              className="w-fit rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800"
+              className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-4 py-2 text-sm font-bold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
             >
               Ver todos
             </Link>
           </div>
 
           {ultimosIngresos.length === 0 ? (
-            <p className="mt-4 text-slate-600">Todavia no hay ingresos registrados.</p>
+            <p className="mt-4 text-[#475569]">Todavia no hay ingresos registrados.</p>
           ) : (
             <>
               <div className="mt-4 hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 text-slate-600">
+                    <tr className="border-b border-[#CBD5E1] text-[#475569]">
                       <th className="py-3 pr-4 font-semibold">ID</th>
                       <th className="py-3 pr-4 font-semibold">Fecha</th>
                       <th className="py-3 pr-4 font-semibold">Tipo</th>
@@ -266,7 +271,7 @@ export default function Home() {
                       return (
                         <tr
                           key={registro.id}
-                          className="border-b border-slate-100 text-slate-900"
+                          className="border-b border-slate-100 text-[#0F172A] hover:bg-red-50/30"
                         >
                           <td className="py-3 pr-4 font-semibold">
                             #{registro.id}
@@ -302,7 +307,7 @@ export default function Home() {
                             {href ? (
                               <Link
                                 href={href}
-                                className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"
+                                className="rounded-lg bg-[#F3171B] px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14]"
                               >
                                 Ver detalle
                               </Link>
@@ -327,26 +332,26 @@ export default function Home() {
                   return (
                     <article
                       key={registro.id}
-                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                      className="rounded-2xl border border-[#CBD5E1] bg-[#F5F7FA] p-4"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-bold text-slate-900">
+                          <p className="font-bold text-[#0F172A]">
                             #{registro.id} - {mostrar(registro.tipoIngreso?.codigo)}
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <span className="text-sm text-slate-600">
+                            <span className="text-sm text-[#475569]">
                               {formatearFecha(registro.fechaIngreso)}
                             </span>
                             <EstadoBadge estado={registro.estado} />
                           </div>
                         </div>
-                        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-700">
+                        <span className="rounded-full border border-[#CBD5E1] bg-white px-3 py-1 text-sm font-semibold text-[#475569]">
                           {registro.fotos?.length || 0} fotos
                         </span>
                       </div>
 
-                      <div className="mt-4 grid gap-2 text-sm text-slate-700">
+                      <div className="mt-4 grid gap-2 text-sm text-[#475569]">
                         <p>
                           <span className="font-semibold">Proveedor:</span>{" "}
                           {mostrar(registro.proveedorNombreCargado)}
@@ -373,7 +378,7 @@ export default function Home() {
                         {href ? (
                           <Link
                             href={href}
-                            className="inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                            className="inline-flex rounded-lg bg-[#F3171B] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14]"
                           >
                             Ver detalle
                           </Link>

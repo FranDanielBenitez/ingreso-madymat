@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
-const SECTION_CLASS = "rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-const LABEL_CLASS = "mb-1 block text-sm font-medium text-slate-800"
+const SECTION_CLASS =
+  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
+const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
 const FIELD_CLASS =
-  "w-full rounded-lg border border-slate-300 bg-white p-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 
 const ESTADOS = [
   "BORRADOR",
@@ -82,8 +83,10 @@ function EstadoBadge({ estado }) {
     <span
       className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
         anulado
-          ? "border-red-200 bg-red-50 text-red-700"
-          : "border-slate-300 bg-slate-50 text-slate-700"
+          ? "border-red-200 bg-red-50 text-[#DC2626]"
+          : estado === "REGISTRADO"
+            ? "border-green-200 bg-green-50 text-[#16A34A]"
+            : "border-slate-300 bg-slate-50 text-[#475569]"
       }`}
     >
       {estado}
@@ -158,19 +161,19 @@ export default function RegistrosPage() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen bg-[#F5F7FA] p-6">
       <div className="mx-auto max-w-7xl space-y-6">
         <section className={SECTION_CLASS}>
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="text-sm font-bold uppercase tracking-wide text-[#F3171B]">
                 Consulta de ingresos
               </p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-900">
+              <h1 className="mt-1 text-3xl font-black text-[#0F172A]">
                 Registros de ingresos
               </h1>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <div className="rounded-lg border border-[#CBD5E1] bg-[#F5F7FA] px-4 py-3 text-sm font-semibold text-[#475569]">
               {registros.length} registros · {totalFotos} fotos
             </div>
           </div>
@@ -273,13 +276,13 @@ export default function RegistrosPage() {
               <button
                 type="button"
                 onClick={limpiarFiltros}
-                className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-800 focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+                className="rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
               >
                 Limpiar filtros
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-slate-900 px-5 py-3 font-medium text-white"
+                className="rounded-lg bg-[#F3171B] px-5 py-3 font-bold text-white shadow-sm hover:bg-[#D90F14]"
               >
                 Buscar
               </button>
@@ -290,10 +293,10 @@ export default function RegistrosPage() {
         <section className={SECTION_CLASS}>
           {loading ? (
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-bold text-[#0F172A]">
                 Cargando registros...
               </h2>
-              <p className="mt-2 text-slate-600">
+              <p className="mt-2 text-[#475569]">
                 Estamos consultando ingresos guardados.
               </p>
             </div>
@@ -302,14 +305,14 @@ export default function RegistrosPage() {
               <h2 className="text-xl font-semibold text-red-700">
                 No se pudieron cargar los registros
               </h2>
-              <p className="mt-2 text-slate-700">{error}</p>
+              <p className="mt-2 text-[#475569]">{error}</p>
             </div>
           ) : registros.length === 0 ? (
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-bold text-[#0F172A]">
                 Sin registros
               </h2>
-              <p className="mt-2 text-slate-600">
+              <p className="mt-2 text-[#475569]">
                 No se encontraron ingresos con los filtros aplicados.
               </p>
             </div>
@@ -318,7 +321,7 @@ export default function RegistrosPage() {
               <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 text-slate-600">
+                    <tr className="border-b border-[#CBD5E1] text-[#475569]">
                       <th className="py-3 pr-4 font-semibold">ID</th>
                       <th className="py-3 pr-4 font-semibold">Fecha</th>
                       <th className="py-3 pr-4 font-semibold">Tipo</th>
@@ -340,7 +343,7 @@ export default function RegistrosPage() {
                       return (
                         <tr
                           key={registro.id}
-                          className="border-b border-slate-100 text-slate-900"
+                          className="border-b border-slate-100 text-[#0F172A] hover:bg-red-50/30"
                         >
                           <td className="py-3 pr-4 font-semibold">
                             #{registro.id}
@@ -376,7 +379,7 @@ export default function RegistrosPage() {
                             {href ? (
                               <Link
                                 href={href}
-                                className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"
+                                className="rounded-lg bg-[#F3171B] px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14]"
                               >
                                 Ver detalle
                               </Link>
@@ -401,26 +404,26 @@ export default function RegistrosPage() {
                   return (
                     <article
                       key={registro.id}
-                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                      className="rounded-2xl border border-[#CBD5E1] bg-[#F5F7FA] p-4"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-bold text-slate-900">
+                          <p className="font-bold text-[#0F172A]">
                             #{registro.id} · {mostrar(registro.tipoIngreso?.codigo)}
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <span className="text-sm text-slate-600">
+                            <span className="text-sm text-[#475569]">
                               {formatearFecha(registro.fechaIngreso)}
                             </span>
                             <EstadoBadge estado={registro.estado} />
                           </div>
                         </div>
-                        <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-700">
+                        <span className="rounded-full border border-[#CBD5E1] bg-white px-3 py-1 text-sm font-semibold text-[#475569]">
                           {registro.fotos?.length || 0} fotos
                         </span>
                       </div>
 
-                      <div className="mt-4 grid gap-2 text-sm text-slate-700">
+                      <div className="mt-4 grid gap-2 text-sm text-[#475569]">
                         <p>
                           <span className="font-semibold">Proveedor:</span>{" "}
                           {mostrar(registro.proveedorNombreCargado)}
@@ -447,7 +450,7 @@ export default function RegistrosPage() {
                         {href ? (
                           <Link
                             href={href}
-                            className="inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                            className="inline-flex rounded-lg bg-[#F3171B] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14]"
                           >
                             Ver detalle
                           </Link>

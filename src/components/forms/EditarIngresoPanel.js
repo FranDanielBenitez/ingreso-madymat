@@ -4,8 +4,8 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 const FIELD_CLASS =
-  "w-full rounded-lg border border-slate-300 bg-white p-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
-const LABEL_CLASS = "mb-1 block text-sm font-medium text-slate-800"
+  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
 
 function fechaInput(value) {
   if (!value) return ""
@@ -110,11 +110,11 @@ export default function EditarIngresoPanel({
   }
 
   return (
-    <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <h3 className="text-lg font-semibold text-slate-900">
+    <div className="mt-5 rounded-xl border border-[#CBD5E1] bg-[#F5F7FA] p-4">
+      <h3 className="text-lg font-bold text-[#0F172A]">
         Editar ingreso
       </h3>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-[#475569]">
         Solo se pueden modificar campos administrativos. El motivo queda en el
         log de auditoria.
       </p>
@@ -239,7 +239,7 @@ export default function EditarIngresoPanel({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-800"
+          className="rounded-lg border border-[#CBD5E1] bg-white px-4 py-2 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
         >
           Cancelar
         </button>
@@ -247,7 +247,7 @@ export default function EditarIngresoPanel({
           type="button"
           onClick={guardarCambios}
           disabled={guardando}
-          className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-[#F3171B] px-4 py-2 font-semibold text-white shadow-sm hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {guardando ? "Guardando..." : "Guardar cambios"}
         </button>
