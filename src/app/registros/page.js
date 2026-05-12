@@ -29,6 +29,22 @@ const FILTROS_INICIALES = {
   patente: "",
 }
 
+function filtrosDesdeUrl() {
+  if (typeof window === "undefined") return FILTROS_INICIALES
+
+  const params = new URLSearchParams(window.location.search)
+
+  return {
+    tipoIngreso: params.get("tipoIngreso") || "",
+    estado: params.get("estado") || "",
+    fechaDesde: params.get("fechaDesde") || "",
+    fechaHasta: params.get("fechaHasta") || "",
+    proveedor: params.get("proveedor") || "",
+    remito: params.get("remito") || "",
+    patente: params.get("patente") || "",
+  }
+}
+
 function formatearFecha(value) {
   if (!value) return "-"
 
@@ -133,8 +149,11 @@ export default function RegistrosPage() {
   }
 
   useEffect(() => {
+    const filtrosIniciales = filtrosDesdeUrl()
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    cargarRegistros(FILTROS_INICIALES)
+    setFiltros(filtrosIniciales)
+    cargarRegistros(filtrosIniciales)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

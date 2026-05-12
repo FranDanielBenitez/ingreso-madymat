@@ -10,6 +10,12 @@ export default function Navbar() {
 
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/"
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-800 focus:bg-slate-800 focus:outline-none"
+          >
+            Inicio
+          </Link>
+          <Link
             href="/ingresos/rollizos"
             className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-800 focus:bg-slate-800 focus:outline-none"
           >
