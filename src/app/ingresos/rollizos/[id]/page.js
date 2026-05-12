@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
+import { toast } from "sonner"
 
 const SECTION_CLASS = "rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
 const LABEL_CLASS = "text-sm font-medium text-slate-600"
@@ -55,11 +56,16 @@ export default function DetalleIngresoRollizosPage() {
   const [ingreso, setIngreso] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [mostrandoAnulacion, setMostrandoAnulacion] = useState(false)
+  const [motivoAnulacion, setMotivoAnulacion] = useState("")
+  const [anulando, setAnulando] = useState(false)
 
   const articuloPrincipal = useMemo(
     () => ingreso?.articulos?.[0] || null,
     [ingreso]
   )
+
+  const ingresoAnulado = ingreso?.estado === "ANULADO"
 
   useEffect(() => {
     async function cargarIngreso() {
@@ -86,6 +92,41 @@ export default function DetalleIngresoRollizosPage() {
       cargarIngreso()
     }
   }, [id])
+
+  async function confirmarAnulacion() {
+    const motivo = motivoAnulacion.trim()
+
+    if (!motivo) {
+      toast.error("El motivo de anulacion es obligatorio")
+      return
+    }
+
+    try {
+      setAnulando(true)
+
+      const response = await fetch(`/api/ingresos/${id}/anular`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ motivo }),
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "No se pudo anular el ingreso")
+      }
+
+      setIngreso(result.ingreso)
+      setMotivoAnulacion("")
+      setMostrandoAnulacion(false)
+      toast.success("Ingreso anulado correctamente")
+    } catch (err) {
+      toast.error(err.message || "No se pudo anular el ingreso")
+    } finally {
+      setAnulando(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -128,7 +169,13 @@ export default function DetalleIngresoRollizosPage() {
                 Ingreso de Rollizos #{ingreso.id}
               </h1>
             </div>
-            <span className="w-fit rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800">
+            <span
+              className={`w-fit rounded-full border px-4 py-2 text-sm font-semibold ${
+                ingresoAnulado
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : "border-slate-300 bg-slate-50 text-slate-800"
+              }`}
+            >
               {ingreso.estado}
             </span>
           </div>
@@ -139,6 +186,71 @@ export default function DetalleIngresoRollizosPage() {
             <Campo label="Tipo" value={ingreso.tipoIngreso?.nombre} />
           </div>
         </section>
+
+        {ingresoAnulado ? (
+          <section className="rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-red-800">
+              Este ingreso se encuentra ANULADO
+            </h2>
+            <p className="mt-2 text-red-700">
+              El registro se conserva completo para auditoria.
+            </p>
+          </section>
+        ) : (
+          <section className={SECTION_CLASS}>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Acciones
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Anula el ingreso sin eliminar datos, fotos ni logs.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMostrandoAnulacion(true)}
+                className="w-fit rounded-lg border border-red-300 bg-white px-5 py-3 font-medium text-red-700 focus:border-red-700 focus:ring-2 focus:ring-red-100"
+              >
+                Anular ingreso
+              </button>
+            </div>
+
+            {mostrandoAnulacion ? (
+              <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+                <label className="block text-sm font-medium text-red-800">
+                  Motivo de anulacion
+                </label>
+                <textarea
+                  value={motivoAnulacion}
+                  onChange={(event) => setMotivoAnulacion(event.target.value)}
+                  className="mt-2 min-h-28 w-full rounded-lg border border-red-200 bg-white p-3 text-slate-900 outline-none focus:border-red-700 focus:ring-2 focus:ring-red-100"
+                  placeholder="Indicar por que se anula este ingreso"
+                />
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMostrandoAnulacion(false)
+                      setMotivoAnulacion("")
+                    }}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-800"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmarAnulacion}
+                    disabled={anulando}
+                    className="rounded-lg bg-red-700 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {anulando ? "Anulando..." : "Confirmar anulacion"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </section>
+        )}
 
         <section className={SECTION_CLASS}>
           <h2 className="mb-4 text-xl font-semibold text-slate-900">

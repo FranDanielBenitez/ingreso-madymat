@@ -59,6 +59,22 @@ function detalleHref(registro) {
   return null
 }
 
+function EstadoBadge({ estado }) {
+  const anulado = estado === "ANULADO"
+
+  return (
+    <span
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
+        anulado
+          ? "border-red-200 bg-red-50 text-red-700"
+          : "border-slate-300 bg-slate-50 text-slate-700"
+      }`}
+    >
+      {estado}
+    </span>
+  )
+}
+
 export default function RegistrosPage() {
   const [filtros, setFiltros] = useState(FILTROS_INICIALES)
   const [registros, setRegistros] = useState([])
@@ -316,7 +332,9 @@ export default function RegistrosPage() {
                           <td className="py-3 pr-4">
                             {mostrar(registro.tipoIngreso?.codigo)}
                           </td>
-                          <td className="py-3 pr-4">{registro.estado}</td>
+                          <td className="py-3 pr-4">
+                            <EstadoBadge estado={registro.estado} />
+                          </td>
                           <td className="py-3 pr-4">
                             {mostrar(registro.proveedorNombreCargado)}
                           </td>
@@ -371,9 +389,12 @@ export default function RegistrosPage() {
                           <p className="font-bold text-slate-900">
                             #{registro.id} · {mostrar(registro.tipoIngreso?.codigo)}
                           </p>
-                          <p className="mt-1 text-sm text-slate-600">
-                            {formatearFecha(registro.fechaIngreso)} · {registro.estado}
-                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="text-sm text-slate-600">
+                              {formatearFecha(registro.fechaIngreso)}
+                            </span>
+                            <EstadoBadge estado={registro.estado} />
+                          </div>
                         </div>
                         <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-700">
                           {registro.fotos?.length || 0} fotos
