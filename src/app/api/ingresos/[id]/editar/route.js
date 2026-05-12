@@ -113,24 +113,6 @@ export async function PATCH(request, context) {
       )
     }
 
-    const cantidad = normalizarDecimal(body?.cantidad)
-
-    if (!cantidad || cantidad <= 0) {
-      return NextResponse.json(
-        { ok: false, message: "La cantidad debe ser mayor a 0" },
-        { status: 400 }
-      )
-    }
-
-    const unidad = limpiarTexto(body?.unidad)
-
-    if (!unidad) {
-      return NextResponse.json(
-        { ok: false, message: "La unidad es obligatoria" },
-        { status: 400 }
-      )
-    }
-
     const ingresoExistente = await prisma.ingreso.findUnique({
       where: { id },
       include: {
@@ -160,10 +142,33 @@ export async function PATCH(request, context) {
     }
 
     const articulo = ingresoExistente.articulos?.[0]
+    const esMaterialMultiItem =
+      ingresoExistente.tipoIngreso?.codigo === "MATERIALES" &&
+      ingresoExistente.articulos.length > 1
 
     if (!articulo) {
       return NextResponse.json(
         { ok: false, message: "No se encontro articulo asociado al ingreso" },
+        { status: 400 }
+      )
+    }
+
+    const cantidad = esMaterialMultiItem
+      ? null
+      : normalizarDecimal(body?.cantidad)
+
+    if (!esMaterialMultiItem && (!cantidad || cantidad <= 0)) {
+      return NextResponse.json(
+        { ok: false, message: "La cantidad debe ser mayor a 0" },
+        { status: 400 }
+      )
+    }
+
+    const unidad = esMaterialMultiItem ? null : limpiarTexto(body?.unidad)
+
+    if (!esMaterialMultiItem && !unidad) {
+      return NextResponse.json(
+        { ok: false, message: "La unidad es obligatoria" },
         { status: 400 }
       )
     }
@@ -227,12 +232,18 @@ export async function PATCH(request, context) {
       )
     }
 
-    if (numeroComparacion(articulo.cantidad) !== numeroComparacion(cantidad)) {
+    if (
+      !esMaterialMultiItem &&
+      numeroComparacion(articulo.cantidad) !== numeroComparacion(cantidad)
+    ) {
       articuloData.cantidad = cantidad
       agregarCambio(cambios, "Cantidad", articulo.cantidad, cantidad)
     }
 
-    if (textoComparacion(articulo.unidad) !== textoComparacion(unidad)) {
+    if (
+      !esMaterialMultiItem &&
+      textoComparacion(articulo.unidad) !== textoComparacion(unidad)
+    ) {
       articuloData.unidad = unidad
       agregarCambio(cambios, "Unidad", articulo.unidad, unidad)
     }

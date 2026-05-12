@@ -26,6 +26,34 @@ function esArchivoValido(file) {
   return file && typeof file.arrayBuffer === "function" && file.size > 0
 }
 
+function normalizarItems(body) {
+  const items = Array.isArray(body.items) ? body.items : []
+
+  if (items.length > 0) return items
+
+  if (body.articuloSeleccionado) {
+    return [
+      {
+        articuloSeleccionado: body.articuloSeleccionado,
+        categoriaMaterial: body.categoriaMaterial,
+        cantidad: body.cantidad,
+        unidad: body.unidad,
+      },
+    ]
+  }
+
+  return []
+}
+
+function prepararItemsValidos(body) {
+  return normalizarItems(body).map((item) => ({
+    categoriaMaterial: limpiarTexto(item.categoriaMaterial),
+    articulo: item.articuloSeleccionado,
+    cantidad: normalizarDecimal(item.cantidad),
+    unidad: limpiarTexto(item.unidad),
+  }))
+}
+
 function obtenerExtension(nombreOriginal) {
   const extension = path.extname(nombreOriginal || "").toLowerCase()
 
@@ -169,32 +197,8 @@ export async function POST(request) {
       )
     }
 
-    if (!body.categoriaMaterial) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: "No existe la categoria seleccionada en PostgreSQL",
-        },
-        { status: 400 }
-      )
-    }
-
-    const categoriaFormulario = await prisma.categoriaFormulario.findUnique({
-      where: { codigo: body.categoriaMaterial },
-    })
-
-    if (!categoriaFormulario) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: "No existe la categoria seleccionada en PostgreSQL",
-        },
-        { status: 400 }
-      )
-    }
-
     const proveedor = body.proveedorSeleccionado
-    const articulo = body.articuloSeleccionado
+    const items = prepararItemsValidos(body)
     const servicio = body.servicioSeleccionado
     const chofer = body.choferSeleccionado
     const portero = body.porteroSeleccionado
@@ -206,9 +210,39 @@ export async function POST(request) {
       )
     }
 
-    if (!articulo) {
+    const itemsInvalidos =
+      items.length === 0 ||
+      items.some(
+        (item) =>
+          !item.categoriaMaterial ||
+          !item.articulo ||
+          !item.cantidad ||
+          item.cantidad <= 0 ||
+          !item.unidad
+      )
+
+    if (itemsInvalidos) {
       return NextResponse.json(
-        { ok: false, message: "Debe seleccionar un articulo" },
+        {
+          ok: false,
+          message:
+            "Debe cargar categoria, articulo, cantidad y unidad en todos los items del remito",
+        },
+        { status: 400 }
+      )
+    }
+
+    const categoriaPrincipalCodigo = items[0].categoriaMaterial
+    const categoriaFormulario = await prisma.categoriaFormulario.findUnique({
+      where: { codigo: categoriaPrincipalCodigo },
+    })
+
+    if (!categoriaFormulario) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "No existe la categoria principal seleccionada en PostgreSQL",
+        },
         { status: 400 }
       )
     }
@@ -303,24 +337,24 @@ export async function POST(request) {
         registradoPorId: usuarioPortero?.id || null,
 
         articulos: {
-          create: {
+          create: items.map((item) => ({
             origenDato: "BEJERMAN",
 
-            articuloGen: articulo.ArticuloGen
-              ? String(articulo.ArticuloGen)
+            articuloGen: item.articulo.ArticuloGen
+              ? String(item.articulo.ArticuloGen)
               : null,
-            articuloCodigo: limpiarTexto(articulo.Codigo),
-            articuloClase: limpiarTexto(articulo.Clase),
-            articuloDescripcion: limpiarTexto(articulo.Descripcion),
-            articuloProceso: limpiarTexto(articulo.Proceso),
-            articuloGrupo: limpiarTexto(articulo.Grupo),
-            articuloSubgrupo: limpiarTexto(articulo.SubGrupo),
+            articuloCodigo: limpiarTexto(item.articulo.Codigo),
+            articuloClase: limpiarTexto(item.articulo.Clase),
+            articuloDescripcion: limpiarTexto(item.articulo.Descripcion),
+            articuloProceso: limpiarTexto(item.articulo.Proceso),
+            articuloGrupo: limpiarTexto(item.articulo.Grupo),
+            articuloSubgrupo: limpiarTexto(item.articulo.SubGrupo),
 
-            categoriaFormulario: body.categoriaMaterial,
+            categoriaFormulario: item.categoriaMaterial,
 
-            cantidad: normalizarDecimal(body.cantidad),
-            unidad: limpiarTexto(body.unidad) || "UN",
-          },
+            cantidad: item.cantidad,
+            unidad: item.unidad || "UN",
+          })),
         },
 
         logs: {
@@ -329,7 +363,7 @@ export async function POST(request) {
             estado: "REGISTRADO",
             detalle: `Ingreso de materiales registrado desde formulario web. Portero: ${
               portero?.NombreCompleto || "Sin portero informado"
-            }`,
+            }. Ítems cargados: ${items.length}`,
           },
         },
       },
@@ -337,6 +371,8 @@ export async function POST(request) {
         articulos: true,
         logs: true,
         registradoPor: true,
+        tipoIngreso: true,
+        categoriaFormulario: true,
       },
     })
 
@@ -417,6 +453,8 @@ export async function POST(request) {
         fotos: true,
         logs: true,
         registradoPor: true,
+        tipoIngreso: true,
+        categoriaFormulario: true,
       },
     })
 

@@ -92,7 +92,11 @@ export async function GET(request) {
       include: {
         tipoIngreso: true,
         categoriaFormulario: true,
-        articulos: true,
+        articulos: {
+          orderBy: {
+            id: "asc",
+          },
+        },
         fotos: true,
         registradoPor: true,
       },

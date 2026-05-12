@@ -16,7 +16,11 @@ export async function GET(_request, context) {
     const ingreso = await prisma.ingreso.findUnique({
       where: { id },
       include: {
-        articulos: true,
+        articulos: {
+          orderBy: {
+            id: "asc",
+          },
+        },
         fotos: true,
         logs: true,
         registradoPor: true,

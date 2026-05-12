@@ -39,6 +39,9 @@ export default function EditarIngresoPanel({
   })
   const [guardando, setGuardando] = useState(false)
   const choferManual = ingreso.choferOrigenDato === "MANUAL"
+  const esMaterialMultiItem =
+    ingreso.tipoIngreso?.codigo === "MATERIALES" &&
+    (ingreso.articulos?.length || 0) > 1
 
   function actualizarCampo(event) {
     const { name, value } = event.target
@@ -58,12 +61,12 @@ export default function EditarIngresoPanel({
       return
     }
 
-    if (!cantidad || cantidad <= 0) {
+    if (!esMaterialMultiItem && (!cantidad || cantidad <= 0)) {
       toast.error("La cantidad debe ser mayor a 0")
       return
     }
 
-    if (!values.unidad.trim()) {
+    if (!esMaterialMultiItem && !values.unidad.trim()) {
       toast.error("La unidad es obligatoria")
       return
     }
@@ -76,23 +79,28 @@ export default function EditarIngresoPanel({
     try {
       setGuardando(true)
 
+      const payload = {
+        fechaIngreso: values.fechaIngreso,
+        remitoProveedor: values.remitoProveedor,
+        patenteCamion: values.patenteCamion,
+        patenteAcoplado: values.patenteAcoplado,
+        observaciones: values.observaciones,
+        choferNombreCargado: values.choferNombreCargado,
+        choferDocumentoCargado: values.choferDocumentoCargado,
+        motivo,
+      }
+
+      if (!esMaterialMultiItem) {
+        payload.cantidad = values.cantidad
+        payload.unidad = values.unidad
+      }
+
       const response = await fetch(`/api/ingresos/${ingreso.id}/editar`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          fechaIngreso: values.fechaIngreso,
-          remitoProveedor: values.remitoProveedor,
-          patenteCamion: values.patenteCamion,
-          patenteAcoplado: values.patenteAcoplado,
-          observaciones: values.observaciones,
-          cantidad: values.cantidad,
-          unidad: values.unidad,
-          choferNombreCargado: values.choferNombreCargado,
-          choferDocumentoCargado: values.choferDocumentoCargado,
-          motivo,
-        }),
+        body: JSON.stringify(payload),
       })
       const result = await response.json()
 
@@ -119,6 +127,13 @@ export default function EditarIngresoPanel({
         log de auditoria.
       </p>
 
+      {esMaterialMultiItem ? (
+        <div className="mt-4 rounded-lg border border-[#CBD5E1] bg-white p-3 text-sm font-semibold text-[#475569]">
+          Este ingreso tiene múltiples ítems. La edición individual de ítems se
+          implementará en una etapa posterior.
+        </div>
+      ) : null}
+
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label>
           <span className={LABEL_CLASS}>Fecha ingreso</span>
@@ -142,28 +157,32 @@ export default function EditarIngresoPanel({
           />
         </label>
 
-        <label>
-          <span className={LABEL_CLASS}>Cantidad</span>
-          <input
-            type="number"
-            step="0.001"
-            name="cantidad"
-            value={values.cantidad}
-            onChange={actualizarCampo}
-            className={FIELD_CLASS}
-          />
-        </label>
+        {!esMaterialMultiItem ? (
+          <>
+            <label>
+              <span className={LABEL_CLASS}>Cantidad</span>
+              <input
+                type="number"
+                step="0.001"
+                name="cantidad"
+                value={values.cantidad}
+                onChange={actualizarCampo}
+                className={FIELD_CLASS}
+              />
+            </label>
 
-        <label>
-          <span className={LABEL_CLASS}>Unidad</span>
-          <input
-            type="text"
-            name="unidad"
-            value={values.unidad}
-            onChange={actualizarCampo}
-            className={FIELD_CLASS}
-          />
-        </label>
+            <label>
+              <span className={LABEL_CLASS}>Unidad</span>
+              <input
+                type="text"
+                name="unidad"
+                value={values.unidad}
+                onChange={actualizarCampo}
+                className={FIELD_CLASS}
+              />
+            </label>
+          </>
+        ) : null}
 
         <label>
           <span className={LABEL_CLASS}>Patente camion</span>

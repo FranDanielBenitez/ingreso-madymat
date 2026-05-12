@@ -69,15 +69,14 @@ function buscarPorLegajo(items, legajo) {
   return items.find((item) => String(item.Legajo) === String(legajo)) || null
 }
 
-function categoriaProveedor(categoria) {
-  return categoria === "ESQUINEROS" ? "ESQUINEROS" : "MATERIA_PRIMA"
-}
-
-function servicioFleteroUrl(categoria) {
-  const categoriaServicio =
-    categoria === "ESQUINEROS" ? "ESQUINEROS" : "MATERIA_PRIMA"
-
-  return `/api/dimensiones/servicios-logisticos?categoria=${categoriaServicio}`
+function crearItemRemito() {
+  return {
+    idLocal: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    categoriaMaterial: "",
+    articuloCodigo: "",
+    cantidad: "",
+    unidad: "UNI",
+  }
 }
 
 function FotoField({
@@ -133,14 +132,16 @@ function FotoField({
 export default function IngresoMaterialesPage() {
   const router = useRouter()
   const [loadingInicial, setLoadingInicial] = useState(true)
-  const [loadingCategoria, setLoadingCategoria] = useState(false)
+  const [loadingLogistica, setLoadingLogistica] = useState(false)
   const [error, setError] = useState("")
-  const [errorCategoria, setErrorCategoria] = useState("")
+  const [errorLogistica, setErrorLogistica] = useState("")
   const [porteros, setPorteros] = useState([])
   const [choferes, setChoferes] = useState([])
   const [proveedores, setProveedores] = useState([])
-  const [articulos, setArticulos] = useState([])
+  const [articulosPorCategoria, setArticulosPorCategoria] = useState({})
+  const [categoriasCargando, setCategoriasCargando] = useState({})
   const [servicios, setServicios] = useState([])
+  const [itemsRemito, setItemsRemito] = useState(() => [crearItemRemito()])
   const [previewsFotos, setPreviewsFotos] = useState({})
   const [fotoInputKeys, setFotoInputKeys] = useState({
     fotoCamionPatente: 0,
@@ -160,20 +161,12 @@ export default function IngresoMaterialesPage() {
   } = useForm({
     defaultValues: {
       fechaIngreso: fechaActual(),
-      categoriaMaterial: "",
       tipoServicio: "FLETERO",
       tipoChofer: "INTERNO",
-      unidad: "",
     },
   })
 
-  const categoriaMaterial = useWatch({
-    control,
-    name: "categoriaMaterial",
-    defaultValue: "",
-  })
   const proveedorCodigo = useWatch({ control, name: "proveedorCodigo" })
-  const articuloCodigo = useWatch({ control, name: "articuloCodigo" })
   const servicioCodigo = useWatch({ control, name: "servicioCodigo" })
   const choferLegajo = useWatch({ control, name: "choferLegajo" })
   const porteroLegajo = useWatch({ control, name: "porteroLegajo" })
@@ -197,11 +190,6 @@ export default function IngresoMaterialesPage() {
     [proveedores, proveedorCodigo]
   )
 
-  const articuloSeleccionado = useMemo(
-    () => buscarPorCodigo(articulos, articuloCodigo),
-    [articulos, articuloCodigo]
-  )
-
   const servicioSeleccionado = useMemo(
     () => buscarPorCodigo(servicios, servicioCodigo),
     [servicios, servicioCodigo]
@@ -223,15 +211,17 @@ export default function IngresoMaterialesPage() {
       setError("")
 
       try {
-        const [porterosData, choferesData] = await Promise.all([
+        const [porterosData, choferesData, proveedoresData] = await Promise.all([
           fetchDimension("/api/dimensiones/porteros"),
           fetchDimension("/api/dimensiones/choferes"),
+          fetchDimension("/api/dimensiones/proveedores?categoria=MATERIA_PRIMA"),
         ])
 
         setPorteros(porterosData)
         setChoferes(choferesData)
+        setProveedores(proveedoresData)
       } catch (err) {
-        setError(err.message || "No se pudieron cargar porteros y choferes")
+        setError(err.message || "No se pudieron cargar datos iniciales")
       } finally {
         setLoadingInicial(false)
       }
@@ -241,58 +231,31 @@ export default function IngresoMaterialesPage() {
   }, [])
 
   useEffect(() => {
-    async function cargarDatosCategoria() {
-      if (!categoriaMaterial) {
-        setArticulos([])
-        setProveedores([])
-        setServicios([])
-        return
-      }
-
-      setLoadingCategoria(true)
-      setErrorCategoria("")
-      setValue("proveedorCodigo", "")
-      setValue("articuloCodigo", "")
+    async function cargarServicios() {
+      setLoadingLogistica(true)
+      setErrorLogistica("")
       setValue("servicioCodigo", "")
 
       try {
-        const proveedorCategoria = categoriaProveedor(categoriaMaterial)
         const servicioUrl =
           tipoServicio === "TRANSPORTE"
             ? "/api/dimensiones/servicios-logisticos?tipo=TRANSPORTE"
-            : servicioFleteroUrl(categoriaMaterial)
+            : "/api/dimensiones/servicios-logisticos?categoria=MATERIA_PRIMA"
 
-        const [articulosData, proveedoresData, serviciosData] =
-          await Promise.all([
-            fetchDimension(
-              `/api/dimensiones/articulos?categoria=${categoriaMaterial}`
-            ),
-            fetchDimension(
-              `/api/dimensiones/proveedores?categoria=${proveedorCategoria}`
-            ),
-            fetchDimension(servicioUrl),
-          ])
+        const serviciosData = await fetchDimension(servicioUrl)
 
-        setArticulos(articulosData)
-        setProveedores(proveedoresData)
         setServicios(serviciosData)
       } catch (err) {
-        setErrorCategoria(
-          err.message || "No se pudieron cargar datos de la categoria"
+        setErrorLogistica(
+          err.message || "No se pudieron cargar servicios logisticos"
         )
       } finally {
-        setLoadingCategoria(false)
+        setLoadingLogistica(false)
       }
     }
 
-    cargarDatosCategoria()
-  }, [categoriaMaterial, setValue, tipoServicio])
-
-  useEffect(() => {
-    if (articuloSeleccionado?.Clase) {
-      setValue("unidad", articuloSeleccionado.Clase)
-    }
-  }, [articuloSeleccionado, setValue])
+    cargarServicios()
+  }, [setValue, tipoServicio])
 
   useEffect(() => {
     const fotos = {
@@ -337,17 +300,105 @@ export default function IngresoMaterialesPage() {
     }))
   }
 
+  async function cargarArticulosCategoria(categoria) {
+    if (!categoria || articulosPorCategoria[categoria]) return
+
+    setCategoriasCargando((prev) => ({
+      ...prev,
+      [categoria]: true,
+    }))
+
+    try {
+      const data = await fetchDimension(
+        `/api/dimensiones/articulos?categoria=${categoria}`
+      )
+
+      setArticulosPorCategoria((prev) => ({
+        ...prev,
+        [categoria]: data,
+      }))
+    } catch (err) {
+      toast.error(err.message || "No se pudieron cargar articulos")
+    } finally {
+      setCategoriasCargando((prev) => ({
+        ...prev,
+        [categoria]: false,
+      }))
+    }
+  }
+
+  function actualizarItemRemito(idLocal, campo, valor) {
+    if (campo === "categoriaMaterial") {
+      setItemsRemito((prev) =>
+        prev.map((item) =>
+          item.idLocal === idLocal
+            ? {
+                ...item,
+                categoriaMaterial: valor,
+                articuloCodigo: "",
+                unidad: "UNI",
+              }
+            : item
+        )
+      )
+      cargarArticulosCategoria(valor)
+      return
+    }
+
+    setItemsRemito((prev) =>
+      prev.map((item) => {
+        if (item.idLocal !== idLocal) return item
+
+        const siguiente = {
+          ...item,
+          [campo]: valor,
+        }
+
+        if (campo === "articuloCodigo") {
+          const articulosCategoria =
+            articulosPorCategoria[item.categoriaMaterial] || []
+          const articulo = buscarPorCodigo(articulosCategoria, valor)
+          siguiente.unidad = articulo?.Clase || item.unidad || ""
+        }
+
+        return siguiente
+      })
+    )
+  }
+
+  function agregarItemRemito() {
+    setItemsRemito((prev) => [...prev, crearItemRemito()])
+  }
+
+  function quitarItemRemito(idLocal) {
+    setItemsRemito((prev) => {
+      if (prev.length <= 1) return prev
+
+      return prev.filter((item) => item.idLocal !== idLocal)
+    })
+  }
+
+  function prepararItemsRemito() {
+    return itemsRemito.map((item) => ({
+      categoriaMaterial: item.categoriaMaterial,
+      articuloSeleccionado: buscarPorCodigo(
+        articulosPorCategoria[item.categoriaMaterial] || [],
+        item.articuloCodigo
+      ),
+      cantidad: item.cantidad,
+      unidad: item.unidad,
+    }))
+  }
+
   function limpiarFormulario() {
     reset({
       fechaIngreso: fechaActual(),
-      categoriaMaterial: "",
       tipoServicio: "FLETERO",
       tipoChofer: "INTERNO",
-      unidad: "",
     })
-    setProveedores([])
-    setArticulos([])
-    setServicios([])
+    setArticulosPorCategoria({})
+    setCategoriasCargando({})
+    setItemsRemito([crearItemRemito()])
     setPreviewsFotos({})
     setFotoInputKeys((prev) => ({
       fotoCamionPatente: prev.fotoCamionPatente + 1,
@@ -385,6 +436,25 @@ export default function IngresoMaterialesPage() {
       return
     }
 
+    const itemsPreparados = prepararItemsRemito()
+    const itemsCompletos = itemsPreparados.every((item) => {
+      const cantidad = Number(String(item.cantidad).replace(",", "."))
+
+      return (
+        item.categoriaMaterial &&
+        item.articuloSeleccionado &&
+        cantidad > 0 &&
+        String(item.unidad || "").trim()
+      )
+    })
+
+    if (itemsPreparados.length === 0 || !itemsCompletos) {
+      toast.error(
+        "Completa categoria, articulo, cantidad y unidad en todos los items del remito"
+      )
+      return
+    }
+
     try {
       setGuardando(true)
 
@@ -398,9 +468,8 @@ export default function IngresoMaterialesPage() {
 
       const ingresoPreparado = {
         ...datosIngreso,
-        categoriaMaterial,
         proveedorSeleccionado,
-        articuloSeleccionado,
+        items: itemsPreparados,
         servicioSeleccionado,
         choferSeleccionado:
           tipoChofer === "INTERNO" ? choferSeleccionado : null,
@@ -531,21 +600,6 @@ export default function IngresoMaterialesPage() {
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>Categoria de material</label>
-              <select
-                {...register("categoriaMaterial", { required: true })}
-                className={FIELD_CLASS}
-              >
-                <option value="">Seleccionar categoria</option>
-                {CATEGORIAS_MATERIALES.map((categoria) => (
-                  <option key={categoria.codigo} value={categoria.codigo}>
-                    {categoria.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
               <label className={LABEL_CLASS}>Remito proveedor</label>
               <input
                 type="text"
@@ -560,18 +614,18 @@ export default function IngresoMaterialesPage() {
         <section className={SECTION_CLASS}>
           <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-bold text-[#0F172A]">
-              Proveedor y material
+              Proveedor
             </h2>
-            {loadingCategoria ? (
+            {loadingLogistica ? (
               <span className="rounded-full border border-[#CBD5E1] bg-[#F5F7FA] px-3 py-1 text-sm font-semibold text-[#475569]">
-                Cargando datos de categoria...
+                Cargando servicios...
               </span>
             ) : null}
           </div>
 
-          {errorCategoria ? (
+          {errorLogistica ? (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {errorCategoria}
+              {errorLogistica}
             </div>
           ) : null}
 
@@ -581,7 +635,7 @@ export default function IngresoMaterialesPage() {
               <select
                 {...register("proveedorCodigo", { required: true })}
                 className={FIELD_CLASS}
-                disabled={!categoriaMaterial || loadingCategoria}
+                disabled={loadingInicial}
               >
                 <option value="">Seleccionar proveedor</option>
                 {proveedores.map((item) => (
@@ -591,42 +645,138 @@ export default function IngresoMaterialesPage() {
                 ))}
               </select>
             </div>
+          </div>
+        </section>
 
+        <section className={SECTION_CLASS}>
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <label className={LABEL_CLASS}>Articulo</label>
-              <select
-                {...register("articuloCodigo", { required: true })}
-                className={FIELD_CLASS}
-                disabled={!categoriaMaterial || loadingCategoria}
+              <h2 className="text-xl font-bold text-[#0F172A]">
+                Ítems del remito
+              </h2>
+              <p className="mt-1 text-sm text-[#475569]">
+                Cargá uno o más artículos asociados al mismo remito.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={agregarItemRemito}
+              className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-4 py-2 text-sm font-bold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              + Agregar ítem
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {itemsRemito.map((item, index) => (
+              <div
+                key={item.idLocal}
+                className="rounded-xl border border-[#CBD5E1] bg-[#F5F7FA] p-4"
               >
-                <option value="">Seleccionar articulo</option>
-                {articulos.map((item) => (
-                  <option key={item.Codigo} value={item.Codigo}>
-                    {etiquetaArticulo(item)}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="font-bold text-[#0F172A]">
+                    Ítem {index + 1}
+                  </h3>
+                  {itemsRemito.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => quitarItemRemito(item.idLocal)}
+                      className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 hover:border-red-400"
+                    >
+                      Quitar
+                    </button>
+                  ) : null}
+                </div>
 
-            <div>
-              <label className={LABEL_CLASS}>Cantidad</label>
-              <input
-                type="number"
-                step="0.001"
-                {...register("cantidad", { required: true })}
-                className={FIELD_CLASS}
-                placeholder="Ej: 12.500"
-              />
-            </div>
+                <div className="grid gap-4 md:grid-cols-[220px_1fr_160px_160px]">
+                  <label>
+                    <span className={LABEL_CLASS}>Categoría</span>
+                    <select
+                      value={item.categoriaMaterial}
+                      onChange={(event) =>
+                        actualizarItemRemito(
+                          item.idLocal,
+                          "categoriaMaterial",
+                          event.target.value
+                        )
+                      }
+                      className={FIELD_CLASS}
+                    >
+                      <option value="">Seleccionar categoría</option>
+                      {CATEGORIAS_MATERIALES.map((categoria) => (
+                        <option key={categoria.codigo} value={categoria.codigo}>
+                          {categoria.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-            <div>
-              <label className={LABEL_CLASS}>Unidad</label>
-              <input
-                type="text"
-                {...register("unidad", { required: true })}
-                className={FIELD_CLASS}
-              />
-            </div>
+                  <label>
+                    <span className={LABEL_CLASS}>Artículo</span>
+                    <select
+                      value={item.articuloCodigo}
+                      onChange={(event) =>
+                        actualizarItemRemito(
+                          item.idLocal,
+                          "articuloCodigo",
+                          event.target.value
+                        )
+                      }
+                      className={FIELD_CLASS}
+                      disabled={
+                        !item.categoriaMaterial ||
+                        categoriasCargando[item.categoriaMaterial]
+                      }
+                    >
+                      <option value="">
+                        {categoriasCargando[item.categoriaMaterial]
+                          ? "Cargando articulos..."
+                          : "Seleccionar articulo"}
+                      </option>
+                      {(articulosPorCategoria[item.categoriaMaterial] || []).map((articulo) => (
+                        <option key={articulo.Codigo} value={articulo.Codigo}>
+                          {etiquetaArticulo(articulo)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    <span className={LABEL_CLASS}>Cantidad</span>
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={item.cantidad}
+                      onChange={(event) =>
+                        actualizarItemRemito(
+                          item.idLocal,
+                          "cantidad",
+                          event.target.value
+                        )
+                      }
+                      className={FIELD_CLASS}
+                      placeholder="Ej: 2500"
+                    />
+                  </label>
+
+                  <label>
+                    <span className={LABEL_CLASS}>Unidad</span>
+                    <input
+                      type="text"
+                      value={item.unidad}
+                      onChange={(event) =>
+                        actualizarItemRemito(
+                          item.idLocal,
+                          "unidad",
+                          event.target.value
+                        )
+                      }
+                      className={FIELD_CLASS}
+                    />
+                  </label>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -649,7 +799,7 @@ export default function IngresoMaterialesPage() {
               <select
                 {...register("servicioCodigo")}
                 className={FIELD_CLASS}
-                disabled={!categoriaMaterial || loadingCategoria}
+                disabled={loadingLogistica}
               >
                 <option value="">Seleccionar servicio</option>
                 {servicios.map((item) => (

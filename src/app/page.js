@@ -47,6 +47,21 @@ function articuloPrincipal(registro) {
   return registro.articulos?.[0] || null
 }
 
+function descripcionArticulos(registro) {
+  const total = registro.articulos?.length || 0
+  if (total > 1) return `${total} ítems`
+
+  return articuloPrincipal(registro)?.articuloDescripcion
+}
+
+function cantidadArticulos(registro) {
+  const total = registro.articulos?.length || 0
+  if (total > 1) return "Ver detalle"
+
+  const articulo = articuloPrincipal(registro)
+  return `${mostrar(articulo?.cantidad)} ${mostrar(articulo?.unidad)}`
+}
+
 function detalleHref(registro) {
   if (registro.tipoIngreso?.codigo === "ROLLIZOS") {
     return `/ingresos/rollizos/${registro.id}`
@@ -265,7 +280,6 @@ export default function Home() {
                   </thead>
                   <tbody>
                     {ultimosIngresos.map((registro) => {
-                      const articulo = articuloPrincipal(registro)
                       const href = detalleHref(registro)
 
                       return (
@@ -292,10 +306,10 @@ export default function Home() {
                             {mostrar(registro.remitoProveedor)}
                           </td>
                           <td className="py-3 pr-4">
-                            {mostrar(articulo?.articuloDescripcion)}
+                            {mostrar(descripcionArticulos(registro))}
                           </td>
                           <td className="py-3 pr-4">
-                            {mostrar(articulo?.cantidad)} {mostrar(articulo?.unidad)}
+                            {cantidadArticulos(registro)}
                           </td>
                           <td className="py-3 pr-4">
                             {mostrar(registro.patenteCamion)}
@@ -326,7 +340,6 @@ export default function Home() {
 
               <div className="mt-4 space-y-4 md:hidden">
                 {ultimosIngresos.map((registro) => {
-                  const articulo = articuloPrincipal(registro)
                   const href = detalleHref(registro)
 
                   return (
@@ -362,11 +375,11 @@ export default function Home() {
                         </p>
                         <p>
                           <span className="font-semibold">Articulo:</span>{" "}
-                          {mostrar(articulo?.articuloDescripcion)}
+                          {mostrar(descripcionArticulos(registro))}
                         </p>
                         <p>
                           <span className="font-semibold">Cantidad:</span>{" "}
-                          {mostrar(articulo?.cantidad)} {mostrar(articulo?.unidad)}
+                          {cantidadArticulos(registro)}
                         </p>
                         <p>
                           <span className="font-semibold">Patente:</span>{" "}

@@ -193,7 +193,10 @@ export default function DetalleIngresoMaterialesPage() {
             <Campo label="Fecha ingreso" value={formatearFecha(ingreso.fechaIngreso)} />
             <Campo label="Fecha creacion" value={formatearFecha(ingreso.createdAt)} />
             <Campo label="Tipo" value={ingreso.tipoIngreso?.nombre} />
-            <Campo label="Categoria" value={ingreso.categoriaFormulario?.nombre} />
+            <Campo
+              label="Categoria principal"
+              value={ingreso.categoriaFormulario?.nombre}
+            />
           </div>
         </section>
 
@@ -296,7 +299,10 @@ export default function DetalleIngresoMaterialesPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Campo label="Portero" value={ingreso.registradoPor?.nombre} />
             <Campo label="Remito proveedor" value={ingreso.remitoProveedor} />
-            <Campo label="Categoria" value={ingreso.categoriaFormulario?.nombre} />
+            <Campo
+              label="Categoria principal"
+              value={ingreso.categoriaFormulario?.nombre}
+            />
             <div className="md:col-span-3">
               <Campo label="Observaciones" value={ingreso.observaciones} />
             </div>
@@ -322,25 +328,98 @@ export default function DetalleIngresoMaterialesPage() {
 
         <section className={SECTION_CLASS}>
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
-            Material
+            Ítems del remito
           </h2>
-          <div className="grid gap-4 md:grid-cols-4">
-            <Campo
-              label="Categoria"
-              value={
-                ingreso.categoriaFormulario?.nombre ||
-                articuloPrincipal?.categoriaFormulario
-              }
-            />
-            <Campo label="Articulo" value={articuloPrincipal?.articuloDescripcion} />
-            <Campo label="Codigo" value={articuloPrincipal?.articuloCodigo} />
-            <Campo
-              label="Cantidad"
-              value={`${mostrar(articuloPrincipal?.cantidad)} ${mostrar(
-                articuloPrincipal?.unidad
-              )}`}
-            />
-          </div>
+          {ingreso.articulos?.length > 0 ? (
+            <>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-[#CBD5E1] text-[#475569]">
+                      <th className="py-3 pr-4 font-semibold">N°</th>
+                      <th className="py-3 pr-4 font-semibold">Categoría</th>
+                      <th className="py-3 pr-4 font-semibold">Artículo</th>
+                      <th className="py-3 pr-4 font-semibold">Código</th>
+                      <th className="py-3 pr-4 font-semibold">Cantidad</th>
+                      <th className="py-3 pr-4 font-semibold">Unidad</th>
+                      <th className="py-3 pr-4 font-semibold">Grupo / Subgrupo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ingreso.articulos.map((articulo, index) => (
+                      <tr
+                        key={articulo.id}
+                        className="border-b border-slate-100 text-[#0F172A]"
+                      >
+                        <td className="py-3 pr-4 font-semibold">
+                          {index + 1}
+                        </td>
+                        <td className="py-3 pr-4">
+                          {mostrar(articulo.categoriaFormulario)}
+                        </td>
+                        <td className="py-3 pr-4">
+                          {mostrar(articulo.articuloDescripcion)}
+                        </td>
+                        <td className="py-3 pr-4">
+                          {mostrar(articulo.articuloCodigo)}
+                        </td>
+                        <td className="py-3 pr-4">
+                          {mostrar(articulo.cantidad)}
+                        </td>
+                        <td className="py-3 pr-4">
+                          {mostrar(articulo.unidad)}
+                        </td>
+                        <td className="py-3 pr-4">
+                          {mostrar(articulo.articuloGrupo)} /{" "}
+                          {mostrar(articulo.articuloSubgrupo)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-3 md:hidden">
+                {ingreso.articulos.map((articulo, index) => (
+                  <article
+                    key={articulo.id}
+                    className="rounded-xl border border-[#CBD5E1] bg-[#F5F7FA] p-4"
+                  >
+                    <p className="font-bold text-[#0F172A]">
+                      Ítem {index + 1}
+                    </p>
+                    <div className="mt-3 grid gap-3">
+                      <Campo
+                        label="Categoría"
+                        value={articulo.categoriaFormulario || "Sin categoría"}
+                      />
+                      <Campo
+                        label="Artículo"
+                        value={articulo.articuloDescripcion}
+                      />
+                      <Campo label="Código" value={articulo.articuloCodigo} />
+                      <Campo
+                        label="Cantidad"
+                        value={`${mostrar(articulo.cantidad)} ${mostrar(
+                          articulo.unidad
+                        )}`}
+                      />
+                      <Campo
+                        label="Grupo / Subgrupo"
+                        value={`${mostrar(articulo.articuloGrupo)} / ${mostrar(
+                          articulo.articuloSubgrupo
+                        )}`}
+                      />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-[#475569]">
+              Este ingreso no tiene ítems registrados.
+            </p>
+          )}
         </section>
 
         <section className={SECTION_CLASS}>
