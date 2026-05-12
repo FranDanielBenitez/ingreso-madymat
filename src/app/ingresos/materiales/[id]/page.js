@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { toast } from "sonner"
+import EditarIngresoPanel from "@/components/forms/EditarIngresoPanel"
 
 const SECTION_CLASS = "rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
 const LABEL_CLASS = "text-sm font-medium text-slate-600"
@@ -57,6 +58,7 @@ export default function DetalleIngresoMaterialesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [mostrandoAnulacion, setMostrandoAnulacion] = useState(false)
+  const [mostrandoEdicion, setMostrandoEdicion] = useState(false)
   const [motivoAnulacion, setMotivoAnulacion] = useState("")
   const [anulando, setAnulando] = useState(false)
 
@@ -205,17 +207,44 @@ export default function DetalleIngresoMaterialesPage() {
                   Acciones
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Anula el ingreso sin eliminar datos, fotos ni logs.
+                  Edita campos administrativos o anula el ingreso con motivo.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setMostrandoAnulacion(true)}
-                className="w-fit rounded-lg border border-red-300 bg-white px-5 py-3 font-medium text-red-700 focus:border-red-700 focus:ring-2 focus:ring-red-100"
-              >
-                Anular ingreso
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrandoEdicion(true)
+                    setMostrandoAnulacion(false)
+                  }}
+                  className="w-fit rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-800 focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+                >
+                  Editar ingreso
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrandoAnulacion(true)
+                    setMostrandoEdicion(false)
+                  }}
+                  className="w-fit rounded-lg border border-red-300 bg-white px-5 py-3 font-medium text-red-700 focus:border-red-700 focus:ring-2 focus:ring-red-100"
+                >
+                  Anular ingreso
+                </button>
+              </div>
             </div>
+
+            {mostrandoEdicion ? (
+              <EditarIngresoPanel
+                ingreso={ingreso}
+                articulo={articuloPrincipal}
+                onCancel={() => setMostrandoEdicion(false)}
+                onUpdated={(ingresoActualizado) => {
+                  setIngreso(ingresoActualizado)
+                  setMostrandoEdicion(false)
+                }}
+              />
+            ) : null}
 
             {mostrandoAnulacion ? (
               <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">

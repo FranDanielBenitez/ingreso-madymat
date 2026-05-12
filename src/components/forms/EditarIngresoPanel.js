@@ -1,0 +1,257 @@
+"use client"
+
+import { useState } from "react"
+import { toast } from "sonner"
+
+const FIELD_CLASS =
+  "w-full rounded-lg border border-slate-300 bg-white p-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+const LABEL_CLASS = "mb-1 block text-sm font-medium text-slate-800"
+
+function fechaInput(value) {
+  if (!value) return ""
+
+  return new Date(value).toISOString().slice(0, 10)
+}
+
+function valorInicial(value) {
+  if (value === null || value === undefined) return ""
+
+  return String(value)
+}
+
+export default function EditarIngresoPanel({
+  ingreso,
+  articulo,
+  onCancel,
+  onUpdated,
+}) {
+  const [values, setValues] = useState({
+    fechaIngreso: fechaInput(ingreso.fechaIngreso),
+    remitoProveedor: valorInicial(ingreso.remitoProveedor),
+    cantidad: valorInicial(articulo?.cantidad),
+    unidad: valorInicial(articulo?.unidad),
+    patenteCamion: valorInicial(ingreso.patenteCamion),
+    patenteAcoplado: valorInicial(ingreso.patenteAcoplado),
+    observaciones: valorInicial(ingreso.observaciones),
+    choferNombreCargado: valorInicial(ingreso.choferNombreCargado),
+    choferDocumentoCargado: valorInicial(ingreso.choferDocumentoCargado),
+    motivo: "",
+  })
+  const [guardando, setGuardando] = useState(false)
+  const choferManual = ingreso.choferOrigenDato === "MANUAL"
+
+  function actualizarCampo(event) {
+    const { name, value } = event.target
+
+    setValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  async function guardarCambios() {
+    const motivo = values.motivo.trim()
+    const cantidad = Number(String(values.cantidad).replace(",", "."))
+
+    if (!values.fechaIngreso) {
+      toast.error("La fecha de ingreso es obligatoria")
+      return
+    }
+
+    if (!cantidad || cantidad <= 0) {
+      toast.error("La cantidad debe ser mayor a 0")
+      return
+    }
+
+    if (!values.unidad.trim()) {
+      toast.error("La unidad es obligatoria")
+      return
+    }
+
+    if (!motivo) {
+      toast.error("El motivo de edicion es obligatorio")
+      return
+    }
+
+    try {
+      setGuardando(true)
+
+      const response = await fetch(`/api/ingresos/${ingreso.id}/editar`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fechaIngreso: values.fechaIngreso,
+          remitoProveedor: values.remitoProveedor,
+          patenteCamion: values.patenteCamion,
+          patenteAcoplado: values.patenteAcoplado,
+          observaciones: values.observaciones,
+          cantidad: values.cantidad,
+          unidad: values.unidad,
+          choferNombreCargado: values.choferNombreCargado,
+          choferDocumentoCargado: values.choferDocumentoCargado,
+          motivo,
+        }),
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "No se pudo actualizar el ingreso")
+      }
+
+      onUpdated(result.ingreso)
+      toast.success("Ingreso actualizado correctamente")
+    } catch (error) {
+      toast.error(error.message || "No se pudo actualizar el ingreso")
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  return (
+    <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <h3 className="text-lg font-semibold text-slate-900">
+        Editar ingreso
+      </h3>
+      <p className="mt-1 text-sm text-slate-600">
+        Solo se pueden modificar campos administrativos. El motivo queda en el
+        log de auditoria.
+      </p>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label>
+          <span className={LABEL_CLASS}>Fecha ingreso</span>
+          <input
+            type="date"
+            name="fechaIngreso"
+            value={values.fechaIngreso}
+            onChange={actualizarCampo}
+            className={FIELD_CLASS}
+          />
+        </label>
+
+        <label>
+          <span className={LABEL_CLASS}>Remito proveedor</span>
+          <input
+            type="text"
+            name="remitoProveedor"
+            value={values.remitoProveedor}
+            onChange={actualizarCampo}
+            className={FIELD_CLASS}
+          />
+        </label>
+
+        <label>
+          <span className={LABEL_CLASS}>Cantidad</span>
+          <input
+            type="number"
+            step="0.001"
+            name="cantidad"
+            value={values.cantidad}
+            onChange={actualizarCampo}
+            className={FIELD_CLASS}
+          />
+        </label>
+
+        <label>
+          <span className={LABEL_CLASS}>Unidad</span>
+          <input
+            type="text"
+            name="unidad"
+            value={values.unidad}
+            onChange={actualizarCampo}
+            className={FIELD_CLASS}
+          />
+        </label>
+
+        <label>
+          <span className={LABEL_CLASS}>Patente camion</span>
+          <input
+            type="text"
+            name="patenteCamion"
+            value={values.patenteCamion}
+            onChange={actualizarCampo}
+            className={`${FIELD_CLASS} uppercase`}
+          />
+        </label>
+
+        <label>
+          <span className={LABEL_CLASS}>Patente acoplado</span>
+          <input
+            type="text"
+            name="patenteAcoplado"
+            value={values.patenteAcoplado}
+            onChange={actualizarCampo}
+            className={`${FIELD_CLASS} uppercase`}
+          />
+        </label>
+
+        {choferManual ? (
+          <>
+            <label>
+              <span className={LABEL_CLASS}>Nombre chofer externo</span>
+              <input
+                type="text"
+                name="choferNombreCargado"
+                value={values.choferNombreCargado}
+                onChange={actualizarCampo}
+                className={FIELD_CLASS}
+              />
+            </label>
+
+            <label>
+              <span className={LABEL_CLASS}>Documento chofer externo</span>
+              <input
+                type="text"
+                name="choferDocumentoCargado"
+                value={values.choferDocumentoCargado}
+                onChange={actualizarCampo}
+                className={FIELD_CLASS}
+              />
+            </label>
+          </>
+        ) : null}
+
+        <label className="md:col-span-2">
+          <span className={LABEL_CLASS}>Observaciones</span>
+          <textarea
+            name="observaciones"
+            value={values.observaciones}
+            onChange={actualizarCampo}
+            className={`${FIELD_CLASS} min-h-24`}
+          />
+        </label>
+
+        <label className="md:col-span-2">
+          <span className={LABEL_CLASS}>Motivo de edicion *</span>
+          <textarea
+            name="motivo"
+            value={values.motivo}
+            onChange={actualizarCampo}
+            className={`${FIELD_CLASS} min-h-24`}
+            placeholder="Ej: Correccion por error de carga"
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-800"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={guardarCambios}
+          disabled={guardando}
+          className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {guardando ? "Guardando..." : "Guardar cambios"}
+        </button>
+      </div>
+    </div>
+  )
+}
