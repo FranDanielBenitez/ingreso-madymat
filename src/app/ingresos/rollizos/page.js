@@ -37,6 +37,58 @@ async function fetchDimensionSegura(url) {
   return json.data || []
 }
 
+function mensajeErrorDimension(result, fallback) {
+  if (result.status === "fulfilled") return ""
+
+  const detalle = result.reason?.message
+  return detalle ? `${fallback}. ${detalle}` : fallback
+}
+
+function CampoErrorDimension({ message }) {
+  if (!message) return null
+
+  return (
+    <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+      {message}
+    </p>
+  )
+}
+
+function AvisoErroresDimensiones({ errores, onRetry, reintentando }) {
+  const erroresActivos = Object.values(errores).filter(Boolean)
+
+  if (erroresActivos.length === 0) return null
+
+  return (
+    <section className="rounded-2xl border border-red-200 bg-red-50/80 p-4 shadow-sm">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="font-bold text-red-700">
+            Algunas dimensiones no se pudieron cargar
+          </h2>
+          <p className="mt-1 text-sm text-[#475569]">
+            Podes seguir revisando el formulario, pero para guardar necesitas
+            completar las dimensiones obligatorias.
+          </p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-red-700">
+            {erroresActivos.map((mensaje) => (
+              <li key={mensaje}>{mensaje}</li>
+            ))}
+          </ul>
+        </div>
+        <button
+          type="button"
+          onClick={onRetry}
+          disabled={reintentando}
+          className="w-fit rounded-lg bg-[#F3171B] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {reintentando ? "Reintentando..." : "Reintentar carga"}
+        </button>
+      </div>
+    </section>
+  )
+}
+
 export default function IngresoRollizosPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -53,6 +105,8 @@ export default function IngresoRollizosPage() {
   const [modoArticulo, setModoArticulo] = useState(MODO_SUGERIDOS)
   const [modoServicio, setModoServicio] = useState(MODO_SUGERIDOS)
   const [cargandoDimensiones, setCargandoDimensiones] = useState({})
+  const [dimensionErrors, setDimensionErrors] = useState({})
+  const [reintentandoDimensiones, setReintentandoDimensiones] = useState(false)
   const [previewsFotos, setPreviewsFotos] = useState({})
   const [fotoInputKeys, setFotoInputKeys] = useState({
     fotoCamionPatente: 0,
@@ -124,6 +178,8 @@ export default function IngresoRollizosPage() {
     [porteros, porteroLegajo]
   )
 
+  const hayErroresDimensiones = Object.values(dimensionErrors).some(Boolean)
+
   function proveedorUrl(modo) {
     return modo === MODO_TODOS
       ? "/api/dimensiones/proveedores?modo=TODOS"
@@ -153,6 +209,13 @@ export default function IngresoRollizosPage() {
     }))
   }
 
+  function setDimensionError(nombre, message) {
+    setDimensionErrors((prev) => ({
+      ...prev,
+      [nombre]: message,
+    }))
+  }
+
   async function cambiarModoProveedor(modo) {
     if (modo === modoProveedor) return
 
@@ -163,9 +226,12 @@ export default function IngresoRollizosPage() {
     try {
       const data = await fetchDimensionSegura(proveedorUrl(modo))
       setProveedores(data)
+      setDimensionError("proveedores", "")
       if (modo === MODO_TODOS) toast.info("Mostrando todos los proveedores")
     } catch (err) {
-      toast.error(err.message || "No se pudieron cargar proveedores")
+      const mensaje = err.message || "No se pudieron cargar proveedores"
+      setDimensionError("proveedores", mensaje)
+      toast.error(mensaje)
     } finally {
       setCargandoDimension("proveedor", false)
     }
@@ -181,9 +247,12 @@ export default function IngresoRollizosPage() {
     try {
       const data = await fetchDimensionSegura(articuloUrl(modo))
       setArticulos(data)
+      setDimensionError("articulos", "")
       if (modo === MODO_TODOS) toast.info("Mostrando todos los articulos")
     } catch (err) {
-      toast.error(err.message || "No se pudieron cargar articulos")
+      const mensaje = err.message || "No se pudieron cargar articulos"
+      setDimensionError("articulos", mensaje)
+      toast.error(mensaje)
     } finally {
       setCargandoDimension("articulo", false)
     }
@@ -199,28 +268,35 @@ export default function IngresoRollizosPage() {
     try {
       const data = await fetchDimensionSegura(servicioUrl(tipoServicio, modo))
       setServicios(data)
+      setDimensionError("servicios", "")
       if (modo === MODO_TODOS) toast.info("Mostrando todos los servicios")
     } catch (err) {
-      toast.error(err.message || "No se pudieron cargar servicios")
+      const mensaje = err.message || "No se pudieron cargar servicios"
+      setDimensionError("servicios", mensaje)
+      toast.error(mensaje)
     } finally {
       setCargandoDimension("servicio", false)
     }
   }
 
-  async function cargarDimensionesIniciales() {
+  async function cargarDimensionesIniciales({ reintento = false } = {}) {
     try {
       console.log("Cargando dimensiones...")
-      setLoading(true)
+      if (reintento) {
+        setReintentandoDimensiones(true)
+      } else {
+        setLoading(true)
+      }
       setError("")
 
       const [
-        proveedoresData,
-        articulosData,
-        serviciosData,
-        hachadoresData,
-        choferesData,
-        porterosData,
-      ] = await Promise.all([
+        proveedoresResult,
+        articulosResult,
+        serviciosResult,
+        hachadoresResult,
+        choferesResult,
+        porterosResult,
+      ] = await Promise.allSettled([
         fetchDimensionSegura(proveedorUrl(modoProveedor)),
         fetchDimensionSegura(articuloUrl(modoArticulo)),
         fetchDimensionSegura(servicioUrl(tipoServicio, modoServicio)),
@@ -229,18 +305,58 @@ export default function IngresoRollizosPage() {
         fetchDimensionSegura("/api/dimensiones/porteros"),
       ])
 
-      setProveedores(proveedoresData)
-      setArticulos(articulosData)
-      setServicios(serviciosData)
-      setHachadores(hachadoresData)
-      setChoferes(choferesData)
-      setPorteros(porterosData)
+      if (proveedoresResult.status === "fulfilled") {
+        setProveedores(proveedoresResult.value)
+      }
+      if (articulosResult.status === "fulfilled") {
+        setArticulos(articulosResult.value)
+      }
+      if (serviciosResult.status === "fulfilled") {
+        setServicios(serviciosResult.value)
+      }
+      if (hachadoresResult.status === "fulfilled") {
+        setHachadores(hachadoresResult.value)
+      }
+      if (choferesResult.status === "fulfilled") {
+        setChoferes(choferesResult.value)
+      }
+      if (porterosResult.status === "fulfilled") {
+        setPorteros(porterosResult.value)
+      }
+
+      setDimensionErrors({
+        proveedores: mensajeErrorDimension(
+          proveedoresResult,
+          "No se pudieron cargar proveedores"
+        ),
+        articulos: mensajeErrorDimension(
+          articulosResult,
+          "No se pudieron cargar articulos"
+        ),
+        servicios: mensajeErrorDimension(
+          serviciosResult,
+          "No se pudieron cargar servicios logisticos"
+        ),
+        hachadores: mensajeErrorDimension(
+          hachadoresResult,
+          "No se pudieron cargar hachadores"
+        ),
+        choferes: mensajeErrorDimension(
+          choferesResult,
+          "No se pudieron cargar choferes"
+        ),
+        porteros: mensajeErrorDimension(
+          porterosResult,
+          "No se pudieron cargar porteros"
+        ),
+      })
 
       console.log("Dimensiones cargadas correctamente")
     } catch (err) {
       setError(err.message || "Error cargando dimensiones")
     } finally {
       setLoading(false)
+      setReintentandoDimensiones(false)
     }
   }
 
@@ -249,9 +365,12 @@ export default function IngresoRollizosPage() {
       const data = await fetchDimensionSegura(servicioUrl(tipo, modoServicio))
       setServicios(data)
       setValue("servicioCodigo", "")
+      setDimensionError("servicios", "")
     } catch (err) {
       console.warn(err)
-      toast.error("No se pudieron cargar los servicios logísticos")
+      const mensaje = "No se pudieron cargar los servicios logisticos"
+      setDimensionError("servicios", mensaje)
+      toast.error(mensaje)
     }
   }
 
@@ -330,6 +449,23 @@ export default function IngresoRollizosPage() {
 
       if (!fotoMaterialCargadoFile) {
         toast.error("La foto del material cargado es obligatoria")
+        return
+      }
+
+      if (!porteroSeleccionado) {
+        toast.error("No se pudo seleccionar portero. Reintentá la carga de datos.")
+        return
+      }
+
+      if (!proveedorSeleccionado) {
+        toast.error(
+          "No se pudo seleccionar proveedor. Reintenta la carga de datos."
+        )
+        return
+      }
+
+      if (!articuloSeleccionado) {
+        toast.error("No se pudo seleccionar articulo. Reintenta la carga de datos.")
         return
       }
 
@@ -468,10 +604,11 @@ export default function IngresoRollizosPage() {
           <p className="mt-3 text-[#475569]">{error}</p>
           <button
             type="button"
-            onClick={cargarDimensionesIniciales}
+            onClick={() => cargarDimensionesIniciales({ reintento: true })}
+            disabled={reintentandoDimensiones}
             className="mt-5 rounded-lg bg-[#F3171B] px-4 py-2 font-semibold text-white hover:bg-[#D90F14]"
           >
-            Reintentar
+            {reintentandoDimensiones ? "Reintentando..." : "Reintentar"}
           </button>
         </div>
       </main>
@@ -493,6 +630,14 @@ export default function IngresoRollizosPage() {
             portería.
           </p>
         </header>
+
+        {hayErroresDimensiones ? (
+          <AvisoErroresDimensiones
+            errores={dimensionErrors}
+            onRetry={() => cargarDimensionesIniciales({ reintento: true })}
+            reintentando={reintentandoDimensiones}
+          />
+        ) : null}
 
         <section className={SECTION_CLASS}>
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
@@ -522,6 +667,7 @@ export default function IngresoRollizosPage() {
                   </option>
                 ))}
               </select>
+              <CampoErrorDimension message={dimensionErrors.porteros} />
             </div>
 
             <div>
@@ -572,6 +718,7 @@ export default function IngresoRollizosPage() {
                   />
                 }
               />
+              <CampoErrorDimension message={dimensionErrors.proveedores} />
             </div>
 
             <div>
@@ -602,6 +749,7 @@ export default function IngresoRollizosPage() {
                   />
                 }
               />
+              <CampoErrorDimension message={dimensionErrors.articulos} />
             </div>
 
             <div>
@@ -670,6 +818,7 @@ export default function IngresoRollizosPage() {
                   />
                 }
               />
+              <CampoErrorDimension message={dimensionErrors.servicios} />
             </div>
 
             <div>
@@ -697,6 +846,7 @@ export default function IngresoRollizosPage() {
                     </option>
                   ))}
                 </select>
+                <CampoErrorDimension message={dimensionErrors.choferes} />
               </div>
             ) : (
               <>
@@ -915,6 +1065,7 @@ export default function IngresoRollizosPage() {
                 getSearchText={(item) => `${item.Codigo} ${item.RazonSocial}`}
                 placeholder="Buscar hachador"
               />
+              <CampoErrorDimension message={dimensionErrors.hachadores} />
             </div>
 
             <div>

@@ -135,6 +135,58 @@ function FotoField({
   )
 }
 
+function mensajeErrorDimension(result, fallback) {
+  if (result.status === "fulfilled") return ""
+
+  const detalle = result.reason?.message
+  return detalle ? `${fallback}. ${detalle}` : fallback
+}
+
+function CampoErrorDimension({ message }) {
+  if (!message) return null
+
+  return (
+    <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+      {message}
+    </p>
+  )
+}
+
+function AvisoErroresDimensiones({ errores, onRetry, reintentando }) {
+  const erroresActivos = Object.values(errores).filter(Boolean)
+
+  if (erroresActivos.length === 0) return null
+
+  return (
+    <section className="rounded-2xl border border-red-200 bg-red-50/80 p-4 shadow-sm">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="font-bold text-red-700">
+            Algunas dimensiones no se pudieron cargar
+          </h2>
+          <p className="mt-1 text-sm text-[#475569]">
+            Podes seguir revisando el formulario, pero para guardar necesitas
+            completar las dimensiones obligatorias.
+          </p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-red-700">
+            {erroresActivos.map((mensaje) => (
+              <li key={mensaje}>{mensaje}</li>
+            ))}
+          </ul>
+        </div>
+        <button
+          type="button"
+          onClick={onRetry}
+          disabled={reintentando}
+          className="w-fit rounded-lg bg-[#F3171B] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {reintentando ? "Reintentando..." : "Reintentar carga"}
+        </button>
+      </div>
+    </section>
+  )
+}
+
 export default function IngresoMaterialesPage() {
   const router = useRouter()
   const [loadingInicial, setLoadingInicial] = useState(true)
@@ -153,6 +205,8 @@ export default function IngresoMaterialesPage() {
   const [modoProveedor, setModoProveedor] = useState(MODO_SUGERIDOS)
   const [modoServicio, setModoServicio] = useState(MODO_SUGERIDOS)
   const [cargandoDimensiones, setCargandoDimensiones] = useState({})
+  const [dimensionErrors, setDimensionErrors] = useState({})
+  const [reintentandoDimensiones, setReintentandoDimensiones] = useState(false)
   const [previewsFotos, setPreviewsFotos] = useState({})
   const [fotoInputKeys, setFotoInputKeys] = useState({
     fotoCamionPatente: 0,
@@ -216,10 +270,19 @@ export default function IngresoMaterialesPage() {
     [porteros, porteroLegajo]
   )
 
+  const hayErroresDimensiones = Object.values(dimensionErrors).some(Boolean)
+
   function setCargandoDimension(nombre, value) {
     setCargandoDimensiones((prev) => ({
       ...prev,
       [nombre]: value,
+    }))
+  }
+
+  function setDimensionError(nombre, message) {
+    setDimensionErrors((prev) => ({
+      ...prev,
+      [nombre]: message,
     }))
   }
 
@@ -249,9 +312,12 @@ export default function IngresoMaterialesPage() {
     try {
       const data = await fetchDimension(proveedorUrl(modo))
       setProveedores(data)
+      setDimensionError("proveedores", "")
       if (modo === MODO_TODOS) toast.info("Mostrando todos los proveedores")
     } catch (err) {
-      toast.error(err.message || "No se pudieron cargar proveedores")
+      const mensaje = err.message || "No se pudieron cargar proveedores"
+      setDimensionError("proveedores", mensaje)
+      toast.error(mensaje)
     } finally {
       setCargandoDimension("proveedor", false)
     }
@@ -267,36 +333,71 @@ export default function IngresoMaterialesPage() {
     try {
       const data = await fetchDimension(servicioUrl(tipoServicio, modo))
       setServicios(data)
+      setErrorLogistica("")
+      setDimensionError("servicios", "")
       if (modo === MODO_TODOS) toast.info("Mostrando todos los servicios")
     } catch (err) {
-      toast.error(err.message || "No se pudieron cargar servicios")
+      const mensaje = err.message || "No se pudieron cargar servicios"
+      setErrorLogistica(mensaje)
+      setDimensionError("servicios", mensaje)
+      toast.error(mensaje)
     } finally {
       setCargandoDimension("servicio", false)
     }
   }
 
-  useEffect(() => {
-    async function cargarDatosIniciales() {
+  async function cargarDatosIniciales({ reintento = false } = {}) {
+    if (reintento) {
+      setReintentandoDimensiones(true)
+    } else {
       setLoadingInicial(true)
-      setError("")
+    }
+    setError("")
 
-      try {
-        const [porterosData, choferesData, proveedoresData] = await Promise.all([
+    try {
+      const [porterosResult, choferesResult, proveedoresResult] =
+        await Promise.allSettled([
           fetchDimension("/api/dimensiones/porteros"),
           fetchDimension("/api/dimensiones/choferes"),
-          fetchDimension("/api/dimensiones/proveedores?categoria=MATERIA_PRIMA"),
+          fetchDimension(proveedorUrl(modoProveedor)),
         ])
 
-        setPorteros(porterosData)
-        setChoferes(choferesData)
-        setProveedores(proveedoresData)
-      } catch (err) {
-        setError(err.message || "No se pudieron cargar datos iniciales")
-      } finally {
-        setLoadingInicial(false)
+      if (porterosResult.status === "fulfilled") {
+        setPorteros(porterosResult.value)
       }
-    }
+      if (choferesResult.status === "fulfilled") {
+        setChoferes(choferesResult.value)
+      }
+      if (proveedoresResult.status === "fulfilled") {
+        setProveedores(proveedoresResult.value)
+      }
 
+      setDimensionErrors((prev) => ({
+        ...prev,
+        porteros: mensajeErrorDimension(
+          porterosResult,
+          "No se pudieron cargar porteros"
+        ),
+        choferes: mensajeErrorDimension(
+          choferesResult,
+          "No se pudieron cargar choferes"
+        ),
+        proveedores: mensajeErrorDimension(
+          proveedoresResult,
+          "No se pudieron cargar proveedores"
+        ),
+      }))
+    } catch (err) {
+      setError(err.message || "No se pudieron cargar datos iniciales")
+    } finally {
+      setLoadingInicial(false)
+      setReintentandoDimensiones(false)
+    }
+  }
+
+  useEffect(() => {
+    // Carga inicial del formulario; mantiene el formulario usable aunque una dimension falle.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargarDatosIniciales()
   }, [])
 
@@ -312,10 +413,11 @@ export default function IngresoMaterialesPage() {
         )
 
         setServicios(serviciosData)
+        setDimensionError("servicios", "")
       } catch (err) {
-        setErrorLogistica(
-          err.message || "No se pudieron cargar servicios logisticos"
-        )
+        const mensaje = err.message || "No se pudieron cargar servicios logisticos"
+        setErrorLogistica(mensaje)
+        setDimensionError("servicios", mensaje)
       } finally {
         setLoadingLogistica(false)
       }
@@ -384,8 +486,11 @@ export default function IngresoMaterialesPage() {
         ...prev,
         [categoria]: data,
       }))
+      setDimensionError("articulos", "")
     } catch (err) {
-      toast.error(err.message || "No se pudieron cargar articulos")
+      const mensaje = err.message || "No se pudieron cargar articulos"
+      setDimensionError("articulos", mensaje)
+      toast.error(mensaje)
     } finally {
       setCategoriasCargando((prev) => ({
         ...prev,
@@ -402,8 +507,11 @@ export default function IngresoMaterialesPage() {
     try {
       const data = await fetchDimension("/api/dimensiones/articulos?modo=TODOS")
       setArticulosTodos(data)
+      setDimensionError("articulos", "")
     } catch (err) {
-      toast.error(err.message || "No se pudieron cargar todos los articulos")
+      const mensaje = err.message || "No se pudieron cargar todos los articulos"
+      setDimensionError("articulos", mensaje)
+      toast.error(mensaje)
     } finally {
       setArticulosTodosCargando(false)
     }
@@ -555,6 +663,16 @@ export default function IngresoMaterialesPage() {
       return
     }
 
+    if (!porteroSeleccionado) {
+      toast.error("No se pudo seleccionar portero. Reintentá la carga de datos.")
+      return
+    }
+
+    if (!proveedorSeleccionado) {
+      toast.error("No se pudo seleccionar proveedor. Reintenta la carga de datos.")
+      return
+    }
+
     const itemsPreparados = prepararItemsRemito()
     const itemsCompletos = itemsPreparados.every((item) => {
       const cantidad = Number(String(item.cantidad).replace(",", "."))
@@ -669,6 +787,14 @@ export default function IngresoMaterialesPage() {
             Error cargando formulario
           </h1>
           <p className="mt-3 text-[#475569]">{error}</p>
+          <button
+            type="button"
+            onClick={() => cargarDatosIniciales({ reintento: true })}
+            disabled={reintentandoDimensiones}
+            className="mt-5 rounded-lg bg-[#F3171B] px-4 py-2 font-semibold text-white hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {reintentandoDimensiones ? "Reintentando..." : "Reintentar"}
+          </button>
         </section>
       </main>
     )
@@ -689,6 +815,14 @@ export default function IngresoMaterialesPage() {
             porteria.
           </p>
         </header>
+
+        {hayErroresDimensiones ? (
+          <AvisoErroresDimensiones
+            errores={dimensionErrors}
+            onRetry={() => cargarDatosIniciales({ reintento: true })}
+            reintentando={reintentandoDimensiones}
+          />
+        ) : null}
 
         <section className={SECTION_CLASS}>
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
@@ -718,6 +852,7 @@ export default function IngresoMaterialesPage() {
                   </option>
                 ))}
               </select>
+              <CampoErrorDimension message={dimensionErrors.porteros} />
             </div>
 
             <div>
@@ -779,6 +914,7 @@ export default function IngresoMaterialesPage() {
                   />
                 }
               />
+              <CampoErrorDimension message={dimensionErrors.proveedores} />
             </div>
           </div>
         </section>
@@ -886,6 +1022,7 @@ export default function IngresoMaterialesPage() {
                       />
                     }
                   />
+                  <CampoErrorDimension message={dimensionErrors.articulos} />
 
                   <label>
                     <span className={LABEL_CLASS}>Cantidad</span>
@@ -965,6 +1102,7 @@ export default function IngresoMaterialesPage() {
                   />
                 }
               />
+              <CampoErrorDimension message={dimensionErrors.servicios} />
             </div>
 
             <div>
@@ -986,6 +1124,7 @@ export default function IngresoMaterialesPage() {
                     </option>
                   ))}
                 </select>
+                <CampoErrorDimension message={dimensionErrors.choferes} />
               </div>
             ) : (
               <>
