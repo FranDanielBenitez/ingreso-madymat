@@ -18,6 +18,21 @@ const TEXTAREA_CLASS =
 const MODO_SUGERIDOS = "SUGERIDOS"
 const MODO_TODOS = "TODOS"
 
+function fechaActual() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function horaActual() {
+  const now = new Date()
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+}
+
+function normalizarCantidad(value) {
+  const texto = String(value || "").trim().replace(/\./g, "").replace(",", ".")
+  const numero = Number(texto)
+  return Number.isNaN(numero) ? 0 : numero
+}
+
 async function fetchDimensionSegura(url) {
   const response = await fetch(url)
   const json = await response.json().catch(() => null)
@@ -127,9 +142,10 @@ export default function IngresoRollizosPage() {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      fechaIngreso: new Date().toISOString().slice(0, 10),
+      fechaIngreso: fechaActual(),
+      horaIngreso: horaActual(),
       tipoServicio: "FLETERO",
-      tipoChofer: "INTERNO",
+      tipoChofer: "EXTERNO",
       unidad: "TN",
     },
   })
@@ -521,7 +537,12 @@ export default function IngresoRollizosPage() {
         articuloCargaManual &&
         !String(values.articuloManualDescripcion || "").trim()
       ) {
-        toast.error("La descripcion del articulo manual es obligatoria")
+        toast.error("La descripción del artículo manual es obligatoria")
+        return
+      }
+
+      if (!values.horaIngreso || !/^\d{2}:\d{2}$/.test(values.horaIngreso)) {
+        toast.error("La hora de ingreso es obligatoria y debe tener formato HH:mm")
         return
       }
 
@@ -530,9 +551,7 @@ export default function IngresoRollizosPage() {
         return
       }
 
-      const cantidadIngreso = Number(
-        String(values.cantidad || "").replace(",", ".")
-      )
+      const cantidadIngreso = normalizarCantidad(values.cantidad)
 
       if (!cantidadIngreso || cantidadIngreso <= 0) {
         toast.error("La cantidad debe ser mayor a cero")
@@ -544,6 +563,11 @@ export default function IngresoRollizosPage() {
         return
       }
 
+      if (!String(values.patenteCamion || "").trim()) {
+        toast.error("La patente del camión es obligatoria")
+        return
+      }
+
       if (servicioCargaManual && !String(values.servicioManualNombre || "").trim()) {
         toast.error("El nombre del servicio manual es obligatorio")
         return
@@ -551,6 +575,16 @@ export default function IngresoRollizosPage() {
 
       if (!servicioCargaManual && !servicioSeleccionado) {
         toast.error("No se pudo seleccionar servicio. Reintenta la carga de datos.")
+        return
+      }
+
+      if (tipoChofer === "INTERNO" && !choferSeleccionado) {
+        toast.error("Debes seleccionar un chofer interno")
+        return
+      }
+
+      if (tipoChofer === "EXTERNO" && !String(values.choferNombreExterno || "").trim()) {
+        toast.error("El nombre del chofer externo es obligatorio")
         return
       }
 
@@ -667,9 +701,10 @@ export default function IngresoRollizosPage() {
 
   function limpiarFormulario() {
     reset({
-      fechaIngreso: new Date().toISOString().slice(0, 10),
+      fechaIngreso: fechaActual(),
+      horaIngreso: horaActual(),
       tipoServicio: "FLETERO",
-      tipoChofer: "INTERNO",
+      tipoChofer: "EXTERNO",
       unidad: "TN",
     })
     setPreviewsFotos({})
@@ -756,6 +791,15 @@ export default function IngresoRollizosPage() {
               <input
                 type="date"
                 {...register("fechaIngreso", { required: true })}
+                className={FIELD_CLASS}
+              />
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>Hora de ingreso</label>
+              <input
+                type="time"
+                {...register("horaIngreso", { required: true })}
                 className={FIELD_CLASS}
               />
             </div>
@@ -997,22 +1041,22 @@ export default function IngresoRollizosPage() {
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>Cantidad</label>
+              <label className={LABEL_CLASS}>Cantidad *</label>
               <input
-                type="number"
-                step="0.001"
+                type="text"
                 {...register("cantidad", { required: true })}
                 className={FIELD_CLASS}
-                placeholder="Ej: 28.500"
+                placeholder="Ej: 2.500,50"
               />
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>Unidad</label>
+              <label className={LABEL_CLASS}>Unidad *</label>
               <input
                 type="text"
                 {...register("unidad", { required: true })}
                 className={FIELD_CLASS}
+                placeholder="Ej: TN"
               />
             </div>
           </div>
@@ -1026,7 +1070,7 @@ export default function IngresoRollizosPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className={LABEL_CLASS}>
-                Tipo de servicio logístico
+                Tipo de servicio logístico *
               </label>
               <select
                 {...register("tipoServicio")}
@@ -1099,7 +1143,7 @@ export default function IngresoRollizosPage() {
               ) : (
                 <>
                   <SearchableSelect
-                    label="Servicio logistico"
+                    label="Servicio logístico"
                     value={servicioCodigo}
                     options={servicios}
                     onChange={(item) =>
@@ -1138,7 +1182,7 @@ export default function IngresoRollizosPage() {
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>Tipo de chofer</label>
+              <label className={LABEL_CLASS}>Tipo de chofer *</label>
               <select
                 {...register("tipoChofer")}
                 className={FIELD_CLASS}
@@ -1168,12 +1212,13 @@ export default function IngresoRollizosPage() {
               <>
                 <div>
                   <label className={LABEL_CLASS}>
-                    Nombre chofer externo
+                    Nombre chofer externo *
                   </label>
                   <input
                     type="text"
                     {...register("choferNombreExterno")}
                     className={FIELD_CLASS}
+                    placeholder="Nombre completo"
                   />
                 </div>
 
@@ -1185,17 +1230,19 @@ export default function IngresoRollizosPage() {
                     type="text"
                     {...register("choferDocumentoExterno")}
                     className={FIELD_CLASS}
+                    placeholder="Opcional"
                   />
                 </div>
               </>
             )}
 
             <div>
-              <label className={LABEL_CLASS}>Patente camión</label>
+              <label className={LABEL_CLASS}>Patente camión *</label>
               <input
                 type="text"
                 {...register("patenteCamion")}
                 className={`${FIELD_CLASS} uppercase`}
+                placeholder="Ej: AB 123 CD"
               />
             </div>
 
@@ -1205,6 +1252,7 @@ export default function IngresoRollizosPage() {
                 type="text"
                 {...register("patenteAcoplado")}
                 className={`${FIELD_CLASS} uppercase`}
+                placeholder="Ej: AB 123 CD"
               />
             </div>
           </div>

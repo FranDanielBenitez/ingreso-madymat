@@ -6,12 +6,35 @@ import { prisma } from "@/lib/prisma"
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
 
-  const texto = String(value).replace(",", ".")
+  const texto = String(value).trim().replace(/\./g, "").replace(",", ".")
   const numero = Number(texto)
 
   if (Number.isNaN(numero)) return 0
 
   return numero
+}
+
+function combinarFechaHora(fecha, hora) {
+  if (!fecha) return null
+
+  const fechaParts = String(fecha).split("-").map(Number)
+  if (fechaParts.length !== 3) return null
+
+  const [year, month, day] = fechaParts
+  const [hours = 0, minutes = 0] = String(hora || "00:00")
+    .split(":")
+    .map(Number)
+
+  if (
+    !year || !month || !day ||
+    Number.isNaN(hours) || Number.isNaN(minutes) ||
+    hours < 0 || hours > 23 ||
+    minutes < 0 || minutes > 59
+  ) {
+    return null
+  }
+
+  return new Date(year, month - 1, day, hours, minutes, 0, 0)
 }
 
 function limpiarTexto(value) {
@@ -213,6 +236,19 @@ export async function POST(request) {
     const proveedorManualObservacion = limpiarTexto(proveedorManual.observacion)
     const items = prepararItemsValidos(body)
     const servicioCargaManual = Boolean(body.servicioCargaManual)
+    const fechaIngreso = body.fechaIngreso
+      ? combinarFechaHora(body.fechaIngreso, body.horaIngreso)
+      : null
+
+    if (body.fechaIngreso && !fechaIngreso) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "La fecha y hora de ingreso deben tener formato valido",
+        },
+        { status: 400 }
+      )
+    }
     const servicio = body.servicioSeleccionado
     const servicioManual = body.servicioManual || {}
     const servicioManualNombre = limpiarTexto(servicioManual.nombre)
@@ -343,9 +379,7 @@ export async function POST(request) {
 
     const ingresoCreado = await prisma.ingreso.create({
       data: {
-        fechaIngreso: body.fechaIngreso
-          ? new Date(body.fechaIngreso)
-          : new Date(),
+        fechaIngreso: fechaIngreso || new Date(),
 
         estado: "REGISTRADO",
 

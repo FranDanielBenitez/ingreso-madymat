@@ -46,6 +46,17 @@ function fechaActual() {
   return new Date().toISOString().slice(0, 10)
 }
 
+function horaActual() {
+  const now = new Date()
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+}
+
+function normalizarCantidad(value) {
+  const texto = String(value || "").trim().replace(/\./g, "").replace(",", ".")
+  const numero = Number(texto)
+  return Number.isNaN(numero) ? 0 : numero
+}
+
 function etiquetaEntidad(item) {
   if (!item) return ""
 
@@ -232,8 +243,9 @@ export default function IngresoMaterialesPage() {
   } = useForm({
     defaultValues: {
       fechaIngreso: fechaActual(),
+      horaIngreso: horaActual(),
       tipoServicio: "FLETERO",
-      tipoChofer: "INTERNO",
+      tipoChofer: "EXTERNO",
     },
   })
 
@@ -687,8 +699,9 @@ export default function IngresoMaterialesPage() {
   function limpiarFormulario() {
     reset({
       fechaIngreso: fechaActual(),
+      horaIngreso: horaActual(),
       tipoServicio: "FLETERO",
-      tipoChofer: "INTERNO",
+      tipoChofer: "EXTERNO",
     })
     setArticulosPorCategoria({})
     setCategoriasCargando({})
@@ -747,8 +760,8 @@ export default function IngresoMaterialesPage() {
       return
     }
 
-    if (servicioCargaManual && !String(values.servicioManualNombre || "").trim()) {
-      toast.error("El nombre del servicio manual es obligatorio")
+    if (!values.horaIngreso || !/^\d{2}:\d{2}$/.test(values.horaIngreso)) {
+      toast.error("La hora de ingreso es obligatoria y debe tener formato HH:mm")
       return
     }
 
@@ -757,9 +770,19 @@ export default function IngresoMaterialesPage() {
       return
     }
 
+    if (tipoChofer === "INTERNO" && !choferSeleccionado) {
+      toast.error("Debes seleccionar un chofer interno")
+      return
+    }
+
+    if (tipoChofer === "EXTERNO" && !String(values.choferNombreExterno || "").trim()) {
+      toast.error("El nombre del chofer externo es obligatorio")
+      return
+    }
+
     const itemsPreparados = prepararItemsRemito()
     const itemsCompletos = itemsPreparados.every((item) => {
-      const cantidad = Number(String(item.cantidad).replace(",", "."))
+      const cantidad = normalizarCantidad(item.cantidad)
 
       return (
         item.categoriaMaterial &&
@@ -933,6 +956,15 @@ export default function IngresoMaterialesPage() {
               <input
                 type="date"
                 {...register("fechaIngreso", { required: true })}
+                className={FIELD_CLASS}
+              />
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>Hora de ingreso</label>
+              <input
+                type="time"
+                {...register("horaIngreso", { required: true })}
                 className={FIELD_CLASS}
               />
             </div>
@@ -1299,10 +1331,9 @@ export default function IngresoMaterialesPage() {
                   </div>
 
                   <label>
-                    <span className={LABEL_CLASS}>Cantidad</span>
+                    <span className={LABEL_CLASS}>Cantidad *</span>
                     <input
-                      type="number"
-                      step="0.001"
+                      type="text"
                       value={item.cantidad}
                       onChange={(event) =>
                         actualizarItemRemito(
@@ -1312,12 +1343,12 @@ export default function IngresoMaterialesPage() {
                         )
                       }
                       className={FIELD_CLASS}
-                      placeholder="Ej: 2500"
+                      placeholder="Ej: 2.500,50"
                     />
                   </label>
 
                   <label>
-                    <span className={LABEL_CLASS}>Unidad</span>
+                    <span className={LABEL_CLASS}>Unidad *</span>
                     <input
                       type="text"
                       value={item.unidad}
@@ -1329,6 +1360,7 @@ export default function IngresoMaterialesPage() {
                         )
                       }
                       className={FIELD_CLASS}
+                      placeholder="Ej: UNI"
                     />
                   </label>
                 </div>
@@ -1344,7 +1376,7 @@ export default function IngresoMaterialesPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className={LABEL_CLASS}>Tipo de servicio logistico</label>
+              <label className={LABEL_CLASS}>Tipo de servicio logístico *</label>
               <select {...register("tipoServicio")} className={FIELD_CLASS}>
                 <option value="FLETERO">Fletero</option>
                 <option value="TRANSPORTE">Transporte</option>
@@ -1413,7 +1445,7 @@ export default function IngresoMaterialesPage() {
               ) : (
                 <>
                   <SearchableSelect
-                    label="Servicio logistico"
+                    label="Servicio logístico"
                     value={servicioCodigo}
                     options={servicios}
                     onChange={(item) =>
@@ -1452,7 +1484,7 @@ export default function IngresoMaterialesPage() {
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>Tipo de chofer</label>
+              <label className={LABEL_CLASS}>Tipo de chofer *</label>
               <select {...register("tipoChofer")} className={FIELD_CLASS}>
                 <option value="INTERNO">Interno</option>
                 <option value="EXTERNO">Externo</option>
@@ -1475,11 +1507,12 @@ export default function IngresoMaterialesPage() {
             ) : (
               <>
                 <div>
-                  <label className={LABEL_CLASS}>Nombre chofer externo</label>
+                  <label className={LABEL_CLASS}>Nombre chofer externo *</label>
                   <input
                     type="text"
                     {...register("choferNombreExterno")}
                     className={FIELD_CLASS}
+                    placeholder="Nombre completo"
                   />
                 </div>
 
@@ -1491,17 +1524,19 @@ export default function IngresoMaterialesPage() {
                     type="text"
                     {...register("choferDocumentoExterno")}
                     className={FIELD_CLASS}
+                    placeholder="Opcional"
                   />
                 </div>
               </>
             )}
 
             <div>
-              <label className={LABEL_CLASS}>Patente camion</label>
+              <label className={LABEL_CLASS}>Patente camion *</label>
               <input
                 type="text"
                 {...register("patenteCamion")}
                 className={`${FIELD_CLASS} uppercase`}
+                placeholder="Ej: AB 123 CD"
               />
             </div>
 
@@ -1511,6 +1546,7 @@ export default function IngresoMaterialesPage() {
                 type="text"
                 {...register("patenteAcoplado")}
                 className={`${FIELD_CLASS} uppercase`}
+                placeholder="Ej: AB 123 CD"
               />
             </div>
           </div>

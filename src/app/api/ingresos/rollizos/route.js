@@ -6,12 +6,35 @@ import path from "node:path"
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
 
-  const texto = String(value).replace(",", ".")
+  const texto = String(value).trim().replace(/\./g, "").replace(",", ".")
   const numero = Number(texto)
 
   if (Number.isNaN(numero)) return 0
 
   return numero
+}
+
+function combinarFechaHora(fecha, hora) {
+  if (!fecha) return null
+
+  const fechaParts = String(fecha).split("-").map(Number)
+  if (fechaParts.length !== 3) return null
+
+  const [year, month, day] = fechaParts
+  const [hours = 0, minutes = 0] = String(hora || "00:00")
+    .split(":")
+    .map(Number)
+
+  if (
+    !year || !month || !day ||
+    Number.isNaN(hours) || Number.isNaN(minutes) ||
+    hours < 0 || hours > 23 ||
+    minutes < 0 || minutes > 59
+  ) {
+    return null
+  }
+
+  return new Date(year, month - 1, day, hours, minutes, 0, 0)
 }
 
 function limpiarTexto(value) {
@@ -235,6 +258,19 @@ export async function POST(request) {
 
     const cantidadIngreso = normalizarDecimal(body.cantidad)
     const unidadIngreso = limpiarTexto(body.unidad)
+    const fechaIngreso = body.fechaIngreso
+      ? combinarFechaHora(body.fechaIngreso, body.horaIngreso)
+      : null
+
+    if (body.fechaIngreso && !fechaIngreso) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "La fecha y hora de ingreso deben tener formato valido",
+        },
+        { status: 400 }
+      )
+    }
 
     if (!cantidadIngreso || cantidadIngreso <= 0) {
       return NextResponse.json(
@@ -320,9 +356,7 @@ export async function POST(request) {
 
     const ingreso = await prisma.ingreso.create({
       data: {
-        fechaIngreso: body.fechaIngreso
-          ? new Date(body.fechaIngreso)
-          : new Date(),
+        fechaIngreso: fechaIngreso || new Date(),
 
         estado: "REGISTRADO",
 
