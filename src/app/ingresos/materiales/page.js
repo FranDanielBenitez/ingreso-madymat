@@ -8,13 +8,12 @@ import SearchableSelect, {
   ModoBusquedaInline,
 } from "@/components/forms/SearchableSelect"
 
-const SECTION_CLASS =
-  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
+const SECTION_CLASS = "panel-surface"
 const LABEL_CLASS = "mb-1 block font-semibold text-[#0F172A]"
 const FIELD_CLASS =
-  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+  "w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 const TEXTAREA_CLASS =
-  "min-h-28 w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+  "min-h-28 w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 const MODO_SUGERIDOS = "SUGERIDOS"
 const MODO_TODOS = "TODOS"
 

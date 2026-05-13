@@ -3,47 +3,28 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import {
+  FiHome,
+  FiList,
+  FiAlertTriangle,
+  FiSun,
+  FiMoon,
+} from "react-icons/fi"
+import { GiWoodPile, GiWoodBeam } from "react-icons/gi"
 
 const LINKS = [
-  { href: "/", label: "Inicio" },
-  { href: "/ingresos/rollizos", label: "Nuevo Rollizos" },
-  { href: "/ingresos/materiales", label: "Nuevo Materiales" },
-  { href: "/registros", label: "Registros" },
-  { href: "/registros/pendientes-validacion", label: "Pendientes" },
+  { href: "/", label: "Inicio", icon: FiHome },
+  { href: "/ingresos/rollizos", label: "Rollizos", icon: GiWoodPile },
+  { href: "/ingresos/materiales", label: "Materiales", icon: GiWoodBeam },
+  { href: "/registros", label: "Registros", icon: FiList },
+  { href: "/registros/pendientes-validacion", label: "Pendientes", icon: FiAlertTriangle },
 ]
 
-function SunIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.6"
-    >
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2.8v2.1M12 19.1v2.1M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2.8 12h2.1M19.1 12h2.1M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" />
-    </svg>
-  )
-}
-
-function MoonIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.6"
-    >
-      <path d="M20.4 14.7A8.2 8.2 0 0 1 9.3 3.6 8.7 8.7 0 1 0 20.4 14.7Z" />
-    </svg>
+function ThemeIcon({ dark }) {
+  return dark ? (
+    <FiSun className="h-5 w-5" aria-hidden="true" />
+  ) : (
+    <FiMoon className="h-5 w-5" aria-hidden="true" />
   )
 }
 
@@ -145,28 +126,27 @@ export default function Navbar() {
                     ? pathname === "/registros"
                     : pathname?.startsWith(link.href)
 
+              const Icon = link.icon
+
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`nav-link rounded-lg px-3 py-2 text-sm font-bold ${
-                    activo
-                      ? "nav-link-active bg-[#F3171B] text-white shadow-sm"
-                      : "text-[#0F172A] hover:bg-red-50 hover:text-[#D90F14] focus:bg-red-50 focus:text-[#D90F14] focus:outline-none"
-                  }`}
+                  className={`nav-link ${activo ? "nav-link-active" : ""}`}
                 >
-                  {link.label}
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <span>{link.label}</span>
                 </Link>
               )
             })}
             <button
               type="button"
               onClick={cambiarTema}
-              className="grid h-10 w-10 place-items-center rounded-lg border-[0.5px] border-[#CBD5E1] bg-white text-[#0F172A] hover: border-[0.5px] border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:outline-none focus:ring-2 focus:ring-red-100"
+              className="btn-icon"
               aria-label={`Cambiar a modo ${theme === "dark" ? "claro" : "oscuro"}`}
               title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
             >
-              {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+              <ThemeIcon dark={theme === "dark"} />
             </button>
           </div>
         </nav>

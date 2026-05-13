@@ -3,15 +3,12 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
-const SECTION_CLASS =
-  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
+const SECTION_CLASS = "panel-surface"
 const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
 const FIELD_CLASS =
-  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
-const BUTTON_SECONDARY_CLASS =
-  "rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
-const BUTTON_PRIMARY_CLASS =
-  "rounded-lg bg-[#F3171B] px-5 py-3 font-bold text-white shadow-sm hover:bg-[#D90F14]"
+  "w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+const BUTTON_SECONDARY_CLASS = "btn-secondary"
+const BUTTON_PRIMARY_CLASS = "btn-primary"
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 15, "TODOS"]
 
 const ESTADOS = [

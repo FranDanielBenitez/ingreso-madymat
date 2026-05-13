@@ -3,15 +3,12 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
-const SECTION_CLASS =
-  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
+const SECTION_CLASS = "panel-surface"
 const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
 const FIELD_CLASS =
-  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
-const BUTTON_SECONDARY_CLASS =
-  "inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
-const BUTTON_PRIMARY_CLASS =
-  "inline-flex items-center justify-center rounded-2xl bg-[#F3171B] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#D90F14]"
+  "w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+const BUTTON_SECONDARY_CLASS = "btn-secondary"
+const BUTTON_PRIMARY_CLASS = "btn-primary"
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 15, "TODOS"]
 
 function formatearFecha(value) {

@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
-const SECTION_CLASS =
-  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
+const SECTION_CLASS = "panel-surface"
 
 const ACCESOS = [
   {
@@ -228,7 +227,7 @@ export default function Home() {
               <Link
                 key={acceso.href}
                 href={acceso.href}
-                className="quick-access-card group rounded-2xl border border-[#CBD5E1] bg-[#F5F7FA] p-5 hover:-translate-y-0.5 hover:border-[#F3171B] hover:bg-white hover:shadow-md focus:border-[#F3171B] focus:outline-none focus:ring-2 focus:ring-red-100"
+                className="quick-access-card group panel-surface panel-surface-soft hover:-translate-y-0.5 hover:border-[#F3171B] hover:bg-white hover:shadow-md focus:border-[#F3171B] focus:outline-none focus:ring-2 focus:ring-red-100"
               >
                 <h3 className="text-lg font-black text-[#0F172A] group-hover:text-[#D90F14]">
                   {acceso.titulo}
@@ -251,7 +250,7 @@ export default function Home() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="rounded-xl border border-amber-200 bg-amber-50 p-5 hover:border-amber-300 hover:bg-amber-100/70 focus:outline-none focus:ring-2 focus:ring-amber-100 dark:border-amber-400/30 dark:bg-amber-400/10 dark:hover:border-amber-300/50 dark:hover:bg-amber-400/15"
+                  className="panel-surface-soft border-amber-200 hover:border-amber-300 hover:bg-amber-100/70 focus:outline-none focus:ring-2 focus:ring-amber-100 dark:border-amber-400/30 dark:bg-amber-400/10 dark:hover:border-amber-300/50 dark:hover:bg-amber-400/15"
                 >
                   <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
                     {item.label}
@@ -263,11 +262,11 @@ export default function Home() {
               ) : (
                 <article
                   key={item.label}
-                  className={`rounded-xl border p-5 ${
+                  className={
                     item.danger
-                      ? "dashboard-danger-card border-red-200 bg-red-50"
-                      : "border-[#CBD5E1] bg-[#F5F7FA]"
-                  }`}
+                      ? "panel-surface dashboard-danger-card border-red-200 bg-red-50"
+                      : "panel-surface panel-surface-soft"
+                  }
                 >
                   <p
                     className={`text-sm font-medium ${
@@ -305,7 +304,7 @@ export default function Home() {
             </div>
             <Link
               href="/registros"
-              className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-4 py-2 text-sm font-bold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+              className="btn-secondary"
             >
               Ver todos
             </Link>
@@ -405,7 +404,7 @@ export default function Home() {
                   return (
                     <article
                       key={registro.id}
-                      className="rounded-2xl border border-[#CBD5E1] bg-[#F5F7FA] p-4"
+                      className="panel-surface panel-surface-soft"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
