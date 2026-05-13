@@ -36,6 +36,7 @@ function normalizarItems(body) {
       {
         articuloSeleccionado: body.articuloSeleccionado,
         categoriaMaterial: body.categoriaMaterial,
+        modoBusquedaArticulo: body.articuloModoBusqueda,
         cantidad: body.cantidad,
         unidad: body.unidad,
       },
@@ -48,6 +49,7 @@ function normalizarItems(body) {
 function prepararItemsValidos(body) {
   return normalizarItems(body).map((item) => ({
     categoriaMaterial: limpiarTexto(item.categoriaMaterial),
+    modoBusquedaArticulo: limpiarTexto(item.modoBusquedaArticulo),
     articulo: item.articuloSeleccionado,
     cantidad: normalizarDecimal(item.cantidad),
     unidad: limpiarTexto(item.unidad),
@@ -251,6 +253,25 @@ export async function POST(request) {
     const tipoChofer = body.tipoChofer || null
     const choferInterno = tipoChofer === "INTERNO"
     const choferExterno = tipoChofer === "EXTERNO"
+    const detallesModoBusqueda = []
+
+    if (body.proveedorModoBusqueda === "TODOS") {
+      detallesModoBusqueda.push("Proveedor seleccionado desde modo Todos.")
+    }
+
+    if (body.servicioModoBusqueda === "TODOS") {
+      detallesModoBusqueda.push(
+        "Servicio logistico seleccionado desde modo Todos."
+      )
+    }
+
+    const itemsModoTodos = items.filter(
+      (item) => item.modoBusquedaArticulo === "TODOS"
+    ).length
+
+    if (itemsModoTodos > 0) {
+      detallesModoBusqueda.push(`Items fuera de sugeridos: ${itemsModoTodos}.`)
+    }
 
     const ingresoCreado = await prisma.ingreso.create({
       data: {
@@ -363,7 +384,11 @@ export async function POST(request) {
             estado: "REGISTRADO",
             detalle: `Ingreso de materiales registrado desde formulario web. Portero: ${
               portero?.NombreCompleto || "Sin portero informado"
-            }. Ítems cargados: ${items.length}`,
+            }. Items cargados: ${items.length}${
+              detallesModoBusqueda.length
+                ? `. ${detallesModoBusqueda.join(" ")}`
+                : ""
+            }`,
           },
         },
       },

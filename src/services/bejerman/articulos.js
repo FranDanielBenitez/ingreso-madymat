@@ -189,3 +189,33 @@ export async function getArticulosInterior() {
 
   return result.recordset
 }
+
+export async function getArticulosTodos() {
+  const pool = await getSqlServerPool()
+
+  const result = await pool.request().query(`
+    SELECT DISTINCT
+      art_Gen AS ArticuloGen,
+      art_CodGen AS Codigo,
+      artcla_Cod AS Clase,
+      art_DescGen AS Descripcion,
+      artpro_Cod AS Proceso,
+      artda1_Cod AS Grupo,
+      artda2_Cod AS SubGrupo
+    FROM SBDAALA.dbo.Articulos
+    WHERE (
+        (
+          artda1_Cod IN ('ROLL')
+          AND art_CodGen LIKE 'ROLL%'
+          AND art_CodGen <> 'ROLLIZOIVA'
+        )
+        OR (
+          artda1_Cod IN ('MATE')
+          AND artda2_Cod IN ('INPA', 'MATA', 'MATC', 'TERC', 'MAES', 'MAFO', 'MAIN')
+        )
+      )
+    ORDER BY Descripcion
+  `)
+
+  return result.recordset
+}

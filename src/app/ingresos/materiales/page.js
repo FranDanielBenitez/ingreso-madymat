@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
+import SearchableSelect, {
+  ModoBusquedaInline,
+} from "@/components/forms/SearchableSelect"
 
 const SECTION_CLASS =
   "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
@@ -12,6 +15,8 @@ const FIELD_CLASS =
   "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 const TEXTAREA_CLASS =
   "min-h-28 w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+const MODO_SUGERIDOS = "SUGERIDOS"
+const MODO_TODOS = "TODOS"
 
 const CATEGORIAS_MATERIALES = [
   { codigo: "PALLETS", nombre: "Pallets" },
@@ -73,6 +78,7 @@ function crearItemRemito() {
   return {
     idLocal: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     categoriaMaterial: "",
+    modoArticulo: MODO_SUGERIDOS,
     articuloCodigo: "",
     cantidad: "",
     unidad: "UNI",
@@ -139,9 +145,14 @@ export default function IngresoMaterialesPage() {
   const [choferes, setChoferes] = useState([])
   const [proveedores, setProveedores] = useState([])
   const [articulosPorCategoria, setArticulosPorCategoria] = useState({})
+  const [articulosTodos, setArticulosTodos] = useState([])
   const [categoriasCargando, setCategoriasCargando] = useState({})
+  const [articulosTodosCargando, setArticulosTodosCargando] = useState(false)
   const [servicios, setServicios] = useState([])
   const [itemsRemito, setItemsRemito] = useState(() => [crearItemRemito()])
+  const [modoProveedor, setModoProveedor] = useState(MODO_SUGERIDOS)
+  const [modoServicio, setModoServicio] = useState(MODO_SUGERIDOS)
+  const [cargandoDimensiones, setCargandoDimensiones] = useState({})
   const [previewsFotos, setPreviewsFotos] = useState({})
   const [fotoInputKeys, setFotoInputKeys] = useState({
     fotoCamionPatente: 0,
@@ -205,6 +216,65 @@ export default function IngresoMaterialesPage() {
     [porteros, porteroLegajo]
   )
 
+  function setCargandoDimension(nombre, value) {
+    setCargandoDimensiones((prev) => ({
+      ...prev,
+      [nombre]: value,
+    }))
+  }
+
+  function proveedorUrl(modo) {
+    return modo === MODO_TODOS
+      ? "/api/dimensiones/proveedores?modo=TODOS"
+      : "/api/dimensiones/proveedores?categoria=MATERIA_PRIMA"
+  }
+
+  function servicioUrl(tipo, modo) {
+    if (modo === MODO_TODOS) {
+      return "/api/dimensiones/servicios-logisticos?modo=TODOS"
+    }
+
+    return tipo === "TRANSPORTE"
+      ? "/api/dimensiones/servicios-logisticos?tipo=TRANSPORTE"
+      : "/api/dimensiones/servicios-logisticos?categoria=MATERIA_PRIMA"
+  }
+
+  async function cambiarModoProveedor(modo) {
+    if (modo === modoProveedor) return
+
+    setModoProveedor(modo)
+    setValue("proveedorCodigo", "")
+    setCargandoDimension("proveedor", true)
+
+    try {
+      const data = await fetchDimension(proveedorUrl(modo))
+      setProveedores(data)
+      if (modo === MODO_TODOS) toast.info("Mostrando todos los proveedores")
+    } catch (err) {
+      toast.error(err.message || "No se pudieron cargar proveedores")
+    } finally {
+      setCargandoDimension("proveedor", false)
+    }
+  }
+
+  async function cambiarModoServicio(modo) {
+    if (modo === modoServicio) return
+
+    setModoServicio(modo)
+    setValue("servicioCodigo", "")
+    setCargandoDimension("servicio", true)
+
+    try {
+      const data = await fetchDimension(servicioUrl(tipoServicio, modo))
+      setServicios(data)
+      if (modo === MODO_TODOS) toast.info("Mostrando todos los servicios")
+    } catch (err) {
+      toast.error(err.message || "No se pudieron cargar servicios")
+    } finally {
+      setCargandoDimension("servicio", false)
+    }
+  }
+
   useEffect(() => {
     async function cargarDatosIniciales() {
       setLoadingInicial(true)
@@ -237,12 +307,9 @@ export default function IngresoMaterialesPage() {
       setValue("servicioCodigo", "")
 
       try {
-        const servicioUrl =
-          tipoServicio === "TRANSPORTE"
-            ? "/api/dimensiones/servicios-logisticos?tipo=TRANSPORTE"
-            : "/api/dimensiones/servicios-logisticos?categoria=MATERIA_PRIMA"
-
-        const serviciosData = await fetchDimension(servicioUrl)
+        const serviciosData = await fetchDimension(
+          servicioUrl(tipoServicio, modoServicio)
+        )
 
         setServicios(serviciosData)
       } catch (err) {
@@ -255,7 +322,7 @@ export default function IngresoMaterialesPage() {
     }
 
     cargarServicios()
-  }, [setValue, tipoServicio])
+  }, [setValue, tipoServicio, modoServicio])
 
   useEffect(() => {
     const fotos = {
@@ -327,8 +394,31 @@ export default function IngresoMaterialesPage() {
     }
   }
 
+  async function cargarArticulosTodos() {
+    if (articulosTodos.length > 0 || articulosTodosCargando) return
+
+    setArticulosTodosCargando(true)
+
+    try {
+      const data = await fetchDimension("/api/dimensiones/articulos?modo=TODOS")
+      setArticulosTodos(data)
+    } catch (err) {
+      toast.error(err.message || "No se pudieron cargar todos los articulos")
+    } finally {
+      setArticulosTodosCargando(false)
+    }
+  }
+
+  function articulosDisponiblesItem(item) {
+    return item.modoArticulo === MODO_TODOS
+      ? articulosTodos
+      : articulosPorCategoria[item.categoriaMaterial] || []
+  }
+
   function actualizarItemRemito(idLocal, campo, valor) {
     if (campo === "categoriaMaterial") {
+      const itemActual = itemsRemito.find((item) => item.idLocal === idLocal)
+
       setItemsRemito((prev) =>
         prev.map((item) =>
           item.idLocal === idLocal
@@ -341,7 +431,37 @@ export default function IngresoMaterialesPage() {
             : item
         )
       )
-      cargarArticulosCategoria(valor)
+
+      if (itemActual?.modoArticulo === MODO_TODOS) {
+        cargarArticulosTodos()
+      } else {
+        cargarArticulosCategoria(valor)
+      }
+
+      return
+    }
+
+    if (campo === "modoArticulo") {
+      setItemsRemito((prev) =>
+        prev.map((item) =>
+          item.idLocal === idLocal
+            ? {
+                ...item,
+                modoArticulo: valor,
+                articuloCodigo: "",
+                unidad: "UNI",
+              }
+            : item
+        )
+      )
+
+      if (valor === MODO_TODOS) {
+        cargarArticulosTodos()
+      } else {
+        const itemActual = itemsRemito.find((item) => item.idLocal === idLocal)
+        cargarArticulosCategoria(itemActual?.categoriaMaterial)
+      }
+
       return
     }
 
@@ -355,9 +475,7 @@ export default function IngresoMaterialesPage() {
         }
 
         if (campo === "articuloCodigo") {
-          const articulosCategoria =
-            articulosPorCategoria[item.categoriaMaterial] || []
-          const articulo = buscarPorCodigo(articulosCategoria, valor)
+          const articulo = buscarPorCodigo(articulosDisponiblesItem(item), valor)
           siguiente.unidad = articulo?.Clase || item.unidad || ""
         }
 
@@ -381,8 +499,9 @@ export default function IngresoMaterialesPage() {
   function prepararItemsRemito() {
     return itemsRemito.map((item) => ({
       categoriaMaterial: item.categoriaMaterial,
+      modoBusquedaArticulo: item.modoArticulo,
       articuloSeleccionado: buscarPorCodigo(
-        articulosPorCategoria[item.categoriaMaterial] || [],
+        articulosDisponiblesItem(item),
         item.articuloCodigo
       ),
       cantidad: item.cantidad,
@@ -469,8 +588,10 @@ export default function IngresoMaterialesPage() {
       const ingresoPreparado = {
         ...datosIngreso,
         proveedorSeleccionado,
+        proveedorModoBusqueda: modoProveedor,
         items: itemsPreparados,
         servicioSeleccionado,
+        servicioModoBusqueda: modoServicio,
         choferSeleccionado:
           tipoChofer === "INTERNO" ? choferSeleccionado : null,
         porteroSeleccionado,
@@ -631,19 +752,33 @@ export default function IngresoMaterialesPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className={LABEL_CLASS}>Proveedor</label>
-              <select
+              <input
+                type="hidden"
                 {...register("proveedorCodigo", { required: true })}
-                className={FIELD_CLASS}
-                disabled={loadingInicial}
-              >
-                <option value="">Seleccionar proveedor</option>
-                {proveedores.map((item) => (
-                  <option key={item.Codigo} value={item.Codigo}>
-                    {etiquetaEntidad(item)}
-                  </option>
-                ))}
-              </select>
+              />
+              <SearchableSelect
+                label="Proveedor"
+                value={proveedorCodigo}
+                options={proveedores}
+                onChange={(item) =>
+                  setValue("proveedorCodigo", item?.Codigo || "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                getOptionValue={(item) => item.Codigo}
+                getOptionLabel={etiquetaEntidad}
+                getSearchText={(item) => `${item.Codigo} ${item.RazonSocial}`}
+                placeholder="Buscar proveedor"
+                loading={loadingInicial || cargandoDimensiones.proveedor}
+                modeControl={
+                  <ModoBusquedaInline
+                    value={modoProveedor}
+                    onChange={cambiarModoProveedor}
+                    disabled={cargandoDimensiones.proveedor}
+                  />
+                }
+              />
             </div>
           </div>
         </section>
@@ -711,35 +846,46 @@ export default function IngresoMaterialesPage() {
                     </select>
                   </label>
 
-                  <label>
-                    <span className={LABEL_CLASS}>Artículo</span>
-                    <select
-                      value={item.articuloCodigo}
-                      onChange={(event) =>
-                        actualizarItemRemito(
-                          item.idLocal,
-                          "articuloCodigo",
-                          event.target.value
-                        )
-                      }
-                      className={FIELD_CLASS}
-                      disabled={
-                        !item.categoriaMaterial ||
-                        categoriasCargando[item.categoriaMaterial]
-                      }
-                    >
-                      <option value="">
-                        {categoriasCargando[item.categoriaMaterial]
-                          ? "Cargando articulos..."
-                          : "Seleccionar articulo"}
-                      </option>
-                      {(articulosPorCategoria[item.categoriaMaterial] || []).map((articulo) => (
-                        <option key={articulo.Codigo} value={articulo.Codigo}>
-                          {etiquetaArticulo(articulo)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <SearchableSelect
+                    label="Articulo"
+                    value={item.articuloCodigo}
+                    options={articulosDisponiblesItem(item)}
+                    onChange={(articulo) =>
+                      actualizarItemRemito(
+                        item.idLocal,
+                        "articuloCodigo",
+                        articulo?.Codigo || ""
+                      )
+                    }
+                    getOptionValue={(articulo) => articulo.Codigo}
+                    getOptionLabel={etiquetaArticulo}
+                    getSearchText={(articulo) =>
+                      `${articulo.Codigo} ${articulo.Descripcion}`
+                    }
+                    placeholder="Buscar articulo"
+                    loading={
+                      categoriasCargando[item.categoriaMaterial] ||
+                      (item.modoArticulo === MODO_TODOS &&
+                        articulosTodosCargando)
+                    }
+                    disabled={
+                      item.modoArticulo !== MODO_TODOS &&
+                      !item.categoriaMaterial
+                    }
+                    modeControl={
+                      <ModoBusquedaInline
+                        value={item.modoArticulo}
+                        onChange={(modo) =>
+                          actualizarItemRemito(
+                            item.idLocal,
+                            "modoArticulo",
+                            modo
+                          )
+                        }
+                        disabled={articulosTodosCargando}
+                      />
+                    }
+                  />
 
                   <label>
                     <span className={LABEL_CLASS}>Cantidad</span>
@@ -795,19 +941,30 @@ export default function IngresoMaterialesPage() {
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>Servicio logistico</label>
-              <select
-                {...register("servicioCodigo")}
-                className={FIELD_CLASS}
-                disabled={loadingLogistica}
-              >
-                <option value="">Seleccionar servicio</option>
-                {servicios.map((item) => (
-                  <option key={item.Codigo} value={item.Codigo}>
-                    {etiquetaEntidad(item)}
-                  </option>
-                ))}
-              </select>
+              <input type="hidden" {...register("servicioCodigo")} />
+              <SearchableSelect
+                label="Servicio logistico"
+                value={servicioCodigo}
+                options={servicios}
+                onChange={(item) =>
+                  setValue("servicioCodigo", item?.Codigo || "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                getOptionValue={(item) => item.Codigo}
+                getOptionLabel={etiquetaEntidad}
+                getSearchText={(item) => `${item.Codigo} ${item.RazonSocial}`}
+                placeholder="Buscar servicio"
+                loading={loadingLogistica || cargandoDimensiones.servicio}
+                modeControl={
+                  <ModoBusquedaInline
+                    value={modoServicio}
+                    onChange={cambiarModoServicio}
+                    disabled={loadingLogistica || cargandoDimensiones.servicio}
+                  />
+                }
+              />
             </div>
 
             <div>

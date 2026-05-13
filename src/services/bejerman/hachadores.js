@@ -18,3 +18,7 @@ export async function getHachadoresRollizos() {
 
   return result.recordset
 }
+
+export async function getHachadoresTodos() {
+  return getHachadoresRollizos()
+}

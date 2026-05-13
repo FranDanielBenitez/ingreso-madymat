@@ -205,6 +205,25 @@ export async function POST(request) {
     }
 
     const usuarioPortero = await obtenerUsuarioPortero(portero)
+    const detallesModoBusqueda = []
+
+    if (body.proveedorModoBusqueda === "TODOS") {
+      detallesModoBusqueda.push("Proveedor seleccionado desde modo Todos.")
+    }
+
+    if (body.articuloModoBusqueda === "TODOS") {
+      detallesModoBusqueda.push("Articulo seleccionado desde modo Todos.")
+    }
+
+    if (body.servicioModoBusqueda === "TODOS") {
+      detallesModoBusqueda.push(
+        "Servicio logistico seleccionado desde modo Todos."
+      )
+    }
+
+    if (body.hachadorModoBusqueda === "TODOS") {
+      detallesModoBusqueda.push("Hachador seleccionado desde modo Todos.")
+    }
 
     const ingreso = await prisma.ingreso.create({
       data: {
@@ -324,6 +343,10 @@ export async function POST(request) {
             estado: "REGISTRADO",
             detalle: `Ingreso de rollizos registrado desde formulario web. Portero: ${
               portero?.NombreCompleto || "Sin portero informado"
+            }${
+              detallesModoBusqueda.length
+                ? `. ${detallesModoBusqueda.join(" ")}`
+                : ""
             }`,
           },
         },

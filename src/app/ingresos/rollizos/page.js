@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
+import SearchableSelect, {
+  ModoBusquedaInline,
+} from "@/components/forms/SearchableSelect"
 
 const SECTION_CLASS =
   "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
@@ -12,22 +15,8 @@ const FIELD_CLASS =
   "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 const TEXTAREA_CLASS =
   "min-h-28 w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
-
-async function fetchDimension(url) {
-  const response = await fetch(url)
-
-  if (!response.ok) {
-    throw new Error(`Error consultando ${url}`)
-  }
-
-  const json = await response.json()
-
-  if (!json.ok) {
-    throw new Error(json.message || `Respuesta inválida desde ${url}`)
-  }
-
-  return json.data || []
-}
+const MODO_SUGERIDOS = "SUGERIDOS"
+const MODO_TODOS = "TODOS"
 
 async function fetchDimensionSegura(url) {
   const response = await fetch(url)
@@ -60,6 +49,10 @@ export default function IngresoRollizosPage() {
   const [hachadores, setHachadores] = useState([])
   const [choferes, setChoferes] = useState([])
   const [porteros, setPorteros] = useState([])
+  const [modoProveedor, setModoProveedor] = useState(MODO_SUGERIDOS)
+  const [modoArticulo, setModoArticulo] = useState(MODO_SUGERIDOS)
+  const [modoServicio, setModoServicio] = useState(MODO_SUGERIDOS)
+  const [cargandoDimensiones, setCargandoDimensiones] = useState({})
   const [previewsFotos, setPreviewsFotos] = useState({})
   const [fotoInputKeys, setFotoInputKeys] = useState({
     fotoCamionPatente: 0,
@@ -131,6 +124,89 @@ export default function IngresoRollizosPage() {
     [porteros, porteroLegajo]
   )
 
+  function proveedorUrl(modo) {
+    return modo === MODO_TODOS
+      ? "/api/dimensiones/proveedores?modo=TODOS"
+      : "/api/dimensiones/proveedores?categoria=ROLLIZOS"
+  }
+
+  function articuloUrl(modo) {
+    return modo === MODO_TODOS
+      ? "/api/dimensiones/articulos?modo=TODOS"
+      : "/api/dimensiones/articulos?categoria=ROLLIZOS"
+  }
+
+  function servicioUrl(tipo, modo) {
+    if (modo === MODO_TODOS) {
+      return "/api/dimensiones/servicios-logisticos?modo=TODOS"
+    }
+
+    return tipo === "TRANSPORTE"
+      ? "/api/dimensiones/servicios-logisticos?tipo=TRANSPORTE"
+      : "/api/dimensiones/servicios-logisticos?categoria=ROLLIZOS"
+  }
+
+  function setCargandoDimension(nombre, value) {
+    setCargandoDimensiones((prev) => ({
+      ...prev,
+      [nombre]: value,
+    }))
+  }
+
+  async function cambiarModoProveedor(modo) {
+    if (modo === modoProveedor) return
+
+    setModoProveedor(modo)
+    setValue("proveedorCodigo", "")
+    setCargandoDimension("proveedor", true)
+
+    try {
+      const data = await fetchDimensionSegura(proveedorUrl(modo))
+      setProveedores(data)
+      if (modo === MODO_TODOS) toast.info("Mostrando todos los proveedores")
+    } catch (err) {
+      toast.error(err.message || "No se pudieron cargar proveedores")
+    } finally {
+      setCargandoDimension("proveedor", false)
+    }
+  }
+
+  async function cambiarModoArticulo(modo) {
+    if (modo === modoArticulo) return
+
+    setModoArticulo(modo)
+    setValue("articuloCodigo", "")
+    setCargandoDimension("articulo", true)
+
+    try {
+      const data = await fetchDimensionSegura(articuloUrl(modo))
+      setArticulos(data)
+      if (modo === MODO_TODOS) toast.info("Mostrando todos los articulos")
+    } catch (err) {
+      toast.error(err.message || "No se pudieron cargar articulos")
+    } finally {
+      setCargandoDimension("articulo", false)
+    }
+  }
+
+  async function cambiarModoServicio(modo) {
+    if (modo === modoServicio) return
+
+    setModoServicio(modo)
+    setValue("servicioCodigo", "")
+    setCargandoDimension("servicio", true)
+
+    try {
+      const data = await fetchDimensionSegura(servicioUrl(tipoServicio, modo))
+      setServicios(data)
+      if (modo === MODO_TODOS) toast.info("Mostrando todos los servicios")
+    } catch (err) {
+      toast.error(err.message || "No se pudieron cargar servicios")
+    } finally {
+      setCargandoDimension("servicio", false)
+    }
+  }
+
   async function cargarDimensionesIniciales() {
     try {
       console.log("Cargando dimensiones...")
@@ -145,11 +221,9 @@ export default function IngresoRollizosPage() {
         choferesData,
         porterosData,
       ] = await Promise.all([
-        fetchDimensionSegura("/api/dimensiones/proveedores?categoria=ROLLIZOS"),
-        fetchDimensionSegura("/api/dimensiones/articulos?categoria=ROLLIZOS"),
-        fetchDimensionSegura(
-          "/api/dimensiones/servicios-logisticos?categoria=ROLLIZOS"
-        ),
+        fetchDimensionSegura(proveedorUrl(modoProveedor)),
+        fetchDimensionSegura(articuloUrl(modoArticulo)),
+        fetchDimensionSegura(servicioUrl(tipoServicio, modoServicio)),
         fetchDimensionSegura("/api/dimensiones/hachadores?categoria=ROLLIZOS"),
         fetchDimensionSegura("/api/dimensiones/choferes"),
         fetchDimensionSegura("/api/dimensiones/porteros"),
@@ -172,12 +246,7 @@ export default function IngresoRollizosPage() {
 
   async function cargarServiciosPorTipo(tipo) {
     try {
-      const url =
-        tipo === "TRANSPORTE"
-          ? "/api/dimensiones/servicios-logisticos?tipo=TRANSPORTE"
-          : "/api/dimensiones/servicios-logisticos?categoria=ROLLIZOS"
-
-      const data = await fetchDimensionSegura(url)
+      const data = await fetchDimensionSegura(servicioUrl(tipo, modoServicio))
       setServicios(data)
       setValue("servicioCodigo", "")
     } catch (err) {
@@ -202,7 +271,7 @@ export default function IngresoRollizosPage() {
     if (!tipoServicio) return
 
     cargarServiciosPorTipo(tipoServicio)
-  }, [tipoServicio])
+  }, [tipoServicio, modoServicio])
 
   useEffect(() => {
     const fotos = {
@@ -277,8 +346,11 @@ export default function IngresoRollizosPage() {
       const ingresoPreparado = {
         ...datosIngreso,
         proveedorSeleccionado,
+        proveedorModoBusqueda: modoProveedor,
         articuloSeleccionado,
+        articuloModoBusqueda: modoArticulo,
         servicioSeleccionado,
+        servicioModoBusqueda: modoServicio,
         hachadorSeleccionado,
         choferSeleccionado:
           tipoChofer === "INTERNO" ? choferSeleccionado : null,
@@ -473,33 +545,63 @@ export default function IngresoRollizosPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className={LABEL_CLASS}>Proveedor</label>
-              <select
+              <input
+                type="hidden"
                 {...register("proveedorCodigo", { required: true })}
-                className={FIELD_CLASS}
-              >
-                <option value="">Seleccionar proveedor</option>
-                {proveedores.map((item) => (
-                  <option key={item.Codigo} value={item.Codigo}>
-                    {item.Codigo} - {item.RazonSocial}
-                  </option>
-                ))}
-              </select>
+              />
+              <SearchableSelect
+                label="Proveedor"
+                value={proveedorCodigo}
+                options={proveedores}
+                onChange={(item) =>
+                  setValue("proveedorCodigo", item?.Codigo || "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                getOptionValue={(item) => item.Codigo}
+                getOptionLabel={(item) => `${item.Codigo} - ${item.RazonSocial}`}
+                getSearchText={(item) => `${item.Codigo} ${item.RazonSocial}`}
+                placeholder="Buscar proveedor"
+                loading={cargandoDimensiones.proveedor}
+                modeControl={
+                  <ModoBusquedaInline
+                    value={modoProveedor}
+                    onChange={cambiarModoProveedor}
+                    disabled={cargandoDimensiones.proveedor}
+                  />
+                }
+              />
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>Artículo</label>
-              <select
+              <input
+                type="hidden"
                 {...register("articuloCodigo", { required: true })}
-                className={FIELD_CLASS}
-              >
-                <option value="">Seleccionar artículo</option>
-                {articulos.map((item) => (
-                  <option key={item.Codigo} value={item.Codigo}>
-                    {item.Descripcion}
-                  </option>
-                ))}
-              </select>
+              />
+              <SearchableSelect
+                label="Articulo"
+                value={articuloCodigo}
+                options={articulos}
+                onChange={(item) =>
+                  setValue("articuloCodigo", item?.Codigo || "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                getOptionValue={(item) => item.Codigo}
+                getOptionLabel={(item) => item.Descripcion}
+                getSearchText={(item) => `${item.Codigo} ${item.Descripcion}`}
+                placeholder="Buscar articulo"
+                loading={cargandoDimensiones.articulo}
+                modeControl={
+                  <ModoBusquedaInline
+                    value={modoArticulo}
+                    onChange={cambiarModoArticulo}
+                    disabled={cargandoDimensiones.articulo}
+                  />
+                }
+              />
             </div>
 
             <div>
@@ -544,20 +646,30 @@ export default function IngresoRollizosPage() {
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>
-                Servicio logístico
-              </label>
-              <select
-                {...register("servicioCodigo")}
-                className={FIELD_CLASS}
-              >
-                <option value="">Seleccionar servicio</option>
-                {servicios.map((item) => (
-                  <option key={item.Codigo} value={item.Codigo}>
-                    {item.Codigo} - {item.RazonSocial}
-                  </option>
-                ))}
-              </select>
+              <input type="hidden" {...register("servicioCodigo")} />
+              <SearchableSelect
+                label="Servicio logistico"
+                value={servicioCodigo}
+                options={servicios}
+                onChange={(item) =>
+                  setValue("servicioCodigo", item?.Codigo || "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                getOptionValue={(item) => item.Codigo}
+                getOptionLabel={(item) => `${item.Codigo} - ${item.RazonSocial}`}
+                getSearchText={(item) => `${item.Codigo} ${item.RazonSocial}`}
+                placeholder="Buscar servicio"
+                loading={cargandoDimensiones.servicio}
+                modeControl={
+                  <ModoBusquedaInline
+                    value={modoServicio}
+                    onChange={cambiarModoServicio}
+                    disabled={cargandoDimensiones.servicio}
+                  />
+                }
+              />
             </div>
 
             <div>
@@ -787,18 +899,22 @@ export default function IngresoRollizosPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className={LABEL_CLASS}>Hachador</label>
-              <select
-                {...register("hachadorCodigo")}
-                className={FIELD_CLASS}
-              >
-                <option value="">Seleccionar hachador</option>
-                {hachadores.map((item) => (
-                  <option key={item.Codigo} value={item.Codigo}>
-                    {item.RazonSocial}
-                  </option>
-                ))}
-              </select>
+              <input type="hidden" {...register("hachadorCodigo")} />
+              <SearchableSelect
+                label="Hachador"
+                value={hachadorCodigo}
+                options={hachadores}
+                onChange={(item) =>
+                  setValue("hachadorCodigo", item?.Codigo || "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                getOptionValue={(item) => item.Codigo}
+                getOptionLabel={(item) => item.RazonSocial}
+                getSearchText={(item) => `${item.Codigo} ${item.RazonSocial}`}
+                placeholder="Buscar hachador"
+              />
             </div>
 
             <div>

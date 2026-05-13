@@ -159,7 +159,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={cambiarTema}
-              className="grid h-10 w-10 place-items-center rounded-lg border-[0.5px] border-[#CBD5E1] bg-white text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:outline-none focus:ring-2 focus:ring-red-100"
+              className="grid h-10 w-10 place-items-center rounded-lg border-[0.5px] border-[#CBD5E1] bg-white text-[#0F172A] hover: border-[0.5px] border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:outline-none focus:ring-2 focus:ring-red-100"
               aria-label={`Cambiar a modo ${theme === "dark" ? "claro" : "oscuro"}`}
               title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
             >

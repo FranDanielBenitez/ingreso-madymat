@@ -9,6 +9,7 @@ import {
   getArticulosEsquineros,
   getArticulosFondos,
   getArticulosInterior,
+  getArticulosTodos,
 } from "@/services/bejerman/articulos"
 
 export async function GET(request) {
@@ -16,10 +17,13 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
 
     const categoria = searchParams.get("categoria")
+    const modo = searchParams.get("modo")
 
     let data = []
 
-    if (categoria === "ROLLIZOS") {
+    if (modo === "TODOS") {
+      data = await getArticulosTodos()
+    } else if (categoria === "ROLLIZOS") {
       data = await getArticulosRollizos()
     } else if (categoria === "PALLETS") {
       data = await getArticulosPallets()
@@ -51,6 +55,7 @@ export async function GET(request) {
     return NextResponse.json({
       ok: true,
       categoria,
+      modo,
       total: data.length,
       data,
     })

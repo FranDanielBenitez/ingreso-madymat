@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server"
-import { getHachadoresRollizos } from "@/services/bejerman/hachadores"
+import {
+  getHachadoresRollizos,
+  getHachadoresTodos,
+} from "@/services/bejerman/hachadores"
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
 
     const categoria = searchParams.get("categoria")
+    const modo = searchParams.get("modo")
 
-    if (categoria !== "ROLLIZOS") {
+    if (modo !== "TODOS" && categoria !== "ROLLIZOS") {
       return NextResponse.json(
         {
           ok: false,
@@ -18,11 +22,13 @@ export async function GET(request) {
       )
     }
 
-    const data = await getHachadoresRollizos()
+    const data =
+      modo === "TODOS" ? await getHachadoresTodos() : await getHachadoresRollizos()
 
     return NextResponse.json({
       ok: true,
       categoria,
+      modo,
       total: data.length,
       data,
     })
