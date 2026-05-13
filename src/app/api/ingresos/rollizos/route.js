@@ -189,7 +189,12 @@ export async function POST(request) {
     const proveedorManualNombre = limpiarTexto(proveedorManual.nombre)
     const proveedorManualCuit = limpiarTexto(proveedorManual.cuit)
     const proveedorManualObservacion = limpiarTexto(proveedorManual.observacion)
+    const articuloCargaManual = Boolean(body.articuloCargaManual)
     const articulo = body.articuloSeleccionado
+    const articuloManual = body.articuloManual || {}
+    const articuloManualDescripcion = limpiarTexto(articuloManual.descripcion)
+    const articuloManualCodigo = limpiarTexto(articuloManual.codigo)
+    const articuloManualObservacion = limpiarTexto(articuloManual.observacion)
     const servicioCargaManual = Boolean(body.servicioCargaManual)
     const servicio = body.servicioSeleccionado
     const servicioManual = body.servicioManual || {}
@@ -214,9 +219,33 @@ export async function POST(request) {
       )
     }
 
-    if (!articulo) {
+    if (articuloCargaManual && !articuloManualDescripcion) {
+      return NextResponse.json(
+        { ok: false, message: "Debe indicar la descripcion del articulo manual" },
+        { status: 400 }
+      )
+    }
+
+    if (!articuloCargaManual && !articulo) {
       return NextResponse.json(
         { ok: false, message: "Debe seleccionar un artículo" },
+        { status: 400 }
+      )
+    }
+
+    const cantidadIngreso = normalizarDecimal(body.cantidad)
+    const unidadIngreso = limpiarTexto(body.unidad)
+
+    if (!cantidadIngreso || cantidadIngreso <= 0) {
+      return NextResponse.json(
+        { ok: false, message: "La cantidad debe ser mayor a cero" },
+        { status: 400 }
+      )
+    }
+
+    if (!unidadIngreso) {
+      return NextResponse.json(
+        { ok: false, message: "La unidad es obligatoria" },
         { status: 400 }
       )
     }
@@ -253,8 +282,19 @@ export async function POST(request) {
       }
     }
 
-    if (body.articuloModoBusqueda === "TODOS") {
+    if (!articuloCargaManual && body.articuloModoBusqueda === "TODOS") {
       detallesModoBusqueda.push("Articulo seleccionado desde modo Todos.")
+    }
+
+    if (articuloCargaManual) {
+      detallesModoBusqueda.push(
+        "Articulo cargado manualmente, pendiente de validar."
+      )
+      if (articuloManualObservacion) {
+        detallesModoBusqueda.push(
+          `Observacion articulo manual: ${articuloManualObservacion}.`
+        )
+      }
     }
 
     if (!servicioCargaManual && body.servicioModoBusqueda === "TODOS") {
@@ -397,8 +437,10 @@ export async function POST(request) {
         tieneCargaManual:
           body.tipoChofer === "EXTERNO" ||
           proveedorCargaManual ||
+          articuloCargaManual ||
           servicioCargaManual,
-        tieneFueraSugerido: proveedorCargaManual || servicioCargaManual,
+        tieneFueraSugerido:
+          proveedorCargaManual || articuloCargaManual || servicioCargaManual,
 
         pdfGenerado: false,
 
@@ -406,22 +448,36 @@ export async function POST(request) {
 
         articulos: {
           create: {
-            origenDato: "BEJERMAN",
+            origenDato: articuloCargaManual ? "MANUAL" : "BEJERMAN",
 
-            articuloGen: articulo.ArticuloGen
+            articuloGen: articuloCargaManual
+              ? null
+              : articulo.ArticuloGen
               ? String(articulo.ArticuloGen)
               : null,
-            articuloCodigo: limpiarTexto(articulo.Codigo),
-            articuloClase: limpiarTexto(articulo.Clase),
-            articuloDescripcion: limpiarTexto(articulo.Descripcion),
-            articuloProceso: limpiarTexto(articulo.Proceso),
-            articuloGrupo: limpiarTexto(articulo.Grupo),
-            articuloSubgrupo: limpiarTexto(articulo.SubGrupo),
+            articuloCodigo: articuloCargaManual
+              ? articuloManualCodigo
+              : limpiarTexto(articulo.Codigo),
+            articuloClase: articuloCargaManual
+              ? null
+              : limpiarTexto(articulo.Clase),
+            articuloDescripcion: articuloCargaManual
+              ? articuloManualDescripcion
+              : limpiarTexto(articulo.Descripcion),
+            articuloProceso: articuloCargaManual
+              ? null
+              : limpiarTexto(articulo.Proceso),
+            articuloGrupo: articuloCargaManual
+              ? null
+              : limpiarTexto(articulo.Grupo),
+            articuloSubgrupo: articuloCargaManual
+              ? null
+              : limpiarTexto(articulo.SubGrupo),
 
             categoriaFormulario: "ROLLIZOS",
 
-            cantidad: normalizarDecimal(body.cantidad),
-            unidad: limpiarTexto(body.unidad) || "TN",
+            cantidad: cantidadIngreso,
+            unidad: unidadIngreso,
           },
         },
 

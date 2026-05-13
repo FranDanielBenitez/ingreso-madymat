@@ -35,6 +35,8 @@ function normalizarItems(body) {
     return [
       {
         articuloSeleccionado: body.articuloSeleccionado,
+        articuloCargaManual: body.articuloCargaManual,
+        articuloManual: body.articuloManual,
         categoriaMaterial: body.categoriaMaterial,
         modoBusquedaArticulo: body.articuloModoBusqueda,
         cantidad: body.cantidad,
@@ -50,7 +52,11 @@ function prepararItemsValidos(body) {
   return normalizarItems(body).map((item) => ({
     categoriaMaterial: limpiarTexto(item.categoriaMaterial),
     modoBusquedaArticulo: limpiarTexto(item.modoBusquedaArticulo),
+    articuloCargaManual: Boolean(item.articuloCargaManual),
     articulo: item.articuloSeleccionado,
+    articuloManualDescripcion: limpiarTexto(item.articuloManual?.descripcion),
+    articuloManualCodigo: limpiarTexto(item.articuloManual?.codigo),
+    articuloManualObservacion: limpiarTexto(item.articuloManual?.observacion),
     cantidad: normalizarDecimal(item.cantidad),
     unidad: limpiarTexto(item.unidad),
   }))
@@ -248,10 +254,12 @@ export async function POST(request) {
       items.some(
         (item) =>
           !item.categoriaMaterial ||
-          !item.articulo ||
           !item.cantidad ||
           item.cantidad <= 0 ||
-          !item.unidad
+          !item.unidad ||
+          (item.articuloCargaManual
+            ? !item.articuloManualDescripcion
+            : !item.articulo)
       )
 
     if (itemsInvalidos) {
@@ -319,11 +327,18 @@ export async function POST(request) {
     }
 
     const itemsModoTodos = items.filter(
-      (item) => item.modoBusquedaArticulo === "TODOS"
+      (item) => !item.articuloCargaManual && item.modoBusquedaArticulo === "TODOS"
     ).length
+    const itemsManuales = items.filter((item) => item.articuloCargaManual).length
 
     if (itemsModoTodos > 0) {
       detallesModoBusqueda.push(`Items fuera de sugeridos: ${itemsModoTodos}.`)
+    }
+
+    if (itemsManuales > 0) {
+      detallesModoBusqueda.push(
+        `Articulos cargados manualmente: ${itemsManuales}. Pendientes de validar.`
+      )
     }
 
     const ingresoCreado = await prisma.ingreso.create({
@@ -436,8 +451,12 @@ export async function POST(request) {
         hachadorValidado: false,
 
         tieneCargaManual:
-          choferExterno || proveedorCargaManual || servicioCargaManual,
-        tieneFueraSugerido: proveedorCargaManual || servicioCargaManual,
+          choferExterno ||
+          proveedorCargaManual ||
+          servicioCargaManual ||
+          itemsManuales > 0,
+        tieneFueraSugerido:
+          proveedorCargaManual || servicioCargaManual || itemsManuales > 0,
 
         pdfGenerado: false,
 
@@ -445,17 +464,31 @@ export async function POST(request) {
 
         articulos: {
           create: items.map((item) => ({
-            origenDato: "BEJERMAN",
+            origenDato: item.articuloCargaManual ? "MANUAL" : "BEJERMAN",
 
-            articuloGen: item.articulo.ArticuloGen
+            articuloGen: item.articuloCargaManual
+              ? null
+              : item.articulo.ArticuloGen
               ? String(item.articulo.ArticuloGen)
               : null,
-            articuloCodigo: limpiarTexto(item.articulo.Codigo),
-            articuloClase: limpiarTexto(item.articulo.Clase),
-            articuloDescripcion: limpiarTexto(item.articulo.Descripcion),
-            articuloProceso: limpiarTexto(item.articulo.Proceso),
-            articuloGrupo: limpiarTexto(item.articulo.Grupo),
-            articuloSubgrupo: limpiarTexto(item.articulo.SubGrupo),
+            articuloCodigo: item.articuloCargaManual
+              ? item.articuloManualCodigo
+              : limpiarTexto(item.articulo.Codigo),
+            articuloClase: item.articuloCargaManual
+              ? null
+              : limpiarTexto(item.articulo.Clase),
+            articuloDescripcion: item.articuloCargaManual
+              ? item.articuloManualDescripcion
+              : limpiarTexto(item.articulo.Descripcion),
+            articuloProceso: item.articuloCargaManual
+              ? null
+              : limpiarTexto(item.articulo.Proceso),
+            articuloGrupo: item.articuloCargaManual
+              ? null
+              : limpiarTexto(item.articulo.Grupo),
+            articuloSubgrupo: item.articuloCargaManual
+              ? null
+              : limpiarTexto(item.articulo.SubGrupo),
 
             categoriaFormulario: item.categoriaMaterial,
 

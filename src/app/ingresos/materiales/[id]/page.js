@@ -82,6 +82,29 @@ function ServicioBadges({ ingreso }) {
   )
 }
 
+function ArticuloBadges({ articulo }) {
+  if (articulo?.origenDato !== "MANUAL") return null
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      <span className="rounded-full border border-slate-300 bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200">
+        Articulo manual
+      </span>
+      <span className="rounded-full border border-amber-200 bg-amber-100/70 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+        Pendiente de validar
+      </span>
+    </div>
+  )
+}
+
+function grupoSubgrupoArticulo(articulo) {
+  if (articulo?.origenDato === "MANUAL") return "No aplica"
+
+  return `${mostrar(articulo?.articuloGrupo)} / ${mostrar(
+    articulo?.articuloSubgrupo
+  )}`
+}
+
 export default function DetalleIngresoMaterialesPage() {
   const params = useParams()
   const id = params?.id
@@ -561,7 +584,10 @@ export default function DetalleIngresoMaterialesPage() {
                             {mostrar(articulo.categoriaFormulario)}
                           </td>
                           <td className="py-3 pr-4">
-                            {mostrar(articulo.articuloDescripcion)}
+                            <div>
+                              <span>{mostrar(articulo.articuloDescripcion)}</span>
+                              <ArticuloBadges articulo={articulo} />
+                            </div>
                           </td>
                           <td className="py-3 pr-4">
                             {mostrar(articulo.articuloCodigo)}
@@ -573,8 +599,7 @@ export default function DetalleIngresoMaterialesPage() {
                             {mostrar(articulo.unidad)}
                           </td>
                           <td className="py-3 pr-4">
-                            {mostrar(articulo.articuloGrupo)} /{" "}
-                            {mostrar(articulo.articuloSubgrupo)}
+                            {grupoSubgrupoArticulo(articulo)}
                           </td>
                           {!ingresoAnulado ? (
                             <td className="py-3 pr-4">
@@ -622,6 +647,7 @@ export default function DetalleIngresoMaterialesPage() {
                         label="Artículo"
                         value={articulo.articuloDescripcion}
                       />
+                      <ArticuloBadges articulo={articulo} />
                       <Campo label="Código" value={articulo.articuloCodigo} />
                       <Campo
                         label="Cantidad"
@@ -631,9 +657,7 @@ export default function DetalleIngresoMaterialesPage() {
                       />
                       <Campo
                         label="Grupo / Subgrupo"
-                        value={`${mostrar(articulo.articuloGrupo)} / ${mostrar(
-                          articulo.articuloSubgrupo
-                        )}`}
+                        value={grupoSubgrupoArticulo(articulo)}
                       />
                     </div>
                     {!ingresoAnulado ? (

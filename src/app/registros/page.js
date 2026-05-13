@@ -119,6 +119,20 @@ function ProveedorManualBadge({ registro }) {
   )
 }
 
+function ArticuloManualBadge({ registro }) {
+  const articulos = registro?.articulos || []
+
+  if (articulos.length !== 1 || articulos[0]?.origenDato !== "MANUAL") {
+    return null
+  }
+
+  return (
+    <span className="mt-1 inline-flex w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">
+      Manual
+    </span>
+  )
+}
+
 export default function RegistrosPage() {
   const [filtros, setFiltros] = useState(FILTROS_INICIALES)
   const [registros, setRegistros] = useState([])
@@ -391,7 +405,10 @@ export default function RegistrosPage() {
                             {mostrar(registro.remitoProveedor)}
                           </td>
                           <td className="py-3 pr-4">
-                            {mostrar(descripcionArticulos(registro))}
+                            <div className="flex flex-col">
+                              <span>{mostrar(descripcionArticulos(registro))}</span>
+                              <ArticuloManualBadge registro={registro} />
+                            </div>
                           </td>
                           <td className="py-3 pr-4">
                             {cantidadArticulos(registro)}
@@ -463,6 +480,7 @@ export default function RegistrosPage() {
                           <span className="font-semibold">Artículo:</span>{" "}
                           {mostrar(descripcionArticulos(registro))}
                         </p>
+                        <ArticuloManualBadge registro={registro} />
                         <p>
                           <span className="font-semibold">Cantidad:</span>{" "}
                           {cantidadArticulos(registro)}

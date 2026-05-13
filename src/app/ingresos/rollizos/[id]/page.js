@@ -82,6 +82,21 @@ function ServicioBadges({ ingreso }) {
   )
 }
 
+function ArticuloBadges({ articulo }) {
+  if (articulo?.origenDato !== "MANUAL") return null
+
+  return (
+    <div className="mb-4 flex flex-wrap gap-2">
+      <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200">
+        Articulo manual
+      </span>
+      <span className="rounded-full border border-amber-200 bg-amber-100/70 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+        Pendiente de validar
+      </span>
+    </div>
+  )
+}
+
 export default function DetalleIngresoRollizosPage() {
   const params = useParams()
   const id = params?.id
@@ -354,6 +369,7 @@ export default function DetalleIngresoRollizosPage() {
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Material
           </h2>
+          <ArticuloBadges articulo={articuloPrincipal} />
           <div className="grid gap-4 md:grid-cols-4">
             <Campo label="Artículo" value={articuloPrincipal?.articuloDescripcion} />
             <Campo label="Código" value={articuloPrincipal?.articuloCodigo} />

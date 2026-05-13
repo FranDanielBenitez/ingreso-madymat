@@ -105,6 +105,7 @@ export default function IngresoRollizosPage() {
   const [modoArticulo, setModoArticulo] = useState(MODO_SUGERIDOS)
   const [modoServicio, setModoServicio] = useState(MODO_SUGERIDOS)
   const [proveedorCargaManual, setProveedorCargaManual] = useState(false)
+  const [articuloCargaManual, setArticuloCargaManual] = useState(false)
   const [servicioCargaManual, setServicioCargaManual] = useState(false)
   const [cargandoDimensiones, setCargandoDimensiones] = useState({})
   const [dimensionErrors, setDimensionErrors] = useState({})
@@ -231,6 +232,21 @@ export default function IngresoRollizosPage() {
     setValue("proveedorManualNombre", "")
     setValue("proveedorManualCuit", "")
     setValue("proveedorManualObservacion", "")
+  }
+
+  function activarArticuloManual() {
+    setArticuloCargaManual(true)
+    setValue("articuloCodigo", "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }
+
+  function volverABuscarArticulo() {
+    setArticuloCargaManual(false)
+    setValue("articuloManualDescripcion", "")
+    setValue("articuloManualCodigo", "")
+    setValue("articuloManualObservacion", "")
   }
 
   function activarServicioManual() {
@@ -501,8 +517,30 @@ export default function IngresoRollizosPage() {
         return
       }
 
-      if (!articuloSeleccionado) {
+      if (
+        articuloCargaManual &&
+        !String(values.articuloManualDescripcion || "").trim()
+      ) {
+        toast.error("La descripcion del articulo manual es obligatoria")
+        return
+      }
+
+      if (!articuloCargaManual && !articuloSeleccionado) {
         toast.error("No se pudo seleccionar articulo. Reintenta la carga de datos.")
+        return
+      }
+
+      const cantidadIngreso = Number(
+        String(values.cantidad || "").replace(",", ".")
+      )
+
+      if (!cantidadIngreso || cantidadIngreso <= 0) {
+        toast.error("La cantidad debe ser mayor a cero")
+        return
+      }
+
+      if (!String(values.unidad || "").trim()) {
+        toast.error("La unidad es obligatoria")
         return
       }
 
@@ -536,7 +574,13 @@ export default function IngresoRollizosPage() {
           observacion: values.proveedorManualObservacion || "",
         },
         proveedorModoBusqueda: modoProveedor,
-        articuloSeleccionado,
+        articuloCargaManual,
+        articuloSeleccionado: articuloCargaManual ? null : articuloSeleccionado,
+        articuloManual: {
+          descripcion: values.articuloManualDescripcion || "",
+          codigo: values.articuloManualCodigo || "",
+          observacion: values.articuloManualObservacion || "",
+        },
         articuloModoBusqueda: modoArticulo,
         servicioCargaManual,
         servicioSeleccionado: servicioCargaManual ? null : servicioSeleccionado,
@@ -630,6 +674,7 @@ export default function IngresoRollizosPage() {
     })
     setPreviewsFotos({})
     setProveedorCargaManual(false)
+    setArticuloCargaManual(false)
     setServicioCargaManual(false)
     setFotoInputKeys((prev) => ({
       fotoCamionPatente: prev.fotoCamionPatente + 1,
@@ -854,35 +899,101 @@ export default function IngresoRollizosPage() {
               )}
             </div>
 
-            <div>
+            <div className={articuloCargaManual ? "md:col-span-2" : ""}>
               <input
                 type="hidden"
-                {...register("articuloCodigo", { required: true })}
+                {...register("articuloCodigo")}
               />
-              <SearchableSelect
-                label="Articulo"
-                value={articuloCodigo}
-                options={articulos}
-                onChange={(item) =>
-                  setValue("articuloCodigo", item?.Codigo || "", {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  })
-                }
-                getOptionValue={(item) => item.Codigo}
-                getOptionLabel={(item) => item.Descripcion}
-                getSearchText={(item) => `${item.Codigo} ${item.Descripcion}`}
-                placeholder="Buscar articulo"
-                loading={cargandoDimensiones.articulo}
-                modeControl={
-                  <ModoBusquedaInline
-                    value={modoArticulo}
-                    onChange={cambiarModoArticulo}
-                    disabled={cargandoDimensiones.articulo}
+              {articuloCargaManual ? (
+                <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 dark:border-amber-400/25 dark:bg-slate-800/60">
+                  <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full border border-slate-300 bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-200">
+                          Articulo manual
+                        </span>
+                        <span className="rounded-full border border-amber-200 bg-amber-100/70 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+                          Pendiente de validar
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-[#475569] dark:text-slate-300">
+                        Usalo solo si el articulo no aparece en Bejerman.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={volverABuscarArticulo}
+                      className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
+                    >
+                      Volver a buscar en Bejerman
+                    </button>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label>
+                      <span className={LABEL_CLASS}>Descripcion articulo *</span>
+                      <input
+                        type="text"
+                        {...register("articuloManualDescripcion")}
+                        className={FIELD_CLASS}
+                        placeholder="Ej: Rollizos especiales"
+                      />
+                    </label>
+                    <label>
+                      <span className={LABEL_CLASS}>Codigo articulo</span>
+                      <input
+                        type="text"
+                        {...register("articuloManualCodigo")}
+                        className={FIELD_CLASS}
+                        placeholder="Opcional"
+                      />
+                    </label>
+                    <label className="md:col-span-2">
+                      <span className={LABEL_CLASS}>Observacion articulo</span>
+                      <textarea
+                        {...register("articuloManualObservacion")}
+                        className={TEXTAREA_CLASS}
+                        placeholder="Opcional"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <SearchableSelect
+                    label="Articulo"
+                    value={articuloCodigo}
+                    options={articulos}
+                    onChange={(item) =>
+                      setValue("articuloCodigo", item?.Codigo || "", {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    getOptionValue={(item) => item.Codigo}
+                    getOptionLabel={(item) => item.Descripcion}
+                    getSearchText={(item) =>
+                      `${item.Codigo} ${item.Descripcion}`
+                    }
+                    placeholder="Buscar articulo"
+                    loading={cargandoDimensiones.articulo}
+                    modeControl={
+                      <ModoBusquedaInline
+                        value={modoArticulo}
+                        onChange={cambiarModoArticulo}
+                        disabled={cargandoDimensiones.articulo}
+                      />
+                    }
                   />
-                }
-              />
-              <CampoErrorDimension message={dimensionErrors.articulos} />
+                  <CampoErrorDimension message={dimensionErrors.articulos} />
+                  <button
+                    type="button"
+                    onClick={activarArticuloManual}
+                    className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                  >
+                    No encuentro el articulo / Cargar manualmente
+                  </button>
+                </>
+              )}
             </div>
 
             <div>

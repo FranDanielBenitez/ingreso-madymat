@@ -80,6 +80,10 @@ function crearItemRemito() {
     categoriaMaterial: "",
     modoArticulo: MODO_SUGERIDOS,
     articuloCodigo: "",
+    articuloCargaManual: false,
+    articuloManualDescripcion: "",
+    articuloManualCodigo: "",
+    articuloManualObservacion: "",
     cantidad: "",
     unidad: "UNI",
   }
@@ -566,6 +570,10 @@ export default function IngresoMaterialesPage() {
                 ...item,
                 categoriaMaterial: valor,
                 articuloCodigo: "",
+                articuloCargaManual: false,
+                articuloManualDescripcion: "",
+                articuloManualCodigo: "",
+                articuloManualObservacion: "",
                 unidad: "UNI",
               }
             : item
@@ -589,6 +597,9 @@ export default function IngresoMaterialesPage() {
                 ...item,
                 modoArticulo: valor,
                 articuloCodigo: "",
+                articuloManualDescripcion: "",
+                articuloManualCodigo: "",
+                articuloManualObservacion: "",
                 unidad: "UNI",
               }
             : item
@@ -601,6 +612,25 @@ export default function IngresoMaterialesPage() {
         const itemActual = itemsRemito.find((item) => item.idLocal === idLocal)
         cargarArticulosCategoria(itemActual?.categoriaMaterial)
       }
+
+      return
+    }
+
+    if (campo === "articuloCargaManual") {
+      setItemsRemito((prev) =>
+        prev.map((item) =>
+          item.idLocal === idLocal
+            ? {
+                ...item,
+                articuloCargaManual: Boolean(valor),
+                articuloCodigo: "",
+                articuloManualDescripcion: "",
+                articuloManualCodigo: "",
+                articuloManualObservacion: "",
+              }
+            : item
+        )
+      )
 
       return
     }
@@ -640,10 +670,15 @@ export default function IngresoMaterialesPage() {
     return itemsRemito.map((item) => ({
       categoriaMaterial: item.categoriaMaterial,
       modoBusquedaArticulo: item.modoArticulo,
-      articuloSeleccionado: buscarPorCodigo(
-        articulosDisponiblesItem(item),
-        item.articuloCodigo
-      ),
+      articuloCargaManual: item.articuloCargaManual,
+      articuloSeleccionado: item.articuloCargaManual
+        ? null
+        : buscarPorCodigo(articulosDisponiblesItem(item), item.articuloCodigo),
+      articuloManual: {
+        descripcion: item.articuloManualDescripcion || "",
+        codigo: item.articuloManualCodigo || "",
+        observacion: item.articuloManualObservacion || "",
+      },
       cantidad: item.cantidad,
       unidad: item.unidad,
     }))
@@ -728,9 +763,11 @@ export default function IngresoMaterialesPage() {
 
       return (
         item.categoriaMaterial &&
-        item.articuloSeleccionado &&
         cantidad > 0 &&
-        String(item.unidad || "").trim()
+        String(item.unidad || "").trim() &&
+        (item.articuloCargaManual
+          ? String(item.articuloManual?.descripcion || "").trim()
+          : item.articuloSeleccionado)
       )
     })
 
@@ -1113,47 +1150,153 @@ export default function IngresoMaterialesPage() {
                     </select>
                   </label>
 
-                  <SearchableSelect
-                    label="Articulo"
-                    value={item.articuloCodigo}
-                    options={articulosDisponiblesItem(item)}
-                    onChange={(articulo) =>
-                      actualizarItemRemito(
-                        item.idLocal,
-                        "articuloCodigo",
-                        articulo?.Codigo || ""
-                      )
-                    }
-                    getOptionValue={(articulo) => articulo.Codigo}
-                    getOptionLabel={etiquetaArticulo}
-                    getSearchText={(articulo) =>
-                      `${articulo.Codigo} ${articulo.Descripcion}`
-                    }
-                    placeholder="Buscar articulo"
-                    loading={
-                      categoriasCargando[item.categoriaMaterial] ||
-                      (item.modoArticulo === MODO_TODOS &&
-                        articulosTodosCargando)
-                    }
-                    disabled={
-                      item.modoArticulo !== MODO_TODOS &&
-                      !item.categoriaMaterial
-                    }
-                    modeControl={
-                      <ModoBusquedaInline
-                        value={item.modoArticulo}
-                        onChange={(modo) =>
-                          actualizarItemRemito(
-                            item.idLocal,
-                            "modoArticulo",
-                            modo
-                          )
-                        }
-                        disabled={articulosTodosCargando}
-                      />
-                    }
-                  />
-                  <CampoErrorDimension message={dimensionErrors.articulos} />
+                  <div>
+                    {item.articuloCargaManual ? (
+                      <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 dark:border-amber-400/25 dark:bg-slate-800/60">
+                        <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <div className="flex flex-wrap gap-2">
+                              <span className="rounded-full border border-slate-300 bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-200">
+                                Articulo manual
+                              </span>
+                              <span className="rounded-full border border-amber-200 bg-amber-100/70 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+                                Pendiente de validar
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm text-[#475569] dark:text-slate-300">
+                              La categoria del item se mantiene como referencia
+                              operativa.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              actualizarItemRemito(
+                                item.idLocal,
+                                "articuloCargaManual",
+                                false
+                              )
+                            }
+                            className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
+                          >
+                            Volver a buscar en Bejerman
+                          </button>
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <label>
+                            <span className={LABEL_CLASS}>
+                              Descripcion articulo *
+                            </span>
+                            <input
+                              type="text"
+                              value={item.articuloManualDescripcion}
+                              onChange={(event) =>
+                                actualizarItemRemito(
+                                  item.idLocal,
+                                  "articuloManualDescripcion",
+                                  event.target.value
+                                )
+                              }
+                              className={FIELD_CLASS}
+                              placeholder="Ej: Pallet especial"
+                            />
+                          </label>
+                          <label>
+                            <span className={LABEL_CLASS}>Codigo articulo</span>
+                            <input
+                              type="text"
+                              value={item.articuloManualCodigo}
+                              onChange={(event) =>
+                                actualizarItemRemito(
+                                  item.idLocal,
+                                  "articuloManualCodigo",
+                                  event.target.value
+                                )
+                              }
+                              className={FIELD_CLASS}
+                              placeholder="Opcional"
+                            />
+                          </label>
+                          <label className="md:col-span-2">
+                            <span className={LABEL_CLASS}>
+                              Observacion articulo
+                            </span>
+                            <textarea
+                              value={item.articuloManualObservacion}
+                              onChange={(event) =>
+                                actualizarItemRemito(
+                                  item.idLocal,
+                                  "articuloManualObservacion",
+                                  event.target.value
+                                )
+                              }
+                              className={TEXTAREA_CLASS}
+                              placeholder="Opcional"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <SearchableSelect
+                          label="Articulo"
+                          value={item.articuloCodigo}
+                          options={articulosDisponiblesItem(item)}
+                          onChange={(articulo) =>
+                            actualizarItemRemito(
+                              item.idLocal,
+                              "articuloCodigo",
+                              articulo?.Codigo || ""
+                            )
+                          }
+                          getOptionValue={(articulo) => articulo.Codigo}
+                          getOptionLabel={etiquetaArticulo}
+                          getSearchText={(articulo) =>
+                            `${articulo.Codigo} ${articulo.Descripcion}`
+                          }
+                          placeholder="Buscar articulo"
+                          loading={
+                            categoriasCargando[item.categoriaMaterial] ||
+                            (item.modoArticulo === MODO_TODOS &&
+                              articulosTodosCargando)
+                          }
+                          disabled={
+                            item.modoArticulo !== MODO_TODOS &&
+                            !item.categoriaMaterial
+                          }
+                          modeControl={
+                            <ModoBusquedaInline
+                              value={item.modoArticulo}
+                              onChange={(modo) =>
+                                actualizarItemRemito(
+                                  item.idLocal,
+                                  "modoArticulo",
+                                  modo
+                                )
+                              }
+                              disabled={articulosTodosCargando}
+                            />
+                          }
+                        />
+                        <CampoErrorDimension
+                          message={dimensionErrors.articulos}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            actualizarItemRemito(
+                              item.idLocal,
+                              "articuloCargaManual",
+                              true
+                            )
+                          }
+                          className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                        >
+                          No encuentro el articulo / Cargar manualmente
+                        </button>
+                      </>
+                    )}
+                  </div>
 
                   <label>
                     <span className={LABEL_CLASS}>Cantidad</span>
