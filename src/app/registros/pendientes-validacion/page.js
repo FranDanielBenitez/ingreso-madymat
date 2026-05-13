@@ -5,6 +5,14 @@ import Link from "next/link"
 
 const SECTION_CLASS =
   "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
+const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
+const FIELD_CLASS =
+  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+const BUTTON_SECONDARY_CLASS =
+  "inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+const BUTTON_PRIMARY_CLASS =
+  "inline-flex items-center justify-center rounded-2xl bg-[#F3171B] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#D90F14]"
+const ITEMS_PER_PAGE_OPTIONS = [5, 10, 15, "TODOS"]
 
 function formatearFecha(value) {
   if (!value) return "-"
@@ -139,22 +147,23 @@ const DEFAULT_FILTROS = {
 export default function PendientesValidacionPage() {
   const [registros, setRegistros] = useState([])
   const [filterValues, setFilterValues] = useState(DEFAULT_FILTROS)
-  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTROS)
+  const [itemsPorPagina, setItemsPorPagina] = useState(10)
+  const [paginaActual, setPaginaActual] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   const filteredRegistros = useMemo(() => {
     return registros.filter((registro) => {
       if (
-        appliedFilters.tipo !== "Todos" &&
-        registro.tipoIngreso?.codigo !== appliedFilters.tipo
+        filterValues.tipo !== "Todos" &&
+        registro.tipoIngreso?.codigo !== filterValues.tipo
       ) {
         return false
       }
 
       if (
-        appliedFilters.estado !== "Todos" &&
-        registro.estado !== appliedFilters.estado
+        filterValues.estado !== "Todos" &&
+        registro.estado !== filterValues.estado
       ) {
         return false
       }
@@ -162,40 +171,82 @@ export default function PendientesValidacionPage() {
       if (
         !incluyeTexto(
           registro.proveedorNombreCargado,
-          appliedFilters.proveedor
+          filterValues.proveedor
         )
       ) {
         return false
       }
 
-      if (!incluyeTexto(registro.remitoProveedor, appliedFilters.remito)) {
+      if (!incluyeTexto(registro.remitoProveedor, filterValues.remito)) {
         return false
       }
 
-      if (appliedFilters.fechaDesde) {
-        const desde = new Date(appliedFilters.fechaDesde)
+      if (filterValues.fechaDesde) {
+        const desde = new Date(filterValues.fechaDesde)
         const ingreso = new Date(registro.fechaIngreso)
         if (ingreso < desde) return false
       }
 
-      if (appliedFilters.fechaHasta) {
-        const hasta = new Date(appliedFilters.fechaHasta)
+      if (filterValues.fechaHasta) {
+        const hasta = new Date(filterValues.fechaHasta)
         const ingreso = new Date(registro.fechaIngreso)
         if (ingreso > hasta) return false
       }
 
-      if (!matchesMotivo(registro, appliedFilters.motivo)) {
+      if (!matchesMotivo(registro, filterValues.motivo)) {
         return false
       }
 
       return true
     })
-  }, [registros, appliedFilters])
+  }, [registros, filterValues])
 
+  const totalRegistros = filteredRegistros.length
   const totalFotos = useMemo(
     () => filteredRegistros.reduce((acc, item) => acc + (item.fotos?.length || 0), 0),
     [filteredRegistros]
   )
+
+  const totalPaginas =
+    itemsPorPagina === "TODOS"
+      ? 1
+      : Math.max(1, Math.ceil(totalRegistros / itemsPorPagina))
+
+  const paginaActualValida = Math.min(paginaActual, totalPaginas)
+
+  const registrosVisibles = useMemo(() => {
+    if (itemsPorPagina === "TODOS") return filteredRegistros
+
+    const inicio = (paginaActualValida - 1) * itemsPorPagina
+    return filteredRegistros.slice(inicio, inicio + itemsPorPagina)
+  }, [filteredRegistros, paginaActualValida, itemsPorPagina])
+
+  function actualizarFiltro(event) {
+    const { name, value } = event.target
+    setFilterValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  function limpiarFiltros() {
+    setFilterValues(DEFAULT_FILTROS)
+    setPaginaActual(1)
+  }
+
+  function actualizarItemsPorPagina(event) {
+    const value = event.target.value
+    setItemsPorPagina(value === "TODOS" ? "TODOS" : Number(value))
+    setPaginaActual(1)
+  }
+
+  function irPaginaAnterior() {
+    setPaginaActual((prev) => Math.max(1, prev - 1))
+  }
+
+  function irPaginaSiguiente() {
+    setPaginaActual((prev) => Math.min(totalPaginas, prev + 1))
+  }
 
   useEffect(() => {
     async function cargarPendientes() {
@@ -256,15 +307,14 @@ export default function PendientesValidacionPage() {
               </h2>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <label className="block text-sm font-semibold text-slate-700">
-                Tipo de ingreso
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+              <label className="block">
+                <span className={LABEL_CLASS}>Tipo de ingreso</span>
                 <select
+                  name="tipo"
                   value={filterValues.tipo}
-                  onChange={(event) =>
-                    setFilterValues({ ...filterValues, tipo: event.target.value })
-                  }
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                  onChange={actualizarFiltro}
+                  className={FIELD_CLASS}
                 >
                   <option>Todos</option>
                   <option>ROLLIZOS</option>
@@ -272,14 +322,13 @@ export default function PendientesValidacionPage() {
                 </select>
               </label>
 
-              <label className="block text-sm font-semibold text-slate-700">
-                Estado
+              <label className="block">
+                <span className={LABEL_CLASS}>Estado</span>
                 <select
+                  name="estado"
                   value={filterValues.estado}
-                  onChange={(event) =>
-                    setFilterValues({ ...filterValues, estado: event.target.value })
-                  }
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                  onChange={actualizarFiltro}
+                  className={FIELD_CLASS}
                 >
                   <option>Todos</option>
                   <option>REGISTRADO</option>
@@ -287,14 +336,13 @@ export default function PendientesValidacionPage() {
                 </select>
               </label>
 
-              <label className="block text-sm font-semibold text-slate-700">
-                Motivo pendiente
+              <label className="block">
+                <span className={LABEL_CLASS}>Motivo pendiente</span>
                 <select
+                  name="motivo"
                   value={filterValues.motivo}
-                  onChange={(event) =>
-                    setFilterValues({ ...filterValues, motivo: event.target.value })
-                  }
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                  onChange={actualizarFiltro}
+                  className={FIELD_CLASS}
                 >
                   <option>Todos</option>
                   <option>Proveedor manual</option>
@@ -305,78 +353,85 @@ export default function PendientesValidacionPage() {
                 </select>
               </label>
 
-              <label className="block text-sm font-semibold text-slate-700">
-                Proveedor
+              <label className="block">
+                <span className={LABEL_CLASS}>Proveedor</span>
                 <input
+                  name="proveedor"
                   value={filterValues.proveedor}
-                  onChange={(event) =>
-                    setFilterValues({ ...filterValues, proveedor: event.target.value })
-                  }
+                  onChange={actualizarFiltro}
                   placeholder="Buscar proveedor"
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                  className={FIELD_CLASS}
                 />
               </label>
 
-              <label className="block text-sm font-semibold text-slate-700">
-                Remito
+              <label className="block">
+                <span className={LABEL_CLASS}>Remito</span>
                 <input
+                  name="remito"
                   value={filterValues.remito}
-                  onChange={(event) =>
-                    setFilterValues({ ...filterValues, remito: event.target.value })
-                  }
+                  onChange={actualizarFiltro}
                   placeholder="Buscar remito"
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                  className={FIELD_CLASS}
                 />
               </label>
 
-              <label className="block text-sm font-semibold text-slate-700">
-                Fecha desde
+              <label className="block">
+                <span className={LABEL_CLASS}>Fecha desde</span>
                 <input
                   type="date"
+                  name="fechaDesde"
                   value={filterValues.fechaDesde}
-                  onChange={(event) =>
-                    setFilterValues({ ...filterValues, fechaDesde: event.target.value })
-                  }
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                  onChange={actualizarFiltro}
+                  className={FIELD_CLASS}
                 />
               </label>
 
-              <label className="block text-sm font-semibold text-slate-700">
-                Fecha hasta
+              <label className="block">
+                <span className={LABEL_CLASS}>Fecha hasta</span>
                 <input
                   type="date"
+                  name="fechaHasta"
                   value={filterValues.fechaHasta}
-                  onChange={(event) =>
-                    setFilterValues({ ...filterValues, fechaHasta: event.target.value })
-                  }
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                  onChange={actualizarFiltro}
+                  className={FIELD_CLASS}
                 />
               </label>
-            </div>
 
-            <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-slate-600">
-                {filteredRegistros.length} pendientes filtrados
-              </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex items-end">
                 <button
                   type="button"
-                  onClick={() => setAppliedFilters(filterValues)}
-                  className="inline-flex items-center justify-center rounded-2xl bg-[#F3171B] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#D90F14]"
-                >
-                  Buscar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilterValues(DEFAULT_FILTROS)
-                    setAppliedFilters(DEFAULT_FILTROS)
-                  }}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+                  onClick={limpiarFiltros}
+                  className={BUTTON_SECONDARY_CLASS}
                 >
                   Limpiar filtros
                 </button>
               </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-slate-600">
+                {itemsPorPagina === "TODOS"
+                  ? "Mostrando todos los pendientes"
+                  : `Mostrando ${
+                      totalRegistros === 0
+                        ? 0
+                        : (paginaActualValida - 1) * itemsPorPagina + 1
+                    }-${Math.min(totalRegistros, paginaActualValida * itemsPorPagina)} de ${totalRegistros}`}
+              </p>
+              <label className="w-full sm:w-auto">
+                <span className={LABEL_CLASS}>Mostrar</span>
+                <select
+                  value={itemsPorPagina}
+                  onChange={actualizarItemsPorPagina}
+                  className={FIELD_CLASS}
+                >
+                  {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option === "TODOS" ? "Todos" : option}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
           {loading ? (
@@ -422,7 +477,7 @@ export default function PendientesValidacionPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRegistros.map((registro) => {
+                    {registrosVisibles.map((registro) => {
                       const href = detalleHref(registro)
                       const motivos = motivosPendientes(registro)
 
@@ -490,7 +545,7 @@ export default function PendientesValidacionPage() {
               </div>
 
               <div className="space-y-4 md:hidden">
-                {filteredRegistros.map((registro) => {
+                {registrosVisibles.map((registro) => {
                   const href = detalleHref(registro)
                   const motivos = motivosPendientes(registro)
 
@@ -562,6 +617,49 @@ export default function PendientesValidacionPage() {
                     </article>
                   )
                 })}
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-slate-600">
+                  {itemsPorPagina === "TODOS"
+                    ? "Mostrando todos los pendientes"
+                    : `Mostrando ${
+                        totalRegistros === 0
+                          ? 0
+                          : (paginaActualValida - 1) * itemsPorPagina + 1
+                      }-${Math.min(totalRegistros, paginaActualValida * itemsPorPagina)} de ${totalRegistros}`}
+                </p>
+                {itemsPorPagina !== "TODOS" && totalRegistros > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={irPaginaAnterior}
+                      disabled={paginaActualValida === 1}
+                      className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                        paginaActualValida === 1
+                          ? "border-slate-200 bg-slate-100 text-slate-400"
+                          : "border-[#CBD5E1] bg-white text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+                      }`}
+                    >
+                      Anterior
+                    </button>
+                    <span className="text-sm text-slate-600">
+                      Página {paginaActualValida} de {totalPaginas}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={irPaginaSiguiente}
+                      disabled={paginaActualValida === totalPaginas}
+                      className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                        paginaActualValida === totalPaginas
+                          ? "border-slate-200 bg-slate-100 text-slate-400"
+                          : "border-[#CBD5E1] bg-white text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+                      }`}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </>
           )}

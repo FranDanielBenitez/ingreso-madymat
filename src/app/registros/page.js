@@ -8,6 +8,11 @@ const SECTION_CLASS =
 const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
 const FIELD_CLASS =
   "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+const BUTTON_SECONDARY_CLASS =
+  "rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+const BUTTON_PRIMARY_CLASS =
+  "rounded-lg bg-[#F3171B] px-5 py-3 font-bold text-white shadow-sm hover:bg-[#D90F14]"
+const ITEMS_PER_PAGE_OPTIONS = [5, 10, 15, "TODOS"]
 
 const ESTADOS = [
   "BORRADOR",
@@ -134,15 +139,32 @@ function ArticuloManualBadge({ registro }) {
 }
 
 export default function RegistrosPage() {
-  const [filtros, setFiltros] = useState(FILTROS_INICIALES)
+  const [filtros, setFiltros] = useState(() => filtrosDesdeUrl())
   const [registros, setRegistros] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [paginaActual, setPaginaActual] = useState(1)
+  const [itemsPorPagina, setItemsPorPagina] = useState(10)
 
   const totalFotos = useMemo(
     () => registros.reduce((acc, item) => acc + (item.fotos?.length || 0), 0),
     [registros]
   )
+
+  const totalRegistros = registros.length
+  const totalPaginas =
+    itemsPorPagina === "TODOS"
+      ? 1
+      : Math.max(1, Math.ceil(totalRegistros / itemsPorPagina))
+
+  const paginaActualValida = Math.min(paginaActual, totalPaginas)
+
+  const registrosVisibles = useMemo(() => {
+    if (itemsPorPagina === "TODOS") return registros
+
+    const inicio = (paginaActualValida - 1) * itemsPorPagina
+    return registros.slice(inicio, inicio + itemsPorPagina)
+  }, [registros, paginaActualValida, itemsPorPagina])
 
   function actualizarFiltro(event) {
     const { name, value } = event.target
@@ -151,6 +173,8 @@ export default function RegistrosPage() {
       ...prev,
       [name]: value,
     }))
+
+    setPaginaActual(1)
   }
 
   async function cargarRegistros(filtrosActuales = filtros) {
@@ -165,7 +189,9 @@ export default function RegistrosPage() {
       })
 
       const query = params.toString()
-      const response = await fetch(`/api/registros${query ? `?${query}` : ""}`)
+      const response = await fetch(
+        `/api/registros${query ? `?${query}` : ""}`
+      )
       const result = await response.json()
 
       if (!response.ok || !result.ok) {
@@ -180,24 +206,33 @@ export default function RegistrosPage() {
     }
   }
 
-  function buscar(event) {
-    event.preventDefault()
-    cargarRegistros()
-  }
-
   function limpiarFiltros() {
     setFiltros(FILTROS_INICIALES)
-    cargarRegistros(FILTROS_INICIALES)
+    setPaginaActual(1)
+  }
+
+  function actualizarItemsPorPagina(event) {
+    const value = event.target.value
+    setItemsPorPagina(value === "TODOS" ? "TODOS" : Number(value))
+    setPaginaActual(1)
+  }
+
+  function irPaginaAnterior() {
+    setPaginaActual((prev) => Math.max(1, prev - 1))
+  }
+
+  function irPaginaSiguiente() {
+    setPaginaActual((prev) => Math.min(totalPaginas, prev + 1))
   }
 
   useEffect(() => {
-    const filtrosIniciales = filtrosDesdeUrl()
+    const timeout = setTimeout(() => {
+      cargarRegistros(filtros)
+    }, 250)
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFiltros(filtrosIniciales)
-    cargarRegistros(filtrosIniciales)
+    return () => clearTimeout(timeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [filtros])
 
   return (
     <main className="min-h-screen bg-[#F5F7FA] p-6">
@@ -219,7 +254,7 @@ export default function RegistrosPage() {
         </section>
 
         <section className={SECTION_CLASS}>
-          <form onSubmit={buscar} className="space-y-4">
+          <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-4">
               <label>
                 <span className={LABEL_CLASS}>Tipo de ingreso</span>
@@ -311,22 +346,30 @@ export default function RegistrosPage() {
               </label>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <label className="w-full sm:w-auto">
+                <span className={LABEL_CLASS}>Mostrar</span>
+                <select
+                  value={itemsPorPagina}
+                  onChange={actualizarItemsPorPagina}
+                  className={FIELD_CLASS}
+                >
+                  {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option === "TODOS" ? "Todos" : option}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="button"
                 onClick={limpiarFiltros}
-                className="rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+                className={BUTTON_SECONDARY_CLASS}
               >
                 Limpiar filtros
               </button>
-              <button
-                type="submit"
-                className="rounded-lg bg-[#F3171B] px-5 py-3 font-bold text-white shadow-sm hover:bg-[#D90F14]"
-              >
-                Buscar
-              </button>
             </div>
-          </form>
+          </div>
         </section>
 
         <section className={SECTION_CLASS}>
@@ -375,7 +418,7 @@ export default function RegistrosPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {registros.map((registro) => {
+                    {registrosVisibles.map((registro) => {
                       const href = detalleHref(registro)
 
                       return (
@@ -441,7 +484,7 @@ export default function RegistrosPage() {
               </div>
 
               <div className="space-y-4 md:hidden">
-                {registros.map((registro) => {
+                {registrosVisibles.map((registro) => {
                   const href = detalleHref(registro)
 
                   return (
@@ -508,6 +551,49 @@ export default function RegistrosPage() {
                     </article>
                   )
                 })}
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-slate-600">
+                  {itemsPorPagina === "TODOS"
+                    ? "Mostrando todos los registros"
+                    : `Mostrando ${
+                        totalRegistros === 0
+                          ? 0
+                          : (paginaActual - 1) * itemsPorPagina + 1
+                      }-${Math.min(totalRegistros, paginaActual * itemsPorPagina)} de ${totalRegistros}`}
+                </p>
+                {itemsPorPagina !== "TODOS" && totalRegistros > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={irPaginaAnterior}
+                      disabled={paginaActualValida === 1}
+                      className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                        paginaActualValida === 1
+                          ? "border-slate-200 bg-slate-100 text-slate-400"
+                          : "border-[#CBD5E1] bg-white text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+                      }`}
+                    >
+                      Anterior
+                    </button>
+                    <span className="text-sm text-slate-600">
+                      Página {paginaActualValida} de {totalPaginas}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={irPaginaSiguiente}
+                      disabled={paginaActualValida === totalPaginas}
+                      className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                        paginaActualValida === totalPaginas
+                          ? "border-slate-200 bg-slate-100 text-slate-400"
+                          : "border-[#CBD5E1] bg-white text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+                      }`}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </>
           )}
