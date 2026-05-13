@@ -58,6 +58,7 @@ model Ingreso {
   estado                    EstadoIngreso          @default(REGISTRADO)
   tipoIngresoId             Int                    @map("tipo_ingreso_id")
   categoriaFormularioId     Int?                   @map("categoria_formulario_id")
+  procedenciaId             Int?                   @map("procedencia_id")
   remitoProveedor           String?                @map("remito_proveedor")
   observaciones             String?
   proveedorOrigenDato       OrigenDato             @default(BEJERMAN) @map("proveedor_origen_dato")
@@ -122,6 +123,7 @@ model Ingreso {
   logs                      IngresoLog[]
   fotos                     IngresoFoto[]
   categoriaFormulario       CategoriaFormulario?   @relation(fields: [categoriaFormularioId], references: [id])
+  procedencia               ProcedenciaDim?        @relation(fields: [procedenciaId], references: [id])
   registradoPor             UsuarioApp?            @relation("IngresoRegistradoPor", fields: [registradoPorId], references: [id])
   tipoIngreso               TipoIngreso            @relation(fields: [tipoIngresoId], references: [id])
   validadoPor               UsuarioApp?            @relation("IngresoValidadoPor", fields: [validadoPorId], references: [id])
@@ -177,6 +179,17 @@ model IngresoFoto {
   ingreso        Ingreso         @relation(fields: [ingresoId], references: [id])
 
   @@map("ingreso_fotos")
+}
+
+model ProcedenciaDim {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  activa    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  ingresos  Ingreso[]
+
+  @@map("procedencia_dim")
 }
 
 enum RolUsuario {

@@ -31,6 +31,11 @@ const ACCESOS = [
     descripcion: "Revisar datos manuales o fuera de sugeridos.",
     href: "/registros/pendientes-validacion",
   },
+  {
+    titulo: "Configurar procedencias",
+    descripcion: "Administrar procedencias disponibles para Rollizos.",
+    href: "/configuracion/procedencias",
+  },
 ]
 
 function formatearFecha(value) {

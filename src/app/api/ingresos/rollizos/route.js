@@ -206,6 +206,32 @@ export async function POST(request) {
       )
     }
 
+    const procedenciaId = Number(body.procedenciaId)
+
+    if (!Number.isInteger(procedenciaId) || procedenciaId <= 0) {
+      return NextResponse.json(
+        { ok: false, message: "La procedencia es obligatoria para Rollizos" },
+        { status: 400 }
+      )
+    }
+
+    const procedencia = await prisma.procedenciaDim.findFirst({
+      where: {
+        id: procedenciaId,
+        activa: true,
+      },
+    })
+
+    if (!procedencia) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "La procedencia seleccionada no existe o no esta activa",
+        },
+        { status: 400 }
+      )
+    }
+
     const proveedorCargaManual = Boolean(body.proveedorCargaManual)
     const proveedor = body.proveedorSeleccionado
     const proveedorManual = body.proveedorManual || {}
@@ -362,6 +388,7 @@ export async function POST(request) {
 
         tipoIngresoId: tipoIngreso.id,
         categoriaFormularioId: categoriaFormulario.id,
+        procedenciaId: procedencia.id,
 
         remitoProveedor: limpiarTexto(body.remitoProveedor),
         observaciones: limpiarTexto(body.observaciones),

@@ -16,6 +16,7 @@ const INCLUDE_INGRESO = {
   registradoPor: true,
   tipoIngreso: true,
   categoriaFormulario: true,
+  procedencia: true,
 }
 
 function limpiarTexto(value) {
@@ -124,6 +125,7 @@ export async function PATCH(request, context) {
         logs: true,
         tipoIngreso: true,
         categoriaFormulario: true,
+        procedencia: true,
       },
     })
 
@@ -143,6 +145,7 @@ export async function PATCH(request, context) {
 
     const articulo = ingresoExistente.articulos?.[0]
     const esMateriales = ingresoExistente.tipoIngreso?.codigo === "MATERIALES"
+    const esRollizos = ingresoExistente.tipoIngreso?.codigo === "ROLLIZOS"
 
     if (!articulo) {
       return NextResponse.json(
@@ -179,6 +182,44 @@ export async function PATCH(request, context) {
     const ingresoData = {}
     const articuloData = {}
     const cambios = []
+
+    if (esRollizos) {
+      const procedenciaId = Number(body?.procedenciaId)
+
+      if (!Number.isInteger(procedenciaId) || procedenciaId <= 0) {
+        return NextResponse.json(
+          { ok: false, message: "La procedencia es obligatoria para Rollizos" },
+          { status: 400 }
+        )
+      }
+
+      const procedencia = await prisma.procedenciaDim.findFirst({
+        where: {
+          id: procedenciaId,
+          activa: true,
+        },
+      })
+
+      if (!procedencia) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message: "La procedencia seleccionada no existe o no esta activa",
+          },
+          { status: 400 }
+        )
+      }
+
+      if (ingresoExistente.procedenciaId !== procedencia.id) {
+        ingresoData.procedenciaId = procedencia.id
+        agregarCambio(
+          cambios,
+          "Procedencia",
+          ingresoExistente.procedencia?.nombre,
+          procedencia.nombre
+        )
+      }
+    }
 
     if (fechaSolo(ingresoExistente.fechaIngreso) !== fechaSolo(fechaIngreso)) {
       ingresoData.fechaIngreso = fechaIngreso

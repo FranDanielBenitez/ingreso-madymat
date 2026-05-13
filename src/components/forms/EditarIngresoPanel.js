@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 const FIELD_CLASS =
@@ -35,11 +35,40 @@ export default function EditarIngresoPanel({
     observaciones: valorInicial(ingreso.observaciones),
     choferNombreCargado: valorInicial(ingreso.choferNombreCargado),
     choferDocumentoCargado: valorInicial(ingreso.choferDocumentoCargado),
+    procedenciaId: valorInicial(ingreso.procedenciaId),
     motivo: "",
   })
   const [guardando, setGuardando] = useState(false)
+  const [procedencias, setProcedencias] = useState([])
+  const [cargandoProcedencias, setCargandoProcedencias] = useState(false)
   const choferManual = ingreso.choferOrigenDato === "MANUAL"
   const esMateriales = ingreso.tipoIngreso?.codigo === "MATERIALES"
+  const esRollizos = ingreso.tipoIngreso?.codigo === "ROLLIZOS"
+
+  useEffect(() => {
+    async function cargarProcedencias() {
+      if (!esRollizos) return
+
+      try {
+        setCargandoProcedencias(true)
+
+        const response = await fetch("/api/dimensiones/procedencias")
+        const result = await response.json()
+
+        if (!response.ok || !result.ok) {
+          throw new Error(result.message || "No se pudieron cargar procedencias")
+        }
+
+        setProcedencias(result.procedencias || [])
+      } catch (error) {
+        toast.error(error.message || "No se pudieron cargar procedencias")
+      } finally {
+        setCargandoProcedencias(false)
+      }
+    }
+
+    cargarProcedencias()
+  }, [esRollizos])
 
   function actualizarCampo(event) {
     const { name, value } = event.target
@@ -56,6 +85,11 @@ export default function EditarIngresoPanel({
 
     if (!values.fechaIngreso) {
       toast.error("La fecha de ingreso es obligatoria")
+      return
+    }
+
+    if (esRollizos && !values.procedenciaId) {
+      toast.error("La procedencia es obligatoria para Rollizos")
       return
     }
 
@@ -86,6 +120,10 @@ export default function EditarIngresoPanel({
         choferNombreCargado: values.choferNombreCargado,
         choferDocumentoCargado: values.choferDocumentoCargado,
         motivo,
+      }
+
+      if (esRollizos) {
+        payload.procedenciaId = values.procedenciaId
       }
 
       if (!esMateriales) {
@@ -154,6 +192,30 @@ export default function EditarIngresoPanel({
             className={FIELD_CLASS}
           />
         </label>
+
+        {esRollizos ? (
+          <label>
+            <span className={LABEL_CLASS}>Procedencia *</span>
+            <select
+              name="procedenciaId"
+              value={values.procedenciaId}
+              onChange={actualizarCampo}
+              className={FIELD_CLASS}
+              disabled={cargandoProcedencias}
+            >
+              <option value="">
+                {cargandoProcedencias
+                  ? "Cargando procedencias..."
+                  : "Seleccionar procedencia"}
+              </option>
+              {procedencias.map((procedencia) => (
+                <option key={procedencia.id} value={procedencia.id}>
+                  {procedencia.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
 
         {!esMateriales ? (
           <>

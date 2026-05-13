@@ -64,6 +64,8 @@ async function main() {
     },
   ]
 
+  const procedencias = ["Mendoza", "San Juan", "Río Negro"]
+
   for (const tipo of tiposIngreso) {
     await prisma.tipoIngreso.upsert({
       where: { codigo: tipo.codigo },
@@ -77,6 +79,38 @@ async function main() {
       where: { codigo: categoria.codigo },
       update: categoria,
       create: categoria,
+    })
+  }
+
+  for (const nombre of procedencias) {
+    if (nombre === "Río Negro") {
+      const sinAcento = await prisma.procedenciaDim.findUnique({
+        where: { nombre: "Rio Negro" },
+      })
+      const conAcento = await prisma.procedenciaDim.findUnique({
+        where: { nombre },
+      })
+
+      if (sinAcento && !conAcento) {
+        await prisma.procedenciaDim.update({
+          where: { id: sinAcento.id },
+          data: {
+            nombre,
+            activa: true,
+          },
+        })
+      }
+    }
+
+    await prisma.procedenciaDim.upsert({
+      where: { nombre },
+      update: {
+        activa: true,
+      },
+      create: {
+        nombre,
+        activa: true,
+      },
     })
   }
 

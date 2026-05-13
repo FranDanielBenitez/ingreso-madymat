@@ -337,11 +337,12 @@ export default function DetalleIngresoRollizosPage() {
                 <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Datos generales
           </h2>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <Campo label="Portero" value={ingreso.registradoPor?.nombre} />
             <Campo label="Remito proveedor" value={ingreso.remitoProveedor} />
             <Campo label="Categoría" value={ingreso.categoriaFormulario?.nombre} />
-            <div className="md:col-span-3">
+            <Campo label="Procedencia" value={ingreso.procedencia?.nombre} />
+            <div className="md:col-span-4">
               <Campo label="Observaciones" value={ingreso.observaciones} />
             </div>
           </div>

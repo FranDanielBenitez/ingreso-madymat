@@ -115,6 +115,7 @@ export default function IngresoRollizosPage() {
   const [hachadores, setHachadores] = useState([])
   const [choferes, setChoferes] = useState([])
   const [porteros, setPorteros] = useState([])
+  const [procedencias, setProcedencias] = useState([])
   const [modoProveedor, setModoProveedor] = useState(MODO_SUGERIDOS)
   const [modoArticulo, setModoArticulo] = useState(MODO_SUGERIDOS)
   const [modoServicio, setModoServicio] = useState(MODO_SUGERIDOS)
@@ -155,6 +156,7 @@ export default function IngresoRollizosPage() {
   const hachadorCodigo = watch("hachadorCodigo")
   const choferLegajo = watch("choferLegajo")
   const porteroLegajo = watch("porteroLegajo")
+  const procedenciaId = watch("procedenciaId")
   const tipoServicio = watch("tipoServicio")
   const tipoChofer = watch("tipoChofer")
   const fotoCamionPatente = watch("fotoCamionPatente")
@@ -194,6 +196,13 @@ export default function IngresoRollizosPage() {
       porteros.find((item) => String(item.Legajo) === String(porteroLegajo)) ||
       null,
     [porteros, porteroLegajo]
+  )
+
+  const procedenciaSeleccionada = useMemo(
+    () =>
+      procedencias.find((item) => String(item.id) === String(procedenciaId)) ||
+      null,
+    [procedencias, procedenciaId]
   )
 
   const hayErroresDimensiones = Object.values(dimensionErrors).some(Boolean)
@@ -359,6 +368,7 @@ export default function IngresoRollizosPage() {
         hachadoresResult,
         choferesResult,
         porterosResult,
+        procedenciasResult,
       ] = await Promise.allSettled([
         fetchDimensionSegura(proveedorUrl(modoProveedor)),
         fetchDimensionSegura(articuloUrl(modoArticulo)),
@@ -366,6 +376,7 @@ export default function IngresoRollizosPage() {
         fetchDimensionSegura("/api/dimensiones/hachadores?categoria=ROLLIZOS"),
         fetchDimensionSegura("/api/dimensiones/choferes"),
         fetchDimensionSegura("/api/dimensiones/porteros"),
+        fetchDimensionSegura("/api/dimensiones/procedencias"),
       ])
 
       if (proveedoresResult.status === "fulfilled") {
@@ -385,6 +396,9 @@ export default function IngresoRollizosPage() {
       }
       if (porterosResult.status === "fulfilled") {
         setPorteros(porterosResult.value)
+      }
+      if (procedenciasResult.status === "fulfilled") {
+        setProcedencias(procedenciasResult.value)
       }
 
       setDimensionErrors({
@@ -411,6 +425,10 @@ export default function IngresoRollizosPage() {
         porteros: mensajeErrorDimension(
           porterosResult,
           "No se pudieron cargar porteros"
+        ),
+        procedencias: mensajeErrorDimension(
+          procedenciasResult,
+          "No se pudieron cargar procedencias"
         ),
       })
 
@@ -517,6 +535,11 @@ export default function IngresoRollizosPage() {
 
       if (!porteroSeleccionado) {
         toast.error("No se pudo seleccionar portero. Reintentá la carga de datos.")
+        return
+      }
+
+      if (!procedenciaSeleccionada) {
+        toast.error("La procedencia es obligatoria para Rollizos")
         return
       }
 
@@ -627,6 +650,8 @@ export default function IngresoRollizosPage() {
         choferSeleccionado:
           tipoChofer === "INTERNO" ? choferSeleccionado : null,
         porteroSeleccionado,
+        procedenciaId: procedenciaSeleccionada.id,
+        procedenciaSeleccionada,
         fotosRegistro: {
           camionPatente: {
             nombre: fotoCamionPatenteFile.name,
@@ -784,7 +809,7 @@ export default function IngresoRollizosPage() {
             Datos generales
           </h2>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <div>
               <label className={LABEL_CLASS}>Fecha de ingreso</label>
               <input
@@ -829,6 +854,24 @@ export default function IngresoRollizosPage() {
                 className={FIELD_CLASS}
                 placeholder="Número de remito"
               />
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>
+                Procedencia <span className="text-[#F3171B]">*</span>
+              </label>
+              <select
+                {...register("procedenciaId", { required: true })}
+                className={FIELD_CLASS}
+              >
+                <option value="">Seleccionar procedencia</option>
+                {procedencias.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nombre}
+                  </option>
+                ))}
+              </select>
+              <CampoErrorDimension message={dimensionErrors.procedencias} />
             </div>
           </div>
         </section>
