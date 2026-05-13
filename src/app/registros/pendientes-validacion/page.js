@@ -31,6 +31,34 @@ function descripcionArticulos(registro) {
   return articuloPrincipal(registro)?.articuloDescripcion
 }
 
+function incluyeTexto(valor, termino) {
+  if (!termino) return true
+  return String(valor || "").toLowerCase().includes(termino.toLowerCase())
+}
+
+function matchesMotivo(registro, motivo) {
+  if (!motivo || motivo === "Todos") return true
+
+  const articulosManuales = (registro.articulos || []).some(
+    (articulo) => articulo.origenDato === "MANUAL"
+  )
+
+  if (motivo === "Proveedor manual") return registro.proveedorCargaManual === true
+  if (motivo === "Servicio manual") return registro.servicioCargaManual === true
+  if (motivo === "Artículo manual") return articulosManuales
+  if (motivo === "Fuera de sugeridos") return registro.tieneFueraSugerido === true
+
+  if (motivo === "Pendiente validar") {
+    return (
+      registro.proveedorValidado === false ||
+      registro.servicioValidado === false ||
+      registro.tieneCargaManual === true
+    )
+  }
+
+  return true
+}
+
 function detalleHref(registro) {
   if (registro.tipoIngreso?.codigo === "ROLLIZOS") {
     return `/ingresos/rollizos/${registro.id}`
@@ -84,7 +112,7 @@ function motivosPendientes(registro) {
 
   if (registro.proveedorCargaManual) motivos.push("Proveedor manual")
   if (registro.servicioCargaManual) motivos.push("Servicio manual")
-  if (articulosManuales) motivos.push("Articulo manual")
+  if (articulosManuales) motivos.push("Artículo manual")
   if (registro.tieneFueraSugerido) motivos.push("Fuera de sugeridos")
 
   if (!registro.proveedorValidado || !registro.servicioValidado) {
@@ -98,14 +126,75 @@ function motivosPendientes(registro) {
   return [...new Set(motivos)]
 }
 
+const DEFAULT_FILTROS = {
+  tipo: "Todos",
+  estado: "Todos",
+  motivo: "Todos",
+  proveedor: "",
+  remito: "",
+  fechaDesde: "",
+  fechaHasta: "",
+}
+
 export default function PendientesValidacionPage() {
   const [registros, setRegistros] = useState([])
+  const [filterValues, setFilterValues] = useState(DEFAULT_FILTROS)
+  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTROS)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
+  const filteredRegistros = useMemo(() => {
+    return registros.filter((registro) => {
+      if (
+        appliedFilters.tipo !== "Todos" &&
+        registro.tipoIngreso?.codigo !== appliedFilters.tipo
+      ) {
+        return false
+      }
+
+      if (
+        appliedFilters.estado !== "Todos" &&
+        registro.estado !== appliedFilters.estado
+      ) {
+        return false
+      }
+
+      if (
+        !incluyeTexto(
+          registro.proveedorNombreCargado,
+          appliedFilters.proveedor
+        )
+      ) {
+        return false
+      }
+
+      if (!incluyeTexto(registro.remitoProveedor, appliedFilters.remito)) {
+        return false
+      }
+
+      if (appliedFilters.fechaDesde) {
+        const desde = new Date(appliedFilters.fechaDesde)
+        const ingreso = new Date(registro.fechaIngreso)
+        if (ingreso < desde) return false
+      }
+
+      if (appliedFilters.fechaHasta) {
+        const hasta = new Date(appliedFilters.fechaHasta)
+        const ingreso = new Date(registro.fechaIngreso)
+        if (ingreso > hasta) return false
+      }
+
+      if (!matchesMotivo(registro, appliedFilters.motivo)) {
+        return false
+      }
+
+      return true
+    })
+  }, [registros, appliedFilters])
+
   const totalFotos = useMemo(
-    () => registros.reduce((acc, item) => acc + (item.fotos?.length || 0), 0),
-    [registros]
+    () => filteredRegistros.reduce((acc, item) => acc + (item.fotos?.length || 0), 0),
+    [filteredRegistros]
   )
 
   useEffect(() => {
@@ -151,12 +240,145 @@ export default function PendientesValidacionPage() {
               </p>
             </div>
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
-              {registros.length} pendientes · {totalFotos} fotos
+              {filteredRegistros.length} pendientes · {totalFotos} fotos
             </div>
           </div>
         </section>
 
         <section className={SECTION_CLASS}>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Filtros
+              </p>
+              <h2 className="mt-2 text-xl font-bold text-[#0F172A]">
+                Refina los pendientes
+              </h2>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <label className="block text-sm font-semibold text-slate-700">
+                Tipo de ingreso
+                <select
+                  value={filterValues.tipo}
+                  onChange={(event) =>
+                    setFilterValues({ ...filterValues, tipo: event.target.value })
+                  }
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                >
+                  <option>Todos</option>
+                  <option>ROLLIZOS</option>
+                  <option>MATERIALES</option>
+                </select>
+              </label>
+
+              <label className="block text-sm font-semibold text-slate-700">
+                Estado
+                <select
+                  value={filterValues.estado}
+                  onChange={(event) =>
+                    setFilterValues({ ...filterValues, estado: event.target.value })
+                  }
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                >
+                  <option>Todos</option>
+                  <option>REGISTRADO</option>
+                  <option>ANULADO</option>
+                </select>
+              </label>
+
+              <label className="block text-sm font-semibold text-slate-700">
+                Motivo pendiente
+                <select
+                  value={filterValues.motivo}
+                  onChange={(event) =>
+                    setFilterValues({ ...filterValues, motivo: event.target.value })
+                  }
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                >
+                  <option>Todos</option>
+                  <option>Proveedor manual</option>
+                  <option>Servicio manual</option>
+                  <option>Artículo manual</option>
+                  <option>Fuera de sugeridos</option>
+                  <option>Pendiente validar</option>
+                </select>
+              </label>
+
+              <label className="block text-sm font-semibold text-slate-700">
+                Proveedor
+                <input
+                  value={filterValues.proveedor}
+                  onChange={(event) =>
+                    setFilterValues({ ...filterValues, proveedor: event.target.value })
+                  }
+                  placeholder="Buscar proveedor"
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                />
+              </label>
+
+              <label className="block text-sm font-semibold text-slate-700">
+                Remito
+                <input
+                  value={filterValues.remito}
+                  onChange={(event) =>
+                    setFilterValues({ ...filterValues, remito: event.target.value })
+                  }
+                  placeholder="Buscar remito"
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                />
+              </label>
+
+              <label className="block text-sm font-semibold text-slate-700">
+                Fecha desde
+                <input
+                  type="date"
+                  value={filterValues.fechaDesde}
+                  onChange={(event) =>
+                    setFilterValues({ ...filterValues, fechaDesde: event.target.value })
+                  }
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                />
+              </label>
+
+              <label className="block text-sm font-semibold text-slate-700">
+                Fecha hasta
+                <input
+                  type="date"
+                  value={filterValues.fechaHasta}
+                  onChange={(event) =>
+                    setFilterValues({ ...filterValues, fechaHasta: event.target.value })
+                  }
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70"
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-slate-600">
+                {filteredRegistros.length} pendientes filtrados
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAppliedFilters(filterValues)}
+                  className="inline-flex items-center justify-center rounded-2xl bg-[#F3171B] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#D90F14]"
+                >
+                  Buscar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterValues(DEFAULT_FILTROS)
+                    setAppliedFilters(DEFAULT_FILTROS)
+                  }}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            </div>
+          </div>
           {loading ? (
             <div>
               <h2 className="text-xl font-bold text-[#0F172A]">
@@ -173,13 +395,13 @@ export default function PendientesValidacionPage() {
               </h2>
               <p className="mt-2 text-[#475569]">{error}</p>
             </div>
-          ) : registros.length === 0 ? (
+          ) : filteredRegistros.length === 0 ? (
             <div>
               <h2 className="text-xl font-bold text-[#0F172A]">
-                Sin pendientes
+                Sin resultados
               </h2>
               <p className="mt-2 text-[#475569]">
-                No hay ingresos con datos manuales o fuera de sugeridos.
+                No hay ingresos que coincidan con los filtros seleccionados.
               </p>
             </div>
           ) : (
@@ -200,7 +422,7 @@ export default function PendientesValidacionPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {registros.map((registro) => {
+                    {filteredRegistros.map((registro) => {
                       const href = detalleHref(registro)
                       const motivos = motivosPendientes(registro)
 
@@ -250,7 +472,7 @@ export default function PendientesValidacionPage() {
                             {href ? (
                               <Link
                                 href={href}
-                                className="rounded-lg bg-[#F3171B] px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14]"
+                                className="inline-flex min-w-[140px] items-center justify-center whitespace-nowrap rounded-lg bg-[#F3171B] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#D90F14]"
                               >
                                 Ver detalle
                               </Link>
@@ -268,7 +490,7 @@ export default function PendientesValidacionPage() {
               </div>
 
               <div className="space-y-4 md:hidden">
-                {registros.map((registro) => {
+                {filteredRegistros.map((registro) => {
                   const href = detalleHref(registro)
                   const motivos = motivosPendientes(registro)
 
@@ -327,7 +549,7 @@ export default function PendientesValidacionPage() {
                         {href ? (
                           <Link
                             href={href}
-                            className="inline-flex rounded-lg bg-[#F3171B] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14]"
+                            className="inline-flex w-full justify-center whitespace-nowrap rounded-lg bg-[#F3171B] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#D90F14] sm:w-auto"
                           >
                             Ver detalle
                           </Link>
