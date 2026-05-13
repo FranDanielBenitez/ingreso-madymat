@@ -52,6 +52,21 @@ function Campo({ label, value }) {
   )
 }
 
+function ProveedorBadges({ ingreso }) {
+  if (!ingreso?.proveedorCargaManual) return null
+
+  return (
+    <div className="mb-4 flex flex-wrap gap-2">
+      <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+        Proveedor manual
+      </span>
+      <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+        Pendiente de validar
+      </span>
+    </div>
+  )
+}
+
 export default function DetalleIngresoMaterialesPage() {
   const params = useParams()
   const id = params?.id
@@ -484,6 +499,7 @@ export default function DetalleIngresoMaterialesPage() {
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Proveedor
           </h2>
+          <ProveedorBadges ingreso={ingreso} />
           <div className="grid gap-4 md:grid-cols-4">
             <Campo label="Codigo" value={ingreso.proveedorCodigoBejerman} />
             <Campo label="Razon social" value={ingreso.proveedorNombreCargado} />

@@ -104,6 +104,7 @@ export default function IngresoRollizosPage() {
   const [modoProveedor, setModoProveedor] = useState(MODO_SUGERIDOS)
   const [modoArticulo, setModoArticulo] = useState(MODO_SUGERIDOS)
   const [modoServicio, setModoServicio] = useState(MODO_SUGERIDOS)
+  const [proveedorCargaManual, setProveedorCargaManual] = useState(false)
   const [cargandoDimensiones, setCargandoDimensiones] = useState({})
   const [dimensionErrors, setDimensionErrors] = useState({})
   const [reintentandoDimensiones, setReintentandoDimensiones] = useState(false)
@@ -214,6 +215,21 @@ export default function IngresoRollizosPage() {
       ...prev,
       [nombre]: message,
     }))
+  }
+
+  function activarProveedorManual() {
+    setProveedorCargaManual(true)
+    setValue("proveedorCodigo", "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }
+
+  function volverABuscarProveedor() {
+    setProveedorCargaManual(false)
+    setValue("proveedorManualNombre", "")
+    setValue("proveedorManualCuit", "")
+    setValue("proveedorManualObservacion", "")
   }
 
   async function cambiarModoProveedor(modo) {
@@ -457,7 +473,12 @@ export default function IngresoRollizosPage() {
         return
       }
 
-      if (!proveedorSeleccionado) {
+      if (proveedorCargaManual && !String(values.proveedorManualNombre || "").trim()) {
+        toast.error("El nombre del proveedor manual es obligatorio")
+        return
+      }
+
+      if (!proveedorCargaManual && !proveedorSeleccionado) {
         toast.error(
           "No se pudo seleccionar proveedor. Reintenta la carga de datos."
         )
@@ -481,7 +502,13 @@ export default function IngresoRollizosPage() {
 
       const ingresoPreparado = {
         ...datosIngreso,
-        proveedorSeleccionado,
+        proveedorCargaManual,
+        proveedorSeleccionado: proveedorCargaManual ? null : proveedorSeleccionado,
+        proveedorManual: {
+          nombre: values.proveedorManualNombre || "",
+          cuit: values.proveedorManualCuit || "",
+          observacion: values.proveedorManualObservacion || "",
+        },
         proveedorModoBusqueda: modoProveedor,
         articuloSeleccionado,
         articuloModoBusqueda: modoArticulo,
@@ -570,6 +597,7 @@ export default function IngresoRollizosPage() {
       unidad: "TN",
     })
     setPreviewsFotos({})
+    setProveedorCargaManual(false)
     setFotoInputKeys((prev) => ({
       fotoCamionPatente: prev.fotoCamionPatente + 1,
       fotoMaterialCargado: prev.fotoMaterialCargado + 1,
@@ -690,35 +718,107 @@ export default function IngresoRollizosPage() {
           </h2>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
+            <div className={proveedorCargaManual ? "md:col-span-2" : ""}>
               <input
                 type="hidden"
-                {...register("proveedorCodigo", { required: true })}
+                {...register("proveedorCodigo")}
               />
-              <SearchableSelect
-                label="Proveedor"
-                value={proveedorCodigo}
-                options={proveedores}
-                onChange={(item) =>
-                  setValue("proveedorCodigo", item?.Codigo || "", {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  })
-                }
-                getOptionValue={(item) => item.Codigo}
-                getOptionLabel={(item) => `${item.Codigo} - ${item.RazonSocial}`}
-                getSearchText={(item) => `${item.Codigo} ${item.RazonSocial}`}
-                placeholder="Buscar proveedor"
-                loading={cargandoDimensiones.proveedor}
-                modeControl={
-                  <ModoBusquedaInline
-                    value={modoProveedor}
-                    onChange={cambiarModoProveedor}
-                    disabled={cargandoDimensiones.proveedor}
+              {proveedorCargaManual ? (
+                <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 dark:border-amber-400/25 dark:bg-slate-800/60">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200">
+                          Proveedor manual
+                        </span>
+                        <span className="rounded-full border border-amber-200 bg-amber-100/70 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+                          Pendiente de validar
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#475569]">
+                        El proveedor quedara pendiente de validar.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={volverABuscarProveedor}
+                      className="rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-800 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
+                    >
+                      Volver a buscar en Bejerman
+                    </button>
+                  </div>
+                  <div className="mt-4 grid gap-3">
+                    <label>
+                      <span className={LABEL_CLASS}>
+                        Nombre / Razon social proveedor *
+                      </span>
+                      <input
+                        type="text"
+                        {...register("proveedorManualNombre")}
+                        className={FIELD_CLASS}
+                        placeholder="Nombre del proveedor"
+                      />
+                    </label>
+                    <label>
+                      <span className={LABEL_CLASS}>CUIT proveedor</span>
+                      <input
+                        type="text"
+                        {...register("proveedorManualCuit")}
+                        className={FIELD_CLASS}
+                        placeholder="Opcional"
+                      />
+                    </label>
+                    <label>
+                      <span className={LABEL_CLASS}>
+                        Observacion proveedor
+                      </span>
+                      <textarea
+                        {...register("proveedorManualObservacion")}
+                        className={TEXTAREA_CLASS}
+                        placeholder="Opcional"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <SearchableSelect
+                    label="Proveedor"
+                    value={proveedorCodigo}
+                    options={proveedores}
+                    onChange={(item) =>
+                      setValue("proveedorCodigo", item?.Codigo || "", {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    getOptionValue={(item) => item.Codigo}
+                    getOptionLabel={(item) =>
+                      `${item.Codigo} - ${item.RazonSocial}`
+                    }
+                    getSearchText={(item) =>
+                      `${item.Codigo} ${item.RazonSocial}`
+                    }
+                    placeholder="Buscar proveedor"
+                    loading={cargandoDimensiones.proveedor}
+                    modeControl={
+                      <ModoBusquedaInline
+                        value={modoProveedor}
+                        onChange={cambiarModoProveedor}
+                        disabled={cargandoDimensiones.proveedor}
+                      />
+                    }
                   />
-                }
-              />
-              <CampoErrorDimension message={dimensionErrors.proveedores} />
+                  <CampoErrorDimension message={dimensionErrors.proveedores} />
+                  <button
+                    type="button"
+                    onClick={activarProveedorManual}
+                    className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                  >
+                    No encuentro el proveedor / Cargar manualmente
+                  </button>
+                </>
+              )}
             </div>
 
             <div>

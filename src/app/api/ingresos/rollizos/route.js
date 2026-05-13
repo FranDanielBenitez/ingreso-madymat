@@ -183,14 +183,26 @@ export async function POST(request) {
       )
     }
 
+    const proveedorCargaManual = Boolean(body.proveedorCargaManual)
     const proveedor = body.proveedorSeleccionado
+    const proveedorManual = body.proveedorManual || {}
+    const proveedorManualNombre = limpiarTexto(proveedorManual.nombre)
+    const proveedorManualCuit = limpiarTexto(proveedorManual.cuit)
+    const proveedorManualObservacion = limpiarTexto(proveedorManual.observacion)
     const articulo = body.articuloSeleccionado
     const servicio = body.servicioSeleccionado
     const hachador = body.hachadorSeleccionado
     const chofer = body.choferSeleccionado
     const portero = body.porteroSeleccionado
 
-    if (!proveedor) {
+    if (proveedorCargaManual && !proveedorManualNombre) {
+      return NextResponse.json(
+        { ok: false, message: "Debe indicar el nombre del proveedor manual" },
+        { status: 400 }
+      )
+    }
+
+    if (!proveedorCargaManual && !proveedor) {
       return NextResponse.json(
         { ok: false, message: "Debe seleccionar un proveedor" },
         { status: 400 }
@@ -207,8 +219,19 @@ export async function POST(request) {
     const usuarioPortero = await obtenerUsuarioPortero(portero)
     const detallesModoBusqueda = []
 
-    if (body.proveedorModoBusqueda === "TODOS") {
+    if (!proveedorCargaManual && body.proveedorModoBusqueda === "TODOS") {
       detallesModoBusqueda.push("Proveedor seleccionado desde modo Todos.")
+    }
+
+    if (proveedorCargaManual) {
+      detallesModoBusqueda.push(
+        "Proveedor cargado manualmente, pendiente de validar."
+      )
+      if (proveedorManualObservacion) {
+        detallesModoBusqueda.push(
+          `Observacion proveedor manual: ${proveedorManualObservacion}.`
+        )
+      }
     }
 
     if (body.articuloModoBusqueda === "TODOS") {
@@ -239,18 +262,34 @@ export async function POST(request) {
         remitoProveedor: limpiarTexto(body.remitoProveedor),
         observaciones: limpiarTexto(body.observaciones),
 
-        proveedorOrigenDato: "BEJERMAN",
-        proveedorCodigoBejerman: limpiarTexto(proveedor.Codigo),
-        proveedorNombreCargado: proveedor.RazonSocial,
-        proveedorCuitCargado: limpiarTexto(proveedor.CUIT),
-        proveedorGrupoBejerman: limpiarTexto(proveedor.Grupo),
-        proveedorSubgrupoBejerman: limpiarTexto(proveedor.SubGrupo),
-        proveedorFueraSugerido: false,
-        proveedorCargaManual: false,
-        proveedorCodigoValidado: limpiarTexto(proveedor.Codigo),
-        proveedorNombreValidado: proveedor.RazonSocial,
-        proveedorCuitValidado: limpiarTexto(proveedor.CUIT),
-        proveedorValidado: true,
+        proveedorOrigenDato: proveedorCargaManual ? "MANUAL" : "BEJERMAN",
+        proveedorCodigoBejerman: proveedorCargaManual
+          ? null
+          : limpiarTexto(proveedor.Codigo),
+        proveedorNombreCargado: proveedorCargaManual
+          ? proveedorManualNombre
+          : proveedor.RazonSocial,
+        proveedorCuitCargado: proveedorCargaManual
+          ? proveedorManualCuit
+          : limpiarTexto(proveedor.CUIT),
+        proveedorGrupoBejerman: proveedorCargaManual
+          ? null
+          : limpiarTexto(proveedor.Grupo),
+        proveedorSubgrupoBejerman: proveedorCargaManual
+          ? null
+          : limpiarTexto(proveedor.SubGrupo),
+        proveedorFueraSugerido: proveedorCargaManual,
+        proveedorCargaManual,
+        proveedorCodigoValidado: proveedorCargaManual
+          ? null
+          : limpiarTexto(proveedor.Codigo),
+        proveedorNombreValidado: proveedorCargaManual
+          ? null
+          : proveedor.RazonSocial,
+        proveedorCuitValidado: proveedorCargaManual
+          ? null
+          : limpiarTexto(proveedor.CUIT),
+        proveedorValidado: !proveedorCargaManual,
 
         tipoServicioLogistico: body.tipoServicio || null,
 
@@ -309,8 +348,8 @@ export async function POST(request) {
         hachadorCuitValidado: limpiarTexto(hachador?.CUIT),
         hachadorValidado: hachador ? true : false,
 
-        tieneCargaManual: body.tipoChofer === "EXTERNO",
-        tieneFueraSugerido: false,
+        tieneCargaManual: body.tipoChofer === "EXTERNO" || proveedorCargaManual,
+        tieneFueraSugerido: proveedorCargaManual,
 
         pdfGenerado: false,
 

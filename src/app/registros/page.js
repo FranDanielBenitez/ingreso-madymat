@@ -109,6 +109,16 @@ function EstadoBadge({ estado }) {
   )
 }
 
+function ProveedorManualBadge({ registro }) {
+  if (!registro?.proveedorCargaManual) return null
+
+  return (
+    <span className="mt-1 inline-flex w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">
+      Manual - Pendiente validar
+    </span>
+  )
+}
+
 export default function RegistrosPage() {
   const [filtros, setFiltros] = useState(FILTROS_INICIALES)
   const [registros, setRegistros] = useState([])
@@ -372,7 +382,10 @@ export default function RegistrosPage() {
                             <EstadoBadge estado={registro.estado} />
                           </td>
                           <td className="py-3 pr-4">
-                            {mostrar(registro.proveedorNombreCargado)}
+                            <div className="flex flex-col">
+                              <span>{mostrar(registro.proveedorNombreCargado)}</span>
+                              <ProveedorManualBadge registro={registro} />
+                            </div>
                           </td>
                           <td className="py-3 pr-4">
                             {mostrar(registro.remitoProveedor)}
@@ -441,6 +454,7 @@ export default function RegistrosPage() {
                           <span className="font-semibold">Proveedor:</span>{" "}
                           {mostrar(registro.proveedorNombreCargado)}
                         </p>
+                        <ProveedorManualBadge registro={registro} />
                         <p>
                           <span className="font-semibold">Remito:</span>{" "}
                           {mostrar(registro.remitoProveedor)}

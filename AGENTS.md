@@ -384,6 +384,18 @@ Los selects deben alimentarse desde APIs internas.
 Los formularios deben estar separados en secciones claras.
 Los errores deben mostrarse con mensajes amigables.
 Los botones principales deben ser visibles y claros.
+
+Reglas UI/UX y contraste visual
+
+El rojo corporativo debe reservarse para acciones primarias, llamados principales o estados críticos reales.
+No usar rojo intenso para acciones secundarias, enlaces auxiliares, modos alternativos o alternativas operativas.
+El proveedor manual es una alternativa operativa, no un error crítico.
+Los estados pendientes de validar deben usar ámbar sobrio, no rojo.
+Los modos manuales deben usar estilo neutro o ámbar suave, con bajo protagonismo visual.
+En modo dark, evitar fondos claros dentro de cards oscuras.
+En modo dark, mantener fondos, bordes, labels, inputs y textos dentro de una misma familia visual para no generar cortes bruscos.
+Mantener contraste suficiente y una estética sobria en formularios, cards, badges y acciones secundarias.
+Los botones secundarios deben verse como acciones secundarias: sin fondo rojo, sin borde fuerte y sin competir con el botón principal.
 Reglas para formularios de ingreso
 
 El formulario de ingreso debe guardar en PostgreSQL una foto de los datos seleccionados desde Bejerman.
