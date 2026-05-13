@@ -205,6 +205,7 @@ export default function IngresoMaterialesPage() {
   const [modoProveedor, setModoProveedor] = useState(MODO_SUGERIDOS)
   const [modoServicio, setModoServicio] = useState(MODO_SUGERIDOS)
   const [proveedorCargaManual, setProveedorCargaManual] = useState(false)
+  const [servicioCargaManual, setServicioCargaManual] = useState(false)
   const [cargandoDimensiones, setCargandoDimensiones] = useState({})
   const [dimensionErrors, setDimensionErrors] = useState({})
   const [reintentandoDimensiones, setReintentandoDimensiones] = useState(false)
@@ -300,6 +301,21 @@ export default function IngresoMaterialesPage() {
     setValue("proveedorManualNombre", "")
     setValue("proveedorManualCuit", "")
     setValue("proveedorManualObservacion", "")
+  }
+
+  function activarServicioManual() {
+    setServicioCargaManual(true)
+    setValue("servicioCodigo", "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }
+
+  function volverABuscarServicio() {
+    setServicioCargaManual(false)
+    setValue("servicioManualNombre", "")
+    setValue("servicioManualCuit", "")
+    setValue("servicioManualObservacion", "")
   }
 
   function proveedorUrl(modo) {
@@ -644,6 +660,7 @@ export default function IngresoMaterialesPage() {
     setItemsRemito([crearItemRemito()])
     setPreviewsFotos({})
     setProveedorCargaManual(false)
+    setServicioCargaManual(false)
     setFotoInputKeys((prev) => ({
       fotoCamionPatente: prev.fotoCamionPatente + 1,
       fotoMaterialCargado: prev.fotoMaterialCargado + 1,
@@ -695,6 +712,16 @@ export default function IngresoMaterialesPage() {
       return
     }
 
+    if (servicioCargaManual && !String(values.servicioManualNombre || "").trim()) {
+      toast.error("El nombre del servicio manual es obligatorio")
+      return
+    }
+
+    if (!servicioCargaManual && !servicioSeleccionado) {
+      toast.error("No se pudo seleccionar servicio. Reintenta la carga de datos.")
+      return
+    }
+
     const itemsPreparados = prepararItemsRemito()
     const itemsCompletos = itemsPreparados.every((item) => {
       const cantidad = Number(String(item.cantidad).replace(",", "."))
@@ -736,7 +763,13 @@ export default function IngresoMaterialesPage() {
         },
         proveedorModoBusqueda: modoProveedor,
         items: itemsPreparados,
-        servicioSeleccionado,
+        servicioCargaManual,
+        servicioSeleccionado: servicioCargaManual ? null : servicioSeleccionado,
+        servicioManual: {
+          nombre: values.servicioManualNombre || "",
+          cuit: values.servicioManualCuit || "",
+          observacion: values.servicioManualObservacion || "",
+        },
         servicioModoBusqueda: modoServicio,
         choferSeleccionado:
           tipoChofer === "INTERNO" ? choferSeleccionado : null,
@@ -1177,30 +1210,102 @@ export default function IngresoMaterialesPage() {
 
             <div>
               <input type="hidden" {...register("servicioCodigo")} />
-              <SearchableSelect
-                label="Servicio logistico"
-                value={servicioCodigo}
-                options={servicios}
-                onChange={(item) =>
-                  setValue("servicioCodigo", item?.Codigo || "", {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  })
-                }
-                getOptionValue={(item) => item.Codigo}
-                getOptionLabel={etiquetaEntidad}
-                getSearchText={(item) => `${item.Codigo} ${item.RazonSocial}`}
-                placeholder="Buscar servicio"
-                loading={loadingLogistica || cargandoDimensiones.servicio}
-                modeControl={
-                  <ModoBusquedaInline
-                    value={modoServicio}
-                    onChange={cambiarModoServicio}
-                    disabled={loadingLogistica || cargandoDimensiones.servicio}
+              {servicioCargaManual ? (
+                <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 dark:border-amber-400/25 dark:bg-slate-800/60">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200">
+                          Servicio manual
+                        </span>
+                        <span className="rounded-full border border-amber-200 bg-amber-100/70 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+                          Pendiente de validar
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-[#475569]">
+                        El servicio quedara pendiente de validar.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={volverABuscarServicio}
+                      className="rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-800 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
+                    >
+                      Volver a buscar en Bejerman
+                    </button>
+                  </div>
+                  <div className="mt-4 grid gap-3">
+                    <label>
+                      <span className={LABEL_CLASS}>
+                        Nombre / Razon social servicio *
+                      </span>
+                      <input
+                        type="text"
+                        {...register("servicioManualNombre")}
+                        className={FIELD_CLASS}
+                        placeholder="Nombre del servicio"
+                      />
+                    </label>
+                    <label>
+                      <span className={LABEL_CLASS}>CUIT servicio</span>
+                      <input
+                        type="text"
+                        {...register("servicioManualCuit")}
+                        className={FIELD_CLASS}
+                        placeholder="Opcional"
+                      />
+                    </label>
+                    <label>
+                      <span className={LABEL_CLASS}>
+                        Observacion servicio
+                      </span>
+                      <textarea
+                        {...register("servicioManualObservacion")}
+                        className={TEXTAREA_CLASS}
+                        placeholder="Opcional"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <SearchableSelect
+                    label="Servicio logistico"
+                    value={servicioCodigo}
+                    options={servicios}
+                    onChange={(item) =>
+                      setValue("servicioCodigo", item?.Codigo || "", {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    getOptionValue={(item) => item.Codigo}
+                    getOptionLabel={etiquetaEntidad}
+                    getSearchText={(item) =>
+                      `${item.Codigo} ${item.RazonSocial}`
+                    }
+                    placeholder="Buscar servicio"
+                    loading={loadingLogistica || cargandoDimensiones.servicio}
+                    modeControl={
+                      <ModoBusquedaInline
+                        value={modoServicio}
+                        onChange={cambiarModoServicio}
+                        disabled={
+                          loadingLogistica || cargandoDimensiones.servicio
+                        }
+                      />
+                    }
                   />
-                }
-              />
-              <CampoErrorDimension message={dimensionErrors.servicios} />
+                  <CampoErrorDimension message={dimensionErrors.servicios} />
+                  <button
+                    type="button"
+                    onClick={activarServicioManual}
+                    className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                  >
+                    No encuentro el servicio / Cargar manualmente
+                  </button>
+                </>
+              )}
             </div>
 
             <div>

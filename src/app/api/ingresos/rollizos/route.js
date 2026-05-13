@@ -190,7 +190,12 @@ export async function POST(request) {
     const proveedorManualCuit = limpiarTexto(proveedorManual.cuit)
     const proveedorManualObservacion = limpiarTexto(proveedorManual.observacion)
     const articulo = body.articuloSeleccionado
+    const servicioCargaManual = Boolean(body.servicioCargaManual)
     const servicio = body.servicioSeleccionado
+    const servicioManual = body.servicioManual || {}
+    const servicioManualNombre = limpiarTexto(servicioManual.nombre)
+    const servicioManualCuit = limpiarTexto(servicioManual.cuit)
+    const servicioManualObservacion = limpiarTexto(servicioManual.observacion)
     const hachador = body.hachadorSeleccionado
     const chofer = body.choferSeleccionado
     const portero = body.porteroSeleccionado
@@ -212,6 +217,20 @@ export async function POST(request) {
     if (!articulo) {
       return NextResponse.json(
         { ok: false, message: "Debe seleccionar un artículo" },
+        { status: 400 }
+      )
+    }
+
+    if (servicioCargaManual && !servicioManualNombre) {
+      return NextResponse.json(
+        { ok: false, message: "Debe indicar el nombre del servicio manual" },
+        { status: 400 }
+      )
+    }
+
+    if (!servicioCargaManual && !servicio) {
+      return NextResponse.json(
+        { ok: false, message: "Debe seleccionar un servicio logistico" },
         { status: 400 }
       )
     }
@@ -238,10 +257,21 @@ export async function POST(request) {
       detallesModoBusqueda.push("Articulo seleccionado desde modo Todos.")
     }
 
-    if (body.servicioModoBusqueda === "TODOS") {
+    if (!servicioCargaManual && body.servicioModoBusqueda === "TODOS") {
       detallesModoBusqueda.push(
         "Servicio logistico seleccionado desde modo Todos."
       )
+    }
+
+    if (servicioCargaManual) {
+      detallesModoBusqueda.push(
+        "Servicio logistico cargado manualmente, pendiente de validar."
+      )
+      if (servicioManualObservacion) {
+        detallesModoBusqueda.push(
+          `Observacion servicio manual: ${servicioManualObservacion}.`
+        )
+      }
     }
 
     if (body.hachadorModoBusqueda === "TODOS") {
@@ -293,18 +323,34 @@ export async function POST(request) {
 
         tipoServicioLogistico: body.tipoServicio || null,
 
-        servicioOrigenDato: servicio ? "BEJERMAN" : null,
-        servicioCodigoBejerman: limpiarTexto(servicio?.Codigo),
-        servicioNombreCargado: limpiarTexto(servicio?.RazonSocial),
-        servicioCuitCargado: limpiarTexto(servicio?.CUIT),
-        servicioGrupoBejerman: limpiarTexto(servicio?.Grupo),
-        servicioSubgrupoBejerman: limpiarTexto(servicio?.SubGrupo),
-        servicioFueraSugerido: false,
-        servicioCargaManual: false,
-        servicioCodigoValidado: limpiarTexto(servicio?.Codigo),
-        servicioNombreValidado: limpiarTexto(servicio?.RazonSocial),
-        servicioCuitValidado: limpiarTexto(servicio?.CUIT),
-        servicioValidado: servicio ? true : false,
+        servicioOrigenDato: servicioCargaManual ? "MANUAL" : "BEJERMAN",
+        servicioCodigoBejerman: servicioCargaManual
+          ? null
+          : limpiarTexto(servicio.Codigo),
+        servicioNombreCargado: servicioCargaManual
+          ? servicioManualNombre
+          : limpiarTexto(servicio.RazonSocial),
+        servicioCuitCargado: servicioCargaManual
+          ? servicioManualCuit
+          : limpiarTexto(servicio.CUIT),
+        servicioGrupoBejerman: servicioCargaManual
+          ? null
+          : limpiarTexto(servicio.Grupo),
+        servicioSubgrupoBejerman: servicioCargaManual
+          ? null
+          : limpiarTexto(servicio.SubGrupo),
+        servicioFueraSugerido: servicioCargaManual,
+        servicioCargaManual,
+        servicioCodigoValidado: servicioCargaManual
+          ? null
+          : limpiarTexto(servicio.Codigo),
+        servicioNombreValidado: servicioCargaManual
+          ? null
+          : limpiarTexto(servicio.RazonSocial),
+        servicioCuitValidado: servicioCargaManual
+          ? null
+          : limpiarTexto(servicio.CUIT),
+        servicioValidado: !servicioCargaManual,
 
         tipoChofer: body.tipoChofer || null,
         choferOrigenDato: body.tipoChofer === "INTERNO" ? "SJALA" : "MANUAL",
@@ -348,8 +394,11 @@ export async function POST(request) {
         hachadorCuitValidado: limpiarTexto(hachador?.CUIT),
         hachadorValidado: hachador ? true : false,
 
-        tieneCargaManual: body.tipoChofer === "EXTERNO" || proveedorCargaManual,
-        tieneFueraSugerido: proveedorCargaManual,
+        tieneCargaManual:
+          body.tipoChofer === "EXTERNO" ||
+          proveedorCargaManual ||
+          servicioCargaManual,
+        tieneFueraSugerido: proveedorCargaManual || servicioCargaManual,
 
         pdfGenerado: false,
 
