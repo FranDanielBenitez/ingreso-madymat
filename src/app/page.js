@@ -27,6 +27,11 @@ const ACCESOS = [
     descripcion: "Auditar ingresos anulados y sus motivos en logs.",
     href: "/registros?estado=ANULADO",
   },
+  {
+    titulo: "Pendientes de validar",
+    descripcion: "Revisar datos manuales o fuera de sugeridos.",
+    href: "/registros/pendientes-validacion",
+  },
 ]
 
 function formatearFecha(value) {
@@ -134,6 +139,12 @@ export default function Home() {
         { label: "Materiales", value: metricas.materiales || 0 },
         { label: "Registrados", value: metricas.registrados || 0 },
         { label: "Anulados", value: metricas.anulados || 0, danger: true },
+        {
+          label: "Pendientes de validar",
+          value: metricas.pendientesValidacion || 0,
+          pending: true,
+          href: "/registros/pendientes-validacion",
+        },
         { label: "Con fotos", value: metricas.conFotos || 0 },
       ]
     },
@@ -212,7 +223,7 @@ export default function Home() {
           <h2 className="text-xl font-bold text-[#0F172A]">
             Accesos rapidos
           </h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {ACCESOS.map((acceso) => (
               <Link
                 key={acceso.href}
@@ -236,29 +247,48 @@ export default function Home() {
           </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {indicadores.map((item) => (
-              <article
-                key={item.label}
-                className={`rounded-xl border p-5 ${
-                  item.danger
-                    ? "dashboard-danger-card border-red-200 bg-red-50"
-                    : "border-[#CBD5E1] bg-[#F5F7FA]"
-                }`}
-              >
-                <p
-                  className={`text-sm font-medium ${
-                    item.danger ? "dashboard-danger-text text-[#DC2626]" : "text-[#475569]"
+              item.href ? (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="rounded-xl border border-amber-200 bg-amber-50 p-5 hover:border-amber-300 hover:bg-amber-100/70 focus:outline-none focus:ring-2 focus:ring-amber-100 dark:border-amber-400/30 dark:bg-amber-400/10 dark:hover:border-amber-300/50 dark:hover:bg-amber-400/15"
+                >
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-3xl font-bold text-amber-900 dark:text-amber-100">
+                    {item.value}
+                  </p>
+                </Link>
+              ) : (
+                <article
+                  key={item.label}
+                  className={`rounded-xl border p-5 ${
+                    item.danger
+                      ? "dashboard-danger-card border-red-200 bg-red-50"
+                      : "border-[#CBD5E1] bg-[#F5F7FA]"
                   }`}
                 >
-                  {item.label}
-                </p>
-                <p
-                  className={`mt-2 text-3xl font-bold ${
-                    item.danger ? "dashboard-danger-text text-[#DC2626]" : "text-[#0F172A]"
-                  }`}
-                >
-                  {item.value}
-                </p>
-              </article>
+                  <p
+                    className={`text-sm font-medium ${
+                      item.danger
+                        ? "dashboard-danger-text text-[#DC2626]"
+                        : "text-[#475569]"
+                    }`}
+                  >
+                    {item.label}
+                  </p>
+                  <p
+                    className={`mt-2 text-3xl font-bold ${
+                      item.danger
+                        ? "dashboard-danger-text text-[#DC2626]"
+                        : "text-[#0F172A]"
+                    }`}
+                  >
+                    {item.value}
+                  </p>
+                </article>
+              )
             ))}
           </div>
         </section>

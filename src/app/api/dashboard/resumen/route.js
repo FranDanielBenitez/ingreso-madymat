@@ -11,6 +11,24 @@ function rangoHoy() {
   return { desde, hasta }
 }
 
+const PENDIENTES_VALIDACION_WHERE = {
+  OR: [
+    { tieneCargaManual: true },
+    { tieneFueraSugerido: true },
+    { proveedorCargaManual: true },
+    { proveedorValidado: false },
+    { servicioCargaManual: true },
+    { servicioValidado: false },
+    {
+      articulos: {
+        some: {
+          origenDato: "MANUAL",
+        },
+      },
+    },
+  ],
+}
+
 export async function GET() {
   try {
     const { desde, hasta } = rangoHoy()
@@ -23,6 +41,7 @@ export async function GET() {
       anulados,
       registrados,
       conFotos,
+      pendientesValidacion,
       ultimosIngresos,
     ] = await Promise.all([
       prisma.ingreso.count(),
@@ -65,6 +84,9 @@ export async function GET() {
           },
         },
       }),
+      prisma.ingreso.count({
+        where: PENDIENTES_VALIDACION_WHERE,
+      }),
       prisma.ingreso.findMany({
         include: {
           tipoIngreso: true,
@@ -94,6 +116,7 @@ export async function GET() {
         anulados,
         registrados,
         conFotos,
+        pendientesValidacion,
       },
       ultimosIngresos,
     })

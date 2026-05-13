@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/ingresos/rollizos", label: "Nuevo Rollizos" },
   { href: "/ingresos/materiales", label: "Nuevo Materiales" },
   { href: "/registros", label: "Registros" },
+  { href: "/registros/pendientes-validacion", label: "Pendientes" },
 ]
 
 function SunIcon() {
@@ -140,7 +141,9 @@ export default function Navbar() {
               const activo =
                 link.href === "/"
                   ? pathname === "/"
-                  : pathname?.startsWith(link.href)
+                  : link.href === "/registros"
+                    ? pathname === "/registros"
+                    : pathname?.startsWith(link.href)
 
               return (
                 <Link
