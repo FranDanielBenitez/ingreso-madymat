@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
+  FiHome,
   FiList,
   FiAlertTriangle,
   FiSettings,
@@ -11,10 +12,12 @@ import {
   FiMoon,
   FiChevronUp,
   FiChevronDown,
+  FiLogOut,
 } from "react-icons/fi"
 import { GiWoodPile, GiWoodBeam } from "react-icons/gi"
 
 const LINKS = [
+  { href: "/", label: "Inicio", icon: FiHome },
   { href: "/ingresos/rollizos", label: "Rollizos", icon: GiWoodPile },
   { href: "/ingresos/materiales", label: "Materiales", icon: GiWoodBeam },
   { href: "/registros", label: "Registros", icon: FiList },
@@ -105,6 +108,10 @@ export default function Navbar() {
     ocultarNavbar()
   }
 
+  if (pathname === "/login") {
+    return null
+  }
+
   return (
     <>
       <button
@@ -129,10 +136,10 @@ export default function Navbar() {
             : "max-h-96 translate-y-0 opacity-100"
         }`}
       >
-        <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-0">
+        <nav className="mx-auto flex max-w-[92rem] items-center gap-3 px-4 py-3 sm:px-6 lg:px-6">
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-5"
+            className="flex shrink-0 items-center gap-4"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -153,7 +160,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1 pr-12 lg:flex-nowrap">
+          <div className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1 pr-12">
             {LINKS.map((link) => {
               const activo =
                 link.href === "/"
@@ -168,7 +175,7 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`nav-link nav-link-compact ${activo ? "nav-link-active" : ""}`}
+                  className={`nav-link nav-link-compact shrink-0 ${activo ? "nav-link-active" : ""}`}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                   <span>{link.label}</span>
@@ -191,37 +198,40 @@ export default function Navbar() {
             )}
             <span
               aria-hidden="true"
-              className="mx-1 hidden h-8 w-px bg-gradient-to-b from-transparent via-[#CBD5E1] to-transparent lg:block"
+              className="mx-1 h-8 w-px shrink-0 bg-gradient-to-b from-transparent via-[#CBD5E1] to-transparent"
             />
             <button
               type="button"
               onClick={cambiarTema}
-              className="btn-icon"
+              className="btn-icon shrink-0"
               aria-label={`Cambiar a modo ${theme === "dark" ? "claro" : "oscuro"}`}
               title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
             >
               <ThemeIcon dark={theme === "dark"} />
             </button>
-            {usuario ? (
-              <div className="ml-1 flex min-w-0 items-center gap-1">
-                <span
-                  className="hidden max-w-36 truncate whitespace-nowrap text-sm font-semibold text-[#0F172A] xl:inline"
-                  title={`${usuario.nombre} - ${(usuario.roles || []).join(", ")}`}
-                >
-                  {usuario.usuario || usuario.nombre}
-                </span>
+            {!cargandoUsuario && (
+              <div className="ml-1 flex shrink-0 items-center gap-1">
+                {usuario && (
+                  <span
+                    className="hidden max-w-32 truncate whitespace-nowrap text-sm font-semibold text-[#0F172A] 2xl:inline"
+                    title={`${usuario.nombre} - ${(usuario.roles || []).join(", ")}`}
+                  >
+                    {usuario.usuario || usuario.nombre}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={cerrarSesion}
-                  className="btn-secondary px-3 py-2 text-sm"
+                  className="btn-secondary gap-2 px-3 py-2 text-sm"
+                  title="Cerrar sesion"
                 >
-                  Salir
+                  <FiLogOut className="h-4 w-4" aria-hidden="true" />
+                  <span>Salir</span>
                 </button>
               </div>
-            ) : (
-              <Link href="/login" className="btn-secondary">
-                Ingresar
-              </Link>
+            )}
+            {cargandoUsuario && (
+              <div className="ml-1 h-9 w-16 shrink-0 rounded-xl border border-[#CBD5E1] bg-white/70" />
             )}
           </div>
         </nav>

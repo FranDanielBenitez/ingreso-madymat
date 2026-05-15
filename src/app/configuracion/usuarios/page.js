@@ -9,6 +9,8 @@ const SECTION_CLASS =
 const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
 const FIELD_CLASS =
   "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+const FIELD_COMPACT_CLASS =
+  "w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 
 const ROLES = [
   { value: "DATA_ENTRY", label: "Data Entry" },
@@ -17,7 +19,7 @@ const ROLES = [
   { value: "IT_TECNICO", label: "IT Tecnico" },
 ]
 
-function RolesCheckboxes({ value, onChange }) {
+function RolesCheckboxes({ value, onChange, compact = false, columns = 2 }) {
   const roles = value || []
 
   function toggle(rol) {
@@ -28,12 +30,20 @@ function RolesCheckboxes({ value, onChange }) {
     )
   }
 
+  const gridClass = compact
+    ? columns === 4
+      ? "sm:grid-cols-2 xl:grid-cols-4"
+      : "sm:grid-cols-2"
+    : "sm:grid-cols-2"
+
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
+    <div className={`grid gap-2 ${gridClass}`}>
       {ROLES.map((rol) => (
         <label
           key={rol.value}
-          className="inline-flex items-center gap-2 rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A]"
+          className={`inline-flex items-center gap-2 rounded-lg border border-[#CBD5E1] bg-white font-semibold text-[#0F172A] ${
+            compact ? "px-2.5 py-2 text-xs" : "px-3 py-2 text-sm"
+          }`}
         >
           <input
             type="checkbox"
@@ -243,7 +253,7 @@ export default function UsuariosPage() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA] p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6">
         <section className={SECTION_CLASS}>
           <p className="text-sm font-bold uppercase tracking-wide text-[#F3171B]">
             Configuracion
@@ -256,11 +266,11 @@ export default function UsuariosPage() {
           </p>
         </section>
 
-        <section className={`${SECTION_CLASS} max-w-3xl`}>
+        <section className={SECTION_CLASS}>
           <h2 className="text-lg font-bold text-[#0F172A]">Nuevo usuario</h2>
-          <form onSubmit={handleSubmit(crearUsuario)} className="mt-4 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label>
+          <form onSubmit={handleSubmit(crearUsuario)} className="mt-4">
+            <div className="grid gap-4 lg:grid-cols-6">
+              <label className="lg:col-span-1">
                 <span className={LABEL_CLASS}>Usuario</span>
                 <input
                   type="text"
@@ -275,7 +285,7 @@ export default function UsuariosPage() {
                 )}
               </label>
 
-              <label>
+              <label className="lg:col-span-2">
                 <span className={LABEL_CLASS}>Nombre completo</span>
                 <input
                   type="text"
@@ -290,7 +300,7 @@ export default function UsuariosPage() {
                 )}
               </label>
 
-              <label>
+              <label className="lg:col-span-2">
                 <span className={LABEL_CLASS}>Email (opcional)</span>
                 <input
                   type="email"
@@ -300,7 +310,7 @@ export default function UsuariosPage() {
                 />
               </label>
 
-              <label>
+              <label className="lg:col-span-1">
                 <span className={LABEL_CLASS}>Contrasena</span>
                 <input
                   type="password"
@@ -314,31 +324,40 @@ export default function UsuariosPage() {
                   </p>
                 )}
               </label>
+
+              <div className="space-y-2 lg:col-span-4">
+                <span className={LABEL_CLASS}>Roles</span>
+                <RolesCheckboxes
+                  value={rolesNuevo}
+                  onChange={setRolesNuevo}
+                  compact
+                  columns={4}
+                />
+                {rolesNuevo.length === 0 && (
+                  <p className="text-sm text-red-600">Seleccione al menos un rol.</p>
+                )}
+              </div>
+
+              <label className="flex items-center gap-3 self-end rounded-xl border border-[#CBD5E1] bg-white px-3 py-3 lg:col-span-1">
+                <input
+                  type="checkbox"
+                  {...register("activo")}
+                  className="h-4 w-4 rounded border-[#CBD5E1] accent-[#F3171B]"
+                  defaultChecked
+                />
+                <span className="text-sm font-semibold text-[#475569]">
+                  Cuenta activa
+                </span>
+              </label>
+
+              <button
+                type="submit"
+                disabled={guardando}
+                className="btn-primary self-end px-4 py-3 lg:col-span-1"
+              >
+                {guardando ? "Guardando..." : "Crear usuario"}
+              </button>
             </div>
-
-            <div className="space-y-2">
-              <span className={LABEL_CLASS}>Roles</span>
-              <RolesCheckboxes value={rolesNuevo} onChange={setRolesNuevo} />
-              {rolesNuevo.length === 0 && (
-                <p className="text-sm text-red-600">Seleccione al menos un rol.</p>
-              )}
-            </div>
-
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                {...register("activo")}
-                className="h-4 w-4 rounded border-[#CBD5E1] accent-[#F3171B]"
-                defaultChecked
-              />
-              <span className="text-sm font-semibold text-[#475569]">
-                Cuenta activa
-              </span>
-            </label>
-
-            <button type="submit" disabled={guardando} className="btn-primary">
-              {guardando ? "Guardando..." : "Crear usuario"}
-            </button>
           </form>
         </section>
 
@@ -362,17 +381,17 @@ export default function UsuariosPage() {
           ) : usuarios.length === 0 ? (
             <p className="mt-4 text-[#475569]">Todavia no hay usuarios registrados.</p>
           ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
+            <div className="mt-4 overflow-x-auto rounded-xl border border-[#CBD5E1]">
+              <table className="w-full table-fixed border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-[#CBD5E1] text-[#475569]">
-                    <th className="py-3 pr-4 font-semibold">Usuario</th>
-                    <th className="py-3 pr-4 font-semibold">Nombre</th>
-                    <th className="py-3 pr-4 font-semibold">Email</th>
-                    <th className="py-3 pr-4 font-semibold">Roles</th>
-                    <th className="py-3 pr-4 font-semibold">Contrasena</th>
-                    <th className="py-3 pr-4 font-semibold">Activo</th>
-                    <th className="py-3 pr-4 font-semibold">Acciones</th>
+                  <tr className="border-b border-[#CBD5E1] bg-slate-50 text-[#475569]">
+                    <th className="w-[12%] px-3 py-3 font-semibold">Usuario</th>
+                    <th className="w-[18%] px-3 py-3 font-semibold">Nombre</th>
+                    <th className="w-[18%] px-3 py-3 font-semibold">Email</th>
+                    <th className="w-[25%] px-3 py-3 font-semibold">Roles</th>
+                    <th className="w-[12%] px-3 py-3 font-semibold">Contrasena</th>
+                    <th className="w-[7%] px-3 py-3 font-semibold">Activo</th>
+                    <th className="w-[8%] px-3 py-3 font-semibold">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -384,7 +403,7 @@ export default function UsuariosPage() {
                         key={usuarioItem.id}
                         className="border-b border-slate-100 text-[#0F172A] hover:bg-red-50/20"
                       >
-                        <td className="py-3 pr-4">
+                        <td className="px-3 py-3 align-top">
                           {editando ? (
                             <input
                               type="text"
@@ -392,13 +411,15 @@ export default function UsuariosPage() {
                               onChange={(event) =>
                                 actualizarEditForm("usuario", event.target.value)
                               }
-                              className={FIELD_CLASS}
+                              className={FIELD_COMPACT_CLASS}
                             />
                           ) : (
-                            usuarioItem.usuario || "-"
+                            <span className="block truncate">
+                              {usuarioItem.usuario || "-"}
+                            </span>
                           )}
                         </td>
-                        <td className="py-3 pr-4 font-semibold">
+                        <td className="px-3 py-3 align-top font-semibold">
                           {editando ? (
                             <input
                               type="text"
@@ -406,13 +427,15 @@ export default function UsuariosPage() {
                               onChange={(event) =>
                                 actualizarEditForm("nombre", event.target.value)
                               }
-                              className={FIELD_CLASS}
+                              className={FIELD_COMPACT_CLASS}
                             />
                           ) : (
-                            usuarioItem.nombre
+                            <span className="block truncate">
+                              {usuarioItem.nombre}
+                            </span>
                           )}
                         </td>
-                        <td className="py-3 pr-4">
+                        <td className="px-3 py-3 align-top">
                           {editando ? (
                             <input
                               type="email"
@@ -420,17 +443,21 @@ export default function UsuariosPage() {
                               onChange={(event) =>
                                 actualizarEditForm("email", event.target.value)
                               }
-                              className={FIELD_CLASS}
+                              className={FIELD_COMPACT_CLASS}
                             />
                           ) : (
-                            usuarioItem.email || "-"
+                            <span className="block truncate">
+                              {usuarioItem.email || "-"}
+                            </span>
                           )}
                         </td>
-                        <td className="py-3 pr-4 min-w-[280px]">
+                        <td className="px-3 py-3 align-top">
                           {editando ? (
                             <RolesCheckboxes
                               value={editForm?.roles || []}
                               onChange={(roles) => actualizarEditForm("roles", roles)}
+                              compact
+                              columns={2}
                             />
                           ) : (
                             <div className="flex flex-wrap gap-1.5">
@@ -442,7 +469,7 @@ export default function UsuariosPage() {
                             </div>
                           )}
                         </td>
-                        <td className="py-3 pr-4">
+                        <td className="px-3 py-3 align-top">
                           {editando ? (
                             <input
                               type="password"
@@ -450,7 +477,7 @@ export default function UsuariosPage() {
                               onChange={(event) =>
                                 actualizarEditForm("password", event.target.value)
                               }
-                              className={FIELD_CLASS}
+                              className={FIELD_COMPACT_CLASS}
                               placeholder="Nueva contrasena"
                             />
                           ) : (
@@ -467,7 +494,7 @@ export default function UsuariosPage() {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 pr-4">
+                        <td className="px-3 py-3 align-top">
                           {editando ? (
                             <label className="inline-flex items-center gap-2 text-sm text-[#475569]">
                               <input
@@ -492,7 +519,7 @@ export default function UsuariosPage() {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 pr-4">
+                        <td className="px-3 py-3 align-top">
                           {editando ? (
                             <div className="flex flex-wrap gap-2">
                               <button

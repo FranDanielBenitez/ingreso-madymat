@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 
 function ArrowUpIcon() {
   return (
@@ -21,9 +22,16 @@ function ArrowUpIcon() {
 }
 
 export default function BackToTopButton() {
+  const pathname = usePathname()
   const [visible, setVisible] = useState(false)
 
+  const ocultarEnLogin = pathname === "/login"
+
   useEffect(() => {
+    if (ocultarEnLogin) {
+      return
+    }
+
     let ticking = false
 
     function evaluarScroll() {
@@ -57,7 +65,11 @@ export default function BackToTopButton() {
       window.removeEventListener("scroll", onScroll)
       window.removeEventListener("resize", onScroll)
     }
-  }, [])
+  }, [ocultarEnLogin])
+
+  if (ocultarEnLogin) {
+    return null
+  }
 
   function volverArriba() {
     window.scrollTo({
