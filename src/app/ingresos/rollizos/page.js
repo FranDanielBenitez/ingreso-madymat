@@ -376,7 +376,7 @@ export default function IngresoRollizosPage() {
         fetchDimensionSegura("/api/dimensiones/hachadores?categoria=ROLLIZOS"),
         fetchDimensionSegura("/api/dimensiones/choferes"),
         fetchDimensionSegura("/api/dimensiones/porteros"),
-        fetchDimensionSegura("/api/dimensiones/procedencias"),
+        fetchDimensionSegura("/api/dimensiones/procedencias?tipo=ROLLIZOS"),
       ])
 
       if (proveedoresResult.status === "fulfilled") {

@@ -269,6 +269,7 @@ export async function POST(request) {
       where: {
         id: procedenciaId,
         activa: true,
+        aplicaMateriales: true,
       },
     })
 
@@ -276,7 +277,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           ok: false,
-          message: "La procedencia seleccionada no existe o no esta activa",
+          message: "La procedencia seleccionada no esta habilitada para Materiales",
         },
         { status: 400 }
       )

@@ -197,6 +197,8 @@ export async function PATCH(request, context) {
         where: {
           id: procedenciaId,
           activa: true,
+          ...(esRollizos ? { aplicaRollizos: true } : {}),
+          ...(esMateriales ? { aplicaMateriales: true } : {}),
         },
       })
 
@@ -204,7 +206,9 @@ export async function PATCH(request, context) {
         return NextResponse.json(
           {
             ok: false,
-            message: "La procedencia seleccionada no existe o no esta activa",
+            message: esRollizos
+              ? "La procedencia seleccionada no esta habilitada para Rollizos"
+              : "La procedencia seleccionada no esta habilitada para Materiales",
           },
           { status: 400 }
         )

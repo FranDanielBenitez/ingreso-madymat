@@ -9,12 +9,35 @@ function limpiarTexto(value) {
   return texto === "" ? null : texto
 }
 
-export async function GET() {
+function esBooleano(value) {
+  return typeof value === "boolean"
+}
+
+function valorBooleano(value, fallback) {
+  return esBooleano(value) ? value : fallback
+}
+
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const tipo = limpiarTexto(searchParams.get("tipo"))?.toUpperCase()
+    const incluirInactivas = searchParams.get("incluirInactivas") === "true"
+    const where = {}
+
+    if (!incluirInactivas) {
+      where.activa = true
+    }
+
+    if (tipo === "ROLLIZOS") {
+      where.aplicaRollizos = true
+    }
+
+    if (tipo === "MATERIALES") {
+      where.aplicaMateriales = true
+    }
+
     const procedencias = await prisma.procedenciaDim.findMany({
-      where: {
-        activa: true,
-      },
+      where,
       orderBy: {
         nombre: "asc",
       },
@@ -43,6 +66,8 @@ export async function POST(request) {
   try {
     const body = await request.json().catch(() => null)
     const nombre = limpiarTexto(body?.nombre)
+    const aplicaRollizos = valorBooleano(body?.aplicaRollizos, true)
+    const aplicaMateriales = valorBooleano(body?.aplicaMateriales, true)
 
     if (!nombre) {
       return NextResponse.json(
@@ -51,13 +76,23 @@ export async function POST(request) {
       )
     }
 
-    const existente = await prisma.procedenciaDim.findFirst({
+    const existente = await prisma.procedenciaDim.findUnique({
       where: {
         nombre,
       },
     })
 
     if (existente) {
+      if (!existente.activa) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message: "La procedencia ya existe. Puede activarla desde el listado.",
+          },
+          { status: 400 }
+        )
+      }
+
       return NextResponse.json(
         { ok: false, message: "Ya existe una procedencia con ese nombre" },
         { status: 400 }
@@ -67,6 +102,8 @@ export async function POST(request) {
     const procedencia = await prisma.procedenciaDim.create({
       data: {
         nombre,
+        aplicaRollizos,
+        aplicaMateriales,
         activa: true,
       },
     })

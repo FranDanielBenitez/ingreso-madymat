@@ -52,7 +52,8 @@ export default function EditarIngresoPanel({
       try {
         setCargandoProcedencias(true)
 
-        const response = await fetch("/api/dimensiones/procedencias")
+        const tipo = esRollizos ? "ROLLIZOS" : "MATERIALES"
+        const response = await fetch(`/api/dimensiones/procedencias?tipo=${tipo}`)
         const result = await response.json()
 
         if (!response.ok || !result.ok) {

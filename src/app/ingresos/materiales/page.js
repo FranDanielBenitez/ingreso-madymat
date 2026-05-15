@@ -408,7 +408,7 @@ export default function IngresoMaterialesPage() {
         await Promise.allSettled([
           fetchDimension("/api/dimensiones/porteros"),
           fetchDimension("/api/dimensiones/choferes"),
-          fetchDimension("/api/dimensiones/procedencias"),
+          fetchDimension("/api/dimensiones/procedencias?tipo=MATERIALES"),
           fetchDimension(proveedorUrl(modoProveedor)),
         ])
 

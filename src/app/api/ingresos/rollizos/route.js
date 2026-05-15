@@ -219,6 +219,7 @@ export async function POST(request) {
       where: {
         id: procedenciaId,
         activa: true,
+        aplicaRollizos: true,
       },
     })
 
@@ -226,7 +227,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           ok: false,
-          message: "La procedencia seleccionada no existe o no esta activa",
+          message: "La procedencia seleccionada no esta habilitada para Rollizos",
         },
         { status: 400 }
       )

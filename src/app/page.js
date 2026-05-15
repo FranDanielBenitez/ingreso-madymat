@@ -2,39 +2,47 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import {
+  FiAlertTriangle,
+  FiMapPin,
+  FiList,
+  FiSettings,
+  FiXCircle,
+} from "react-icons/fi"
+import { GiWoodBeam, GiWoodPile } from "react-icons/gi"
 
 const SECTION_CLASS = "panel-surface"
 
 const ACCESOS = [
   {
     titulo: "Nuevo ingreso Rollizos",
-    descripcion: "Registrar madera rolliza con proveedor, material y fotos.",
     href: "/ingresos/rollizos",
+    icon: GiWoodPile,
   },
   {
     titulo: "Nuevo ingreso Materiales",
-    descripcion: "Cargar pallets, tablas, tacos, terciado y otros materiales.",
     href: "/ingresos/materiales",
+    icon: GiWoodBeam,
   },
   {
     titulo: "Ver registros",
-    descripcion: "Consultar ingresos guardados y entrar a sus detalles.",
     href: "/registros",
+    icon: FiList,
   },
   {
     titulo: "Registros anulados",
-    descripcion: "Auditar ingresos anulados y sus motivos en logs.",
     href: "/registros?estado=ANULADO",
+    icon: FiXCircle,
   },
   {
     titulo: "Pendientes de validar",
-    descripcion: "Revisar datos manuales o fuera de sugeridos.",
     href: "/registros/pendientes-validacion",
+    icon: FiAlertTriangle,
   },
   {
     titulo: "Configurar procedencias",
-    descripcion: "Administrar procedencias disponibles para Rollizos.",
     href: "/configuracion/procedencias",
+    icon: FiMapPin,
   },
 ]
 
@@ -147,7 +155,6 @@ export default function Home() {
           label: "Pendientes de validar",
           value: metricas.pendientesValidacion || 0,
           pending: true,
-          href: "/registros/pendientes-validacion",
         },
         { label: "Con fotos", value: metricas.conFotos || 0 },
       ]
@@ -227,21 +234,25 @@ export default function Home() {
           <h2 className="text-xl font-bold text-[#0F172A]">
             Accesos rapidos
           </h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {ACCESOS.map((acceso) => (
-              <Link
-                key={acceso.href}
-                href={acceso.href}
-                className="quick-access-card group panel-surface panel-surface-soft hover:-translate-y-0.5 hover:border-[#F3171B] hover:bg-white hover:shadow-md focus:border-[#F3171B] focus:outline-none focus:ring-2 focus:ring-red-100"
-              >
-                <h3 className="text-lg font-black text-[#0F172A] group-hover:text-[#D90F14]">
-                  {acceso.titulo}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-[#475569]">
-                  {acceso.descripcion}
-                </p>
-              </Link>
-            ))}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {ACCESOS.map((acceso) => {
+              const Icon = acceso.icon || FiSettings
+
+              return (
+                <Link
+                  key={acceso.href}
+                  href={acceso.href}
+                  className="quick-access-card group panel-surface panel-surface-soft flex min-h-32 flex-col items-center justify-center gap-3 text-center hover:-translate-y-0.5 hover:border-amber-300 hover:bg-white hover:shadow-md focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-100"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-[#CBD5E1] bg-white text-slate-500 group-hover:border-amber-300 group-hover:bg-amber-50 group-hover:text-amber-700 dark:text-slate-300 dark:group-hover:text-amber-200">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <h3 className="text-sm font-black leading-5 text-[#0F172A] group-hover:text-amber-800 dark:group-hover:text-amber-100">
+                    {acceso.titulo}
+                  </h3>
+                </Link>
+              )
+            })}
           </div>
         </section>
 
@@ -251,48 +262,39 @@ export default function Home() {
           </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {indicadores.map((item) => (
-              item.href ? (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="panel-surface-soft border-amber-200 hover:border-amber-300 hover:bg-amber-100/70 focus:outline-none focus:ring-2 focus:ring-amber-100 dark:border-amber-400/30 dark:bg-amber-400/10 dark:hover:border-amber-300/50 dark:hover:bg-amber-400/15"
-                >
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                    {item.label}
-                  </p>
-                  <p className="mt-2 text-3xl font-bold text-amber-900 dark:text-amber-100">
-                    {item.value}
-                  </p>
-                </Link>
-              ) : (
-                <article
-                  key={item.label}
-                  className={
-                    item.danger
-                      ? "panel-surface dashboard-danger-card border-red-200 bg-red-50"
+              <article
+                key={item.label}
+                className={
+                  item.danger
+                    ? "panel-surface dashboard-danger-card border-red-200 bg-red-50"
+                    : item.pending
+                      ? "panel-surface dashboard-pending-card border-amber-200 bg-amber-50"
                       : "panel-surface panel-surface-soft"
-                  }
-                >
-                  <p
-                    className={`text-sm font-medium ${
-                      item.danger
-                        ? "dashboard-danger-text text-[#DC2626]"
+                }
+              >
+                <p
+                  className={`text-sm font-medium ${
+                    item.danger
+                      ? "dashboard-danger-text text-[#DC2626]"
+                      : item.pending
+                        ? "dashboard-pending-text text-amber-800"
                         : "text-[#475569]"
-                    }`}
-                  >
-                    {item.label}
-                  </p>
-                  <p
-                    className={`mt-2 text-3xl font-bold ${
-                      item.danger
-                        ? "dashboard-danger-text text-[#DC2626]"
+                  }`}
+                >
+                  {item.label}
+                </p>
+                <p
+                  className={`mt-2 text-3xl font-bold ${
+                    item.danger
+                      ? "dashboard-danger-text text-[#DC2626]"
+                      : item.pending
+                        ? "dashboard-pending-text text-amber-900"
                         : "text-[#0F172A]"
-                    }`}
-                  >
-                    {item.value}
-                  </p>
-                </article>
-              )
+                  }`}
+                >
+                  {item.value}
+                </p>
+              </article>
             ))}
           </div>
         </section>

@@ -182,12 +182,14 @@ model IngresoFoto {
 }
 
 model ProcedenciaDim {
-  id        Int       @id @default(autoincrement())
-  nombre    String    @unique
-  activa    Boolean   @default(true)
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  ingresos  Ingreso[]
+  id               Int       @id @default(autoincrement())
+  nombre           String    @unique
+  activa           Boolean   @default(true)
+  aplicaRollizos   Boolean   @default(true) @map("aplica_rollizos")
+  aplicaMateriales Boolean   @default(true) @map("aplica_materiales")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  ingresos         Ingreso[]
 
   @@map("procedencia_dim")
 }

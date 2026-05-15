@@ -7,8 +7,11 @@ import {
   FiHome,
   FiList,
   FiAlertTriangle,
+  FiSettings,
   FiSun,
   FiMoon,
+  FiChevronUp,
+  FiChevronDown,
 } from "react-icons/fi"
 import { GiWoodPile, GiWoodBeam } from "react-icons/gi"
 
@@ -81,7 +84,12 @@ export default function Navbar() {
         aria-expanded={!navbarOculto}
         title={navbarOculto ? "Mostrar navbar" : "Ocultar navbar"}
       >
-        <span aria-hidden="true" className="-translate-y-px">
+        {navbarOculto ? (
+          <FiChevronDown className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <FiChevronUp className="h-4 w-4" aria-hidden="true" />
+        )}
+        <span aria-hidden="true" className="hidden">
           {navbarOculto ? "⌄" : "⌃"}
         </span>
       </button>
@@ -93,10 +101,10 @@ export default function Navbar() {
             : "max-h-96 translate-y-0 opacity-100"
         }`}
       >
-        <nav className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-0">
+        <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-0">
           <Link
             href="/"
-            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-8"
+            className="flex shrink-0 items-center gap-5"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -106,18 +114,18 @@ export default function Navbar() {
                   : "/Logo%20Envases%20dark.png"
               }
               alt="Puebla Envases"
-              className="h-10 w-auto object-contain object-left"
+              className="h-9 w-auto object-contain object-left"
             />
             <span
               aria-hidden="true"
-              className="hidden h-10 w-px bg-gradient-to-b from-transparent via-[#F3171B]/45 to-transparent sm:block"
+              className="hidden h-9 w-px bg-gradient-to-b from-transparent via-[#F3171B]/45 to-transparent sm:block"
             />
-            <span className="block text-lg font-black tracking-tight text-[#0F172A]">
+            <span className="hidden whitespace-nowrap text-base font-black tracking-tight text-[#0F172A] sm:block">
               Ingreso Madymat
             </span>
           </Link>
 
-          <div className="flex flex-wrap items-center gap-2 pr-12">
+          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1 pr-12 lg:flex-nowrap">
             {LINKS.map((link) => {
               const activo =
                 link.href === "/"
@@ -132,13 +140,29 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`nav-link ${activo ? "nav-link-active" : ""}`}
+                  className={`nav-link nav-link-compact ${activo ? "nav-link-active" : ""}`}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                   <span>{link.label}</span>
                 </Link>
               )
             })}
+            <Link
+              href="/configuracion/procedencias"
+              className={`btn-icon ${
+                pathname?.startsWith("/configuracion")
+                  ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100"
+                  : ""
+              }`}
+              aria-label="Configuracion"
+              title="Configuracion"
+            >
+              <FiSettings className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <span
+              aria-hidden="true"
+              className="mx-1 hidden h-8 w-px bg-gradient-to-b from-transparent via-[#CBD5E1] to-transparent lg:block"
+            />
             <button
               type="button"
               onClick={cambiarTema}
