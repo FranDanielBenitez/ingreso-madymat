@@ -40,8 +40,8 @@ const ACCESOS = [
     icon: FiAlertTriangle,
   },
   {
-    titulo: "Configurar procedencias",
-    href: "/configuracion/procedencias",
+    titulo: "Configuracion",
+    href: "/configuracion",
     icon: FiMapPin,
   },
 ]

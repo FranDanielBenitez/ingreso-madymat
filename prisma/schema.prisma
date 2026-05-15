@@ -11,6 +11,7 @@ model UsuarioApp {
   id                  Int          @id @default(autoincrement())
   nombre              String
   email               String       @unique
+  usuario             String?      @unique @map("usuario")
   passwordHash        String?      @map("password_hash")
   rol                 RolUsuario   @default(PORTERIA)
   activo              Boolean      @default(true)
@@ -22,8 +23,32 @@ model UsuarioApp {
   logs                IngresoLog[]
   ingresosRegistrados Ingreso[]    @relation("IngresoRegistradoPor")
   ingresosValidados   Ingreso[]    @relation("IngresoValidadoPor")
+  sesiones            UsuarioSesion[]
+  roles               UsuarioRol[]
 
   @@map("usuarios_app")
+}
+
+model UsuarioRol {
+  id        Int        @id @default(autoincrement())
+  usuarioId Int        @map("usuario_id")
+  rol       String
+  createdAt DateTime   @default(now()) @map("created_at")
+  usuario   UsuarioApp @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, rol])
+  @@map("usuario_roles")
+}
+
+model UsuarioSesion {
+  id         Int        @id @default(autoincrement())
+  usuarioId  Int        @map("usuario_id")
+  token      String     @unique
+  expiresAt  DateTime   @map("expires_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  usuario    UsuarioApp @relation(fields: [usuarioId], references: [id])
+
+  @@map("usuario_sesiones")
 }
 
 model TipoIngreso {

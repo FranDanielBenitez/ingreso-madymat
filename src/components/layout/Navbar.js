@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  FiHome,
   FiList,
   FiAlertTriangle,
   FiSettings,
@@ -16,7 +15,6 @@ import {
 import { GiWoodPile, GiWoodBeam } from "react-icons/gi"
 
 const LINKS = [
-  { href: "/", label: "Inicio", icon: FiHome },
   { href: "/ingresos/rollizos", label: "Rollizos", icon: GiWoodPile },
   { href: "/ingresos/materiales", label: "Materiales", icon: GiWoodBeam },
   { href: "/registros", label: "Registros", icon: FiList },
@@ -35,6 +33,8 @@ export default function Navbar() {
   const pathname = usePathname()
   const [theme, setTheme] = useState("light")
   const [navbarOculto, setNavbarOculto] = useState(false)
+  const [usuario, setUsuario] = useState(null)
+  const [cargandoUsuario, setCargandoUsuario] = useState(true)
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark")
@@ -45,6 +45,37 @@ export default function Navbar() {
     setTheme(isDark ? "dark" : "light")
     setNavbarOculto(oculto)
   }, [])
+
+  useEffect(() => {
+    async function cargarUsuario() {
+      try {
+        const response = await fetch("/api/auth/me")
+        const result = await response.json()
+
+        if (response.ok && result.ok) {
+          setUsuario(result.user)
+        } else {
+          setUsuario(null)
+        }
+      } catch (error) {
+        setUsuario(null)
+      } finally {
+        setCargandoUsuario(false)
+      }
+    }
+
+    cargarUsuario()
+  }, [])
+
+  const mostrarConfiguracion =
+    !cargandoUsuario &&
+    (usuario?.roles?.includes("ADMINISTRADOR") ||
+      usuario?.roles?.includes("IT_TECNICO"))
+
+  async function cerrarSesion() {
+    await fetch("/api/auth/logout", { method: "POST" })
+    window.location.href = "/login"
+  }
 
   function cambiarTema() {
     const nuevoTema = theme === "dark" ? "light" : "dark"
@@ -89,9 +120,6 @@ export default function Navbar() {
         ) : (
           <FiChevronUp className="h-4 w-4" aria-hidden="true" />
         )}
-        <span aria-hidden="true" className="hidden">
-          {navbarOculto ? "⌄" : "⌃"}
-        </span>
       </button>
 
       <header
@@ -147,18 +175,20 @@ export default function Navbar() {
                 </Link>
               )
             })}
-            <Link
-              href="/configuracion/procedencias"
-              className={`btn-icon ${
-                pathname?.startsWith("/configuracion")
-                  ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100"
-                  : ""
-              }`}
-              aria-label="Configuracion"
-              title="Configuracion"
-            >
-              <FiSettings className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            {mostrarConfiguracion && (
+              <Link
+                href="/configuracion"
+                className={`btn-icon ${
+                  pathname?.startsWith("/configuracion")
+                    ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100"
+                    : ""
+                }`}
+                aria-label="Configuracion"
+                title="Configuracion"
+              >
+                <FiSettings className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            )}
             <span
               aria-hidden="true"
               className="mx-1 hidden h-8 w-px bg-gradient-to-b from-transparent via-[#CBD5E1] to-transparent lg:block"
@@ -172,9 +202,31 @@ export default function Navbar() {
             >
               <ThemeIcon dark={theme === "dark"} />
             </button>
+            {usuario ? (
+              <div className="ml-1 flex min-w-0 items-center gap-1">
+                <span
+                  className="hidden max-w-36 truncate whitespace-nowrap text-sm font-semibold text-[#0F172A] xl:inline"
+                  title={`${usuario.nombre} - ${(usuario.roles || []).join(", ")}`}
+                >
+                  {usuario.usuario || usuario.nombre}
+                </span>
+                <button
+                  type="button"
+                  onClick={cerrarSesion}
+                  className="btn-secondary px-3 py-2 text-sm"
+                >
+                  Salir
+                </button>
+              </div>
+            ) : (
+              <Link href="/login" className="btn-secondary">
+                Ingresar
+              </Link>
+            )}
           </div>
         </nav>
       </header>
     </>
   )
 }
+

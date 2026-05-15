@@ -232,6 +232,34 @@ export default function IngresoMaterialesPage() {
     fotoAdicional: 0,
   })
   const [guardando, setGuardando] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [usuarioCargando, setUsuarioCargando] = useState(true)
+  const [puedeGuardar, setPuedeGuardar] = useState(false)
+
+  useEffect(() => {
+    async function cargarUsuario() {
+      try {
+        const response = await fetch("/api/auth/me")
+        const result = await response.json()
+
+        if (response.ok && result.ok) {
+          setCurrentUser(result.user)
+          setPuedeGuardar(
+            result.user.roles?.includes("DATA_ENTRY") ||
+              result.user.roles?.includes("ADMINISTRADOR")
+          )
+        } else {
+          setPuedeGuardar(false)
+        }
+      } catch {
+        setPuedeGuardar(false)
+      } finally {
+        setUsuarioCargando(false)
+      }
+    }
+
+    cargarUsuario()
+  }, [])
 
   const {
     register,
@@ -739,6 +767,13 @@ export default function IngresoMaterialesPage() {
 
   async function onSubmit(values) {
     if (guardando) return
+
+    if (!puedeGuardar) {
+      toast.error(
+        "No puede guardar el ingreso porque su usuario no tiene rol Data Entry. Solicite habilitación a IT si corresponde."
+      )
+      return
+    }
 
     const fotoCamionPatenteFile = values.fotoCamionPatente?.[0]
     const fotoMaterialCargadoFile = values.fotoMaterialCargado?.[0]
@@ -1644,6 +1679,13 @@ export default function IngresoMaterialesPage() {
           />
         </section>
 
+        {!usuarioCargando && !puedeGuardar && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            No puede guardar el ingreso porque su usuario no tiene rol Data Entry.
+            Solicite habilitación a IT si corresponde.
+          </div>
+        )}
+
         <div className={`flex flex-col justify-end gap-3 sm:flex-row ${SECTION_CLASS}`}>
           <button
             type="button"
@@ -1656,7 +1698,7 @@ export default function IngresoMaterialesPage() {
 
           <button
             type="submit"
-            disabled={guardando}
+            disabled={guardando || !puedeGuardar}
             className="rounded-lg bg-[#F3171B] px-5 py-3 font-bold text-white shadow-sm hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {guardando ? "Guardando..." : "Guardar ingreso"}

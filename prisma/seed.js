@@ -1,6 +1,13 @@
 const { PrismaClient } = require("@prisma/client")
+const { randomBytes, scryptSync } = require("crypto")
 
 const prisma = new PrismaClient()
+
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex")
+  const derivedKey = scryptSync(String(password), salt, 64).toString("hex")
+  return `${salt}:${derivedKey}`
+}
 
 async function main() {
   const tiposIngreso = [
@@ -113,6 +120,29 @@ async function main() {
       },
     })
   }
+
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@ingreso-madymat.local"
+  const adminUsuario = process.env.ADMIN_USER || "admin"
+  const adminPassword = process.env.ADMIN_PASSWORD || "Admin123!"
+
+  await prisma.usuarioApp.upsert({
+    where: { email: adminEmail },
+    update: {
+      nombre: "Administrador",
+      usuario: adminUsuario,
+      passwordHash: hashPassword(adminPassword),
+      rol: "ADMIN",
+      activo: true,
+    },
+    create: {
+      nombre: "Administrador",
+      email: adminEmail,
+      usuario: adminUsuario,
+      passwordHash: hashPassword(adminPassword),
+      rol: "ADMIN",
+      activo: true,
+    },
+  })
 
   console.log("Seed ejecutado correctamente.")
 }

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
+import { getCurrentUser } from "@/lib/auth"
+import { canCreateIngreso } from "@/lib/auth/permissions"
 
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
@@ -136,6 +138,19 @@ async function obtenerUsuarioPortero(porteroSeleccionado) {
 
 export async function POST(request) {
   try {
+    const currentUser = await getCurrentUser()
+
+    if (!currentUser || !canCreateIngreso(currentUser)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message:
+            "No puede guardar el ingreso porque su usuario no tiene rol Data Entry. Solicite habilitación a IT si corresponde.",
+        },
+        { status: 403 }
+      )
+    }
+
     const formData = await request.formData()
     const payloadRaw = formData.get("payload")
 
