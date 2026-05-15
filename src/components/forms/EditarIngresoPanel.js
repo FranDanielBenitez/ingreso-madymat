@@ -47,7 +47,7 @@ export default function EditarIngresoPanel({
 
   useEffect(() => {
     async function cargarProcedencias() {
-      if (!esRollizos) return
+      if (!esRollizos && !esMateriales) return
 
       try {
         setCargandoProcedencias(true)
@@ -68,7 +68,7 @@ export default function EditarIngresoPanel({
     }
 
     cargarProcedencias()
-  }, [esRollizos])
+  }, [esMateriales, esRollizos])
 
   function actualizarCampo(event) {
     const { name, value } = event.target
@@ -88,8 +88,8 @@ export default function EditarIngresoPanel({
       return
     }
 
-    if (esRollizos && !values.procedenciaId) {
-      toast.error("La procedencia es obligatoria para Rollizos")
+    if ((esRollizos || esMateriales) && !values.procedenciaId) {
+      toast.error("La procedencia es obligatoria")
       return
     }
 
@@ -122,7 +122,7 @@ export default function EditarIngresoPanel({
         motivo,
       }
 
-      if (esRollizos) {
+      if (esRollizos || esMateriales) {
         payload.procedenciaId = values.procedenciaId
       }
 
@@ -193,7 +193,7 @@ export default function EditarIngresoPanel({
           />
         </label>
 
-        {esRollizos ? (
+        {esRollizos || esMateriales ? (
           <label>
             <span className={LABEL_CLASS}>Procedencia *</span>
             <select

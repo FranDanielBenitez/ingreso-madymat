@@ -236,6 +236,7 @@ export async function POST(request) {
     const proveedorManualObservacion = limpiarTexto(proveedorManual.observacion)
     const items = prepararItemsValidos(body)
     const servicioCargaManual = Boolean(body.servicioCargaManual)
+    const procedenciaId = Number(body.procedenciaId)
     const fechaIngreso = body.fechaIngreso
       ? combinarFechaHora(body.fechaIngreso, body.horaIngreso)
       : null
@@ -256,6 +257,30 @@ export async function POST(request) {
     const servicioManualObservacion = limpiarTexto(servicioManual.observacion)
     const chofer = body.choferSeleccionado
     const portero = body.porteroSeleccionado
+
+    if (!Number.isInteger(procedenciaId) || procedenciaId <= 0) {
+      return NextResponse.json(
+        { ok: false, message: "La procedencia es obligatoria" },
+        { status: 400 }
+      )
+    }
+
+    const procedencia = await prisma.procedenciaDim.findFirst({
+      where: {
+        id: procedenciaId,
+        activa: true,
+      },
+    })
+
+    if (!procedencia) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "La procedencia seleccionada no existe o no esta activa",
+        },
+        { status: 400 }
+      )
+    }
 
     if (proveedorCargaManual && !proveedorManualNombre) {
       return NextResponse.json(
@@ -385,6 +410,7 @@ export async function POST(request) {
 
         tipoIngresoId: tipoIngreso.id,
         categoriaFormularioId: categoriaFormulario.id,
+        procedenciaId: procedencia.id,
 
         remitoProveedor: limpiarTexto(body.remitoProveedor),
         observaciones: limpiarTexto(body.observaciones),
@@ -551,6 +577,7 @@ export async function POST(request) {
         registradoPor: true,
         tipoIngreso: true,
         categoriaFormulario: true,
+        procedencia: true,
       },
     })
 
@@ -633,6 +660,7 @@ export async function POST(request) {
         registradoPor: true,
         tipoIngreso: true,
         categoriaFormulario: true,
+        procedencia: true,
       },
     })
 

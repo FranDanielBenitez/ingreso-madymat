@@ -26,6 +26,7 @@ export async function GET(_request, context) {
         registradoPor: true,
         tipoIngreso: true,
         categoriaFormulario: true,
+        procedencia: true,
       },
     })
 

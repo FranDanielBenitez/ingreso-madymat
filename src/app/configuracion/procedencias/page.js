@@ -92,7 +92,7 @@ export default function ConfiguracionProcedenciasPage() {
             Procedencias
           </h1>
           <p className="mt-2 text-[#475569]">
-            Dimension parametrizable para ingresos de Rollizos.
+            Dimension parametrizable para ingresos de Rollizos y Materiales.
           </p>
         </section>
 

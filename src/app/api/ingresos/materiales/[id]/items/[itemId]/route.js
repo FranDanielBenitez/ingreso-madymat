@@ -16,6 +16,7 @@ const INCLUDE_INGRESO = {
   registradoPor: true,
   tipoIngreso: true,
   categoriaFormulario: true,
+  procedencia: true,
 }
 
 function limpiarTexto(value) {

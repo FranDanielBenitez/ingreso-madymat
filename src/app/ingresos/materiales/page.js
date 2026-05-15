@@ -209,6 +209,7 @@ export default function IngresoMaterialesPage() {
   const [errorLogistica, setErrorLogistica] = useState("")
   const [porteros, setPorteros] = useState([])
   const [choferes, setChoferes] = useState([])
+  const [procedencias, setProcedencias] = useState([])
   const [proveedores, setProveedores] = useState([])
   const [articulosPorCategoria, setArticulosPorCategoria] = useState({})
   const [articulosTodos, setArticulosTodos] = useState([])
@@ -245,6 +246,7 @@ export default function IngresoMaterialesPage() {
       horaIngreso: horaActual(),
       tipoServicio: "FLETERO",
       tipoChofer: "EXTERNO",
+      procedenciaId: "",
     },
   })
 
@@ -402,10 +404,11 @@ export default function IngresoMaterialesPage() {
     setError("")
 
     try {
-      const [porterosResult, choferesResult, proveedoresResult] =
+      const [porterosResult, choferesResult, procedenciasResult, proveedoresResult] =
         await Promise.allSettled([
           fetchDimension("/api/dimensiones/porteros"),
           fetchDimension("/api/dimensiones/choferes"),
+          fetchDimension("/api/dimensiones/procedencias"),
           fetchDimension(proveedorUrl(modoProveedor)),
         ])
 
@@ -414,6 +417,9 @@ export default function IngresoMaterialesPage() {
       }
       if (choferesResult.status === "fulfilled") {
         setChoferes(choferesResult.value)
+      }
+      if (procedenciasResult.status === "fulfilled") {
+        setProcedencias(procedenciasResult.value)
       }
       if (proveedoresResult.status === "fulfilled") {
         setProveedores(proveedoresResult.value)
@@ -428,6 +434,10 @@ export default function IngresoMaterialesPage() {
         choferes: mensajeErrorDimension(
           choferesResult,
           "No se pudieron cargar choferes"
+        ),
+        procedencias: mensajeErrorDimension(
+          procedenciasResult,
+          "No se pudieron cargar procedencias"
         ),
         proveedores: mensajeErrorDimension(
           proveedoresResult,
@@ -701,6 +711,7 @@ export default function IngresoMaterialesPage() {
       horaIngreso: horaActual(),
       tipoServicio: "FLETERO",
       tipoChofer: "EXTERNO",
+      procedenciaId: "",
     })
     setArticulosPorCategoria({})
     setCategoriasCargando({})
@@ -746,6 +757,11 @@ export default function IngresoMaterialesPage() {
 
     if (!porteroSeleccionado) {
       toast.error("No se pudo seleccionar portero. Reintentá la carga de datos.")
+      return
+    }
+
+    if (!values.procedenciaId) {
+      toast.error("La procedencia es obligatoria")
       return
     }
 
@@ -814,6 +830,11 @@ export default function IngresoMaterialesPage() {
       const ingresoPreparado = {
         ...datosIngreso,
         proveedorCargaManual,
+        procedenciaId: Number(values.procedenciaId),
+        procedenciaSeleccionada:
+          procedencias.find(
+            (procedencia) => String(procedencia.id) === String(values.procedenciaId)
+          ) || null,
         proveedorSeleccionado: proveedorCargaManual ? null : proveedorSeleccionado,
         proveedorManual: {
           nombre: values.proveedorManualNombre || "",
@@ -892,7 +913,7 @@ export default function IngresoMaterialesPage() {
             Cargando formulario...
           </h1>
           <p className="mt-3 text-[#475569]">
-            Estamos consultando porteros y choferes.
+            Estamos consultando porteros, choferes y procedencias.
           </p>
         </section>
       </main>
@@ -949,7 +970,7 @@ export default function IngresoMaterialesPage() {
             Datos generales
           </h2>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <div>
               <label className={LABEL_CLASS}>Fecha de ingreso</label>
               <input
@@ -992,6 +1013,22 @@ export default function IngresoMaterialesPage() {
                 className={FIELD_CLASS}
                 placeholder="Numero de remito"
               />
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>Procedencia *</label>
+              <select
+                {...register("procedenciaId", { required: true })}
+                className={FIELD_CLASS}
+              >
+                <option value="">Seleccionar procedencia</option>
+                {procedencias.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nombre}
+                  </option>
+                ))}
+              </select>
+              <CampoErrorDimension message={dimensionErrors.procedencias} />
             </div>
           </div>
         </section>

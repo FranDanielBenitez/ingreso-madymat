@@ -8,6 +8,7 @@ const INCLUDE_INGRESO = {
   registradoPor: true,
   tipoIngreso: true,
   categoriaFormulario: true,
+  procedencia: true,
 }
 
 export async function PATCH(request, context) {

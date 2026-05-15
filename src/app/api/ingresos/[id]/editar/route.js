@@ -183,12 +183,12 @@ export async function PATCH(request, context) {
     const articuloData = {}
     const cambios = []
 
-    if (esRollizos) {
+    if (esRollizos || esMateriales) {
       const procedenciaId = Number(body?.procedenciaId)
 
       if (!Number.isInteger(procedenciaId) || procedenciaId <= 0) {
         return NextResponse.json(
-          { ok: false, message: "La procedencia es obligatoria para Rollizos" },
+          { ok: false, message: "La procedencia es obligatoria" },
           { status: 400 }
         )
       }
