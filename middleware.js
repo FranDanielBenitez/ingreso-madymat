@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server"
-import { prisma } from "./src/lib/prisma"
 
 const AUTH_COOKIE_NAME = "ingreso_madymat_session"
 const PUBLIC_FILE = /\.(.*)$/
 
-export async function middleware(request) {
+export function middleware(request) {
   const { pathname } = request.nextUrl
 
   if (
@@ -16,52 +15,25 @@ export async function middleware(request) {
     return NextResponse.next()
   }
 
-  if (pathname === "/login" || pathname.startsWith("/api/auth")) {
+  if (pathname.startsWith("/api/auth")) {
     return NextResponse.next()
   }
 
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
-
-  try {
-    const session = await prisma.usuarioSesion.findFirst({
-      where: {
-        token,
-        expiresAt: {
-          gt: new Date(),
-        },
-      },
-      include: {
-        usuario: true,
-      },
-    })
-
-    if (!session?.usuario?.activo) {
-      const response = NextResponse.redirect(new URL("/login", request.url))
-      response.cookies.set({
-        name: AUTH_COOKIE_NAME,
-        value: "",
-        path: "/",
-        maxAge: 0,
-      })
-      return response
-    }
-
-    if (
-      pathname.startsWith("/configuracion") &&
-      !["ADMIN", "SISTEMAS"].includes(session.usuario.rol)
-    ) {
+  if (pathname === "/login") {
+    if (token) {
       return NextResponse.redirect(new URL("/", request.url))
     }
 
     return NextResponse.next()
-  } catch (error) {
-    console.error("Middleware error verificando sesión:", error)
+  }
+
+  if (!token) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
+
+  return NextResponse.next()
 }
 
 export const config = {
