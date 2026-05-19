@@ -68,7 +68,7 @@ export async function getProveedoresMateriaPrima() {
       prodp2_Cod AS SubGrupo
     FROM SBDAALA.dbo.Proveed
     WHERE prodp1_Cod = 'MATE'
-      AND prodp2_Cod = 'MPRI'
+      AND prodp2_Cod IN ('MPRI', 'ESQU')
     ORDER BY pro_RazSoc
   `)
 
