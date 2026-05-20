@@ -67,7 +67,7 @@ function mostrarViaje(registro) {
     return "-"
   }
 
-  return `Viaje N° ${registro.numeroViaje}`
+  return `#${registro.numeroViaje}`
 }
 
 function articuloPrincipal(registro) {
@@ -417,7 +417,7 @@ export default function RegistrosPage() {
                       <th className="py-3 pr-4 font-semibold">ID</th>
                       <th className="py-3 pr-4 font-semibold">Fecha</th>
                       <th className="py-3 pr-4 font-semibold">Tipo</th>
-                      <th className="py-3 pr-4 font-semibold">N° viaje</th>
+                      <th className="py-3 pr-4 font-semibold min-w-[70px]">N° viaje</th>
                       <th className="py-3 pr-4 font-semibold">Estado</th>
                       <th className="py-3 pr-4 font-semibold">Proveedor</th>
                       <th className="py-3 pr-4 font-semibold">Remito</th>
@@ -446,7 +446,7 @@ export default function RegistrosPage() {
                           <td className="py-3 pr-4">
                             {mostrar(registro.tipoIngreso?.codigo)}
                           </td>
-                          <td className="py-3 pr-4">
+                          <td className="py-3 pr-4 whitespace-nowrap">
                             {mostrarViaje(registro)}
                           </td>
                           <td className="py-3 pr-4">
@@ -476,11 +476,11 @@ export default function RegistrosPage() {
                           <td className="py-3 pr-4">
                             {registro.fotos?.length || 0}
                           </td>
-                          <td className="py-3 pr-4">
+                          <td className="py-3 pr-4 whitespace-nowrap min-w-[150px]">
                             {href ? (
                               <Link
                                 href={href}
-                                className="rounded-lg bg-[#F3171B] px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14]"
+                                className="inline-flex whitespace-nowrap rounded-lg bg-[#F3171B] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#D90F14]"
                               >
                                 Ver detalle
                               </Link>
@@ -525,7 +525,7 @@ export default function RegistrosPage() {
 
                       <div className="mt-4 grid gap-2 text-sm text-[#475569]">
                         <p>
-                          <span className="font-semibold">N° viaje:</span>{" "}
+                          <span className="font-semibold">Viaje:</span>{" "}
                           {mostrarViaje(registro)}
                         </p>
                         <p>
