@@ -7,6 +7,7 @@ import {
   FiHome,
   FiList,
   FiAlertTriangle,
+  FiBookOpen,
   FiSettings,
   FiSun,
   FiMoon,
@@ -22,6 +23,7 @@ const LINKS = [
   { href: "/ingresos/materiales", label: "Materiales", icon: GiWoodBeam },
   { href: "/registros", label: "Registros", icon: FiList },
   { href: "/registros/pendientes-validacion", label: "Pendientes", icon: FiAlertTriangle },
+  { href: "/manual", label: "Manual", icon: FiBookOpen },
 ]
 
 function ThemeIcon({ dark }) {
