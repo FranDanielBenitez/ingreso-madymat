@@ -28,6 +28,7 @@ const FILTROS_INICIALES = {
   fechaDesde: "",
   fechaHasta: "",
   proveedor: "",
+  portero: "",
   remito: "",
   patente: "",
 }
@@ -43,6 +44,7 @@ function filtrosDesdeUrl() {
     fechaDesde: params.get("fechaDesde") || "",
     fechaHasta: params.get("fechaHasta") || "",
     proveedor: params.get("proveedor") || "",
+    portero: params.get("portero") || "",
     remito: params.get("remito") || "",
     patente: params.get("patente") || "",
   }
@@ -84,6 +86,13 @@ function descripcionArticulos(registro) {
 
 function proveedorPrincipal(registro) {
   return registro.proveedorNombreValidado || registro.proveedorNombreCargado
+}
+
+function etiquetaPortero(portero) {
+  const nombre = portero?.NombreCompleto || portero?.nombre || "-"
+  const legajo = portero?.Legajo || portero?.legajoSjala
+
+  return legajo ? `${nombre} (${legajo})` : nombre
 }
 
 function cantidadArticulos(registro) {
@@ -153,6 +162,8 @@ export default function RegistrosPage() {
   const [registros, setRegistros] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [porteros, setPorteros] = useState([])
+  const [loadingPorteros, setLoadingPorteros] = useState(false)
   const [paginaActual, setPaginaActual] = useState(1)
   const [itemsPorPagina, setItemsPorPagina] = useState(10)
 
@@ -234,6 +245,29 @@ export default function RegistrosPage() {
   function irPaginaSiguiente() {
     setPaginaActual((prev) => Math.min(totalPaginas, prev + 1))
   }
+
+  useEffect(() => {
+    async function cargarPorteros() {
+      setLoadingPorteros(true)
+
+      try {
+        const response = await fetch("/api/dimensiones/porteros")
+        const result = await response.json()
+
+        if (!response.ok || !result.ok) {
+          throw new Error(result.message || "No se pudieron cargar porteros")
+        }
+
+        setPorteros(result.data || [])
+      } catch {
+        setPorteros([])
+      } finally {
+        setLoadingPorteros(false)
+      }
+    }
+
+    cargarPorteros()
+  }, [])
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -329,6 +363,26 @@ export default function RegistrosPage() {
                   className={FIELD_CLASS}
                   placeholder="Buscar proveedor"
                 />
+              </label>
+
+              <label>
+                <span className={LABEL_CLASS}>Portero</span>
+                <select
+                  name="portero"
+                  value={filtros.portero}
+                  onChange={actualizarFiltro}
+                  className={FIELD_CLASS}
+                  disabled={loadingPorteros}
+                >
+                  <option value="">
+                    {loadingPorteros ? "Cargando porteros..." : "Todos"}
+                  </option>
+                  {porteros.map((portero) => (
+                    <option key={portero.Legajo} value={portero.Legajo}>
+                      {etiquetaPortero(portero)}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label>

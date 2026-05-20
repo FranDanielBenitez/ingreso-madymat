@@ -795,6 +795,13 @@ export default function IngresoMaterialesPage() {
       return
     }
 
+    const remitoProveedor = String(values.remitoProveedor || "").trim()
+
+    if (!remitoProveedor) {
+      toast.error("Debe ingresar el remito del proveedor.")
+      return
+    }
+
     if (!values.procedenciaId) {
       toast.error("La procedencia es obligatoria")
       return
@@ -864,6 +871,7 @@ export default function IngresoMaterialesPage() {
 
       const ingresoPreparado = {
         ...datosIngreso,
+        remitoProveedor,
         proveedorCargaManual,
         procedenciaId: Number(values.procedenciaId),
         procedenciaSeleccionada:
@@ -1041,10 +1049,12 @@ export default function IngresoMaterialesPage() {
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>Remito proveedor</label>
+              <label className={LABEL_CLASS}>
+                Remito proveedor <span className="text-[#F3171B]">*</span>
+              </label>
               <input
                 type="text"
-                {...register("remitoProveedor")}
+                {...register("remitoProveedor", { required: true })}
                 className={FIELD_CLASS}
                 placeholder="Numero de remito"
               />

@@ -54,6 +54,8 @@ export async function GET(request) {
     const fechaDesde = fechaDesdeParam(searchParams.get("fechaDesde"))
     const fechaHasta = fechaHastaParam(searchParams.get("fechaHasta"))
     const proveedor = filtroTexto(searchParams.get("proveedor"))
+    const porteroTexto = limpiar(searchParams.get("portero"))
+    const portero = filtroTexto(porteroTexto)
     const remito = filtroTexto(searchParams.get("remito"))
     const patente = filtroTexto(searchParams.get("patente"))
 
@@ -83,6 +85,22 @@ export async function GET(request) {
       ])
     }
 
+    if (portero) {
+      const condicionesPortero = [
+        { registradoPor: { is: { nombre: portero } } },
+        { registradoPor: { is: { usuario: portero } } },
+        { registradoPor: { is: { nombreSjala: portero } } },
+      ]
+
+      if (/^\d+$/.test(porteroTexto)) {
+        condicionesPortero.push({
+          registradoPor: { is: { legajoSjala: Number(porteroTexto) } },
+        })
+      }
+
+      agregarGrupoOr(where, condicionesPortero)
+    }
+
     if (remito) {
       where.remitoProveedor = remito
     }
@@ -105,7 +123,15 @@ export async function GET(request) {
           },
         },
         fotos: true,
-        registradoPor: true,
+        registradoPor: {
+          select: {
+            id: true,
+            nombre: true,
+            usuario: true,
+            legajoSjala: true,
+            nombreSjala: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",

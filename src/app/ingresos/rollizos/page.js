@@ -618,6 +618,13 @@ export default function IngresoRollizosPage() {
         return
       }
 
+      const remitoProveedor = String(values.remitoProveedor || "").trim()
+
+      if (!remitoProveedor) {
+        toast.error("Debe ingresar el remito del proveedor.")
+        return
+      }
+
       if (!procedenciaSeleccionada) {
         toast.error("La procedencia es obligatoria para Rollizos")
         return
@@ -707,6 +714,7 @@ export default function IngresoRollizosPage() {
 
       const ingresoPreparado = {
         ...datosIngreso,
+        remitoProveedor,
         proveedorCargaManual,
         proveedorSeleccionado: proveedorCargaManual ? null : proveedorSeleccionado,
         proveedorManual: {
@@ -940,11 +948,11 @@ export default function IngresoRollizosPage() {
 
             <div>
               <label className={LABEL_CLASS}>
-                Remito proveedor
+                Remito proveedor <span className="text-[#F3171B]">*</span>
               </label>
               <input
                 type="text"
-                {...register("remitoProveedor")}
+                {...register("remitoProveedor", { required: true })}
                 className={FIELD_CLASS}
                 placeholder="Número de remito"
               />

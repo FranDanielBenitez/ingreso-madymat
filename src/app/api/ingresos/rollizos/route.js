@@ -279,6 +279,14 @@ export async function POST(request) {
       (!hachadorCargaManual && Boolean(hachador) && body.hachadorModoBusqueda === "TODOS")
     const chofer = body.choferSeleccionado
     const portero = body.porteroSeleccionado
+    const remitoProveedor = limpiarTexto(body.remitoProveedor)
+
+    if (!remitoProveedor) {
+      return NextResponse.json(
+        { ok: false, message: "Debe ingresar el remito del proveedor." },
+        { status: 400 }
+      )
+    }
 
     if (proveedorCargaManual && !proveedorManualNombre) {
       return NextResponse.json(
@@ -445,7 +453,7 @@ export async function POST(request) {
           categoriaFormularioId: categoriaFormulario.id,
           procedenciaId: procedencia.id,
 
-        remitoProveedor: limpiarTexto(body.remitoProveedor),
+        remitoProveedor,
         observaciones: limpiarTexto(body.observaciones),
 
         proveedorOrigenDato: proveedorCargaManual ? "MANUAL" : "BEJERMAN",
