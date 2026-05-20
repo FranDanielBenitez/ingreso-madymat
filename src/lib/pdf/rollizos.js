@@ -1,6 +1,10 @@
 import path from "node:path"
 import { prisma } from "@/lib/prisma"
 import { generatePdfFromTemplate } from "@/lib/pdf/docx-template"
+import {
+  obtenerMotivosPendientes,
+  tienePendientesSinAprobar,
+} from "@/lib/ingresos/pendientes"
 
 const PDF_CONFIG = {
   proveedor: {
@@ -162,6 +166,15 @@ export async function getIngresoRollizoParaPdf(id) {
     throw pdfError(400, "No se pueden generar PDFs de ingresos anulados")
   }
 
+  if (tienePendientesSinAprobar(ingreso)) {
+    const error = pdfError(
+      409,
+      "No se puede descargar el PDF porque el ingreso tiene datos pendientes de aprobacion."
+    )
+    error.motivos = obtenerMotivosPendientes(ingreso)
+    throw error
+  }
+
   if (!ingreso.procedencia?.nombre) {
     throw pdfError(400, "No hay procedencia asociada al ingreso")
   }
@@ -202,6 +215,7 @@ export function jsonPdfError(error) {
     {
       ok: false,
       message: error.message || "No se pudo generar el PDF",
+      motivos: error.motivos || undefined,
     },
     {
       status: error.status || 500,

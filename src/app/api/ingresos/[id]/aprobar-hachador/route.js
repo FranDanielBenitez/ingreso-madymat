@@ -1,0 +1,93 @@
+import { NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import {
+  actualizarFlagsPendientes,
+  jsonError,
+  limpiarObservacion,
+  nombreUsuario,
+  observacionLog,
+  obtenerIngresoParaAprobacion,
+  validarIdIngreso,
+  validarUsuarioAprobador,
+} from "@/lib/ingresos/aprobaciones"
+
+export async function PATCH(request, context) {
+  try {
+    const { usuario, error } = await validarUsuarioAprobador()
+    if (error) return error
+
+    const params = await context.params
+    const id = validarIdIngreso(params.id)
+
+    if (!id) return jsonError("ID de ingreso no valido", 400)
+
+    const body = await request.json().catch(() => ({}))
+    const observacion = limpiarObservacion(body?.observacion)
+
+    const ingreso = await prisma.$transaction(async (tx) => {
+      const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
+
+      if (!ingresoExistente) {
+        throw Object.assign(new Error("Ingreso no encontrado"), { status: 404 })
+      }
+
+      if (ingresoExistente.estado === "ANULADO") {
+        throw Object.assign(new Error("No se puede aprobar un ingreso anulado"), {
+          status: 400,
+        })
+      }
+
+      const tienePendiente =
+        ingresoExistente.hachadorAplica === true &&
+        (ingresoExistente.hachadorCargaManual ||
+          ingresoExistente.hachadorFueraSugerido ||
+          ingresoExistente.hachadorOrigenDato === "MANUAL") &&
+        ingresoExistente.hachadorValidado !== true
+
+      if (!tienePendiente) {
+        throw Object.assign(
+          new Error("El hachador no tiene pendientes de aprobacion"),
+          { status: 400 }
+        )
+      }
+
+      await tx.ingreso.update({
+        where: { id },
+        data: {
+          hachadorValidado: true,
+          hachadorCodigoValidado:
+            ingresoExistente.hachadorCodigoValidado ||
+            ingresoExistente.hachadorCodigoBejerman,
+          hachadorNombreValidado:
+            ingresoExistente.hachadorNombreValidado ||
+            ingresoExistente.hachadorNombreCargado,
+          hachadorCuitValidado:
+            ingresoExistente.hachadorCuitValidado ||
+            ingresoExistente.hachadorCuitCargado,
+        },
+      })
+
+      await tx.ingresoLog.create({
+        data: {
+          ingresoId: id,
+          usuarioId: usuario.id,
+          estado: "HACHADOR_APROBADO",
+          detalle: `Hachador aprobado por ${nombreUsuario(usuario)}.${observacionLog(
+            observacion
+          )}`,
+        },
+      })
+
+      return actualizarFlagsPendientes(tx, id)
+    })
+
+    return NextResponse.json({
+      ok: true,
+      message: "Hachador aprobado correctamente",
+      ingreso,
+    })
+  } catch (error) {
+    console.error("Error aprobando hachador:", error)
+    return jsonError(error.message || "Error aprobando hachador", error.status || 500)
+  }
+}

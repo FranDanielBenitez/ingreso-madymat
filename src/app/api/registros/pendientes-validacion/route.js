@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { obtenerPendientesDetalle } from "@/lib/ingresos/pendientes"
 
 const PENDIENTES_WHERE = {
   OR: [
@@ -9,6 +10,9 @@ const PENDIENTES_WHERE = {
     { proveedorValidado: false },
     { servicioCargaManual: true },
     { servicioValidado: false },
+    { hachadorCargaManual: true },
+    { hachadorFueraSugerido: true },
+    { hachadorValidado: false },
     {
       articulos: {
         some: {
@@ -21,7 +25,7 @@ const PENDIENTES_WHERE = {
 
 export async function GET() {
   try {
-    const registros = await prisma.ingreso.findMany({
+    const registrosCandidatos = await prisma.ingreso.findMany({
       where: PENDIENTES_WHERE,
       include: {
         tipoIngreso: true,
@@ -33,12 +37,22 @@ export async function GET() {
         },
         fotos: true,
         registradoPor: true,
-        logs: true,
+        logs: {
+          orderBy: {
+            id: "asc",
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
     })
+    const registros = registrosCandidatos
+      .map((registro) => ({
+        ...registro,
+        pendientes: obtenerPendientesDetalle(registro),
+      }))
+      .filter((registro) => registro.pendientes.length > 0)
 
     return NextResponse.json({
       ok: true,

@@ -266,7 +266,16 @@ export async function POST(request) {
     const servicioManualNombre = limpiarTexto(servicioManual.nombre)
     const servicioManualCuit = limpiarTexto(servicioManual.cuit)
     const servicioManualObservacion = limpiarTexto(servicioManual.observacion)
+    const hachadorCargaManual = Boolean(body.hachadorCargaManual)
     const hachador = body.hachadorSeleccionado
+    const hachadorManual = body.hachadorManual || {}
+    const hachadorManualNombre = limpiarTexto(hachadorManual.nombre)
+    const hachadorManualCuit = limpiarTexto(hachadorManual.cuit)
+    const hachadorManualCodigo = limpiarTexto(hachadorManual.codigo)
+    const hachadorManualObservacion = limpiarTexto(hachadorManual.observacion)
+    const hachadorFueraSugerido =
+      hachadorCargaManual ||
+      (!hachadorCargaManual && Boolean(hachador) && body.hachadorModoBusqueda === "TODOS")
     const chofer = body.choferSeleccionado
     const portero = body.porteroSeleccionado
 
@@ -342,6 +351,13 @@ export async function POST(request) {
       )
     }
 
+    if (hachadorCargaManual && !hachadorManualNombre) {
+      return NextResponse.json(
+        { ok: false, message: "Debe indicar el nombre del hachador manual" },
+        { status: 400 }
+      )
+    }
+
     const usuarioPortero = await obtenerUsuarioPortero(portero)
     const detallesModoBusqueda = []
 
@@ -392,8 +408,19 @@ export async function POST(request) {
       }
     }
 
-    if (body.hachadorModoBusqueda === "TODOS") {
+    if (body.hachadorModoBusqueda === "TODOS" && !hachadorCargaManual) {
       detallesModoBusqueda.push("Hachador seleccionado desde modo Todos.")
+    }
+
+    if (hachadorCargaManual) {
+      detallesModoBusqueda.push(
+        "Hachador cargado manualmente, pendiente de validar."
+      )
+      if (hachadorManualObservacion) {
+        detallesModoBusqueda.push(
+          `Observacion hachador manual: ${hachadorManualObservacion}.`
+        )
+      }
     }
 
     const ingreso = await prisma.ingreso.create({
@@ -498,26 +525,43 @@ export async function POST(request) {
         patenteAcoplado: limpiarTexto(body.patenteAcoplado)?.toUpperCase(),
 
         hachadorAplica: true,
-        hachadorOrigenDato: hachador ? "BEJERMAN" : null,
-        hachadorCodigoBejerman: limpiarTexto(hachador?.Codigo),
-        hachadorNombreCargado: limpiarTexto(hachador?.RazonSocial),
-        hachadorCuitCargado: limpiarTexto(hachador?.CUIT),
-        hachadorGrupoBejerman: limpiarTexto(hachador?.Grupo),
-        hachadorSubgrupoBejerman: limpiarTexto(hachador?.SubGrupo),
-        hachadorFueraSugerido: false,
-        hachadorCargaManual: false,
-        hachadorCodigoValidado: limpiarTexto(hachador?.Codigo),
-        hachadorNombreValidado: limpiarTexto(hachador?.RazonSocial),
-        hachadorCuitValidado: limpiarTexto(hachador?.CUIT),
-        hachadorValidado: hachador ? true : false,
+        hachadorOrigenDato: hachadorCargaManual ? "MANUAL" : hachador ? "BEJERMAN" : null,
+        hachadorCodigoBejerman: hachadorCargaManual
+          ? hachadorManualCodigo
+          : limpiarTexto(hachador?.Codigo),
+        hachadorNombreCargado: hachadorCargaManual
+          ? hachadorManualNombre
+          : limpiarTexto(hachador?.RazonSocial),
+        hachadorCuitCargado: hachadorCargaManual
+          ? hachadorManualCuit
+          : limpiarTexto(hachador?.CUIT),
+        hachadorGrupoBejerman: hachadorCargaManual
+          ? null
+          : limpiarTexto(hachador?.Grupo),
+        hachadorSubgrupoBejerman: hachadorCargaManual
+          ? null
+          : limpiarTexto(hachador?.SubGrupo),
+        hachadorFueraSugerido,
+        hachadorCargaManual,
+        hachadorCodigoValidado:
+          hachador && !hachadorFueraSugerido ? limpiarTexto(hachador.Codigo) : null,
+        hachadorNombreValidado:
+          hachador && !hachadorFueraSugerido ? limpiarTexto(hachador.RazonSocial) : null,
+        hachadorCuitValidado:
+          hachador && !hachadorFueraSugerido ? limpiarTexto(hachador.CUIT) : null,
+        hachadorValidado: Boolean(hachador && !hachadorFueraSugerido),
 
         tieneCargaManual:
           body.tipoChofer === "EXTERNO" ||
           proveedorCargaManual ||
           articuloCargaManual ||
-          servicioCargaManual,
+          servicioCargaManual ||
+          hachadorCargaManual,
         tieneFueraSugerido:
-          proveedorCargaManual || articuloCargaManual || servicioCargaManual,
+          proveedorCargaManual ||
+          articuloCargaManual ||
+          servicioCargaManual ||
+          hachadorFueraSugerido,
 
         pdfGenerado: false,
 

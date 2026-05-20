@@ -4,6 +4,9 @@ import { Fragment, useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { toast } from "sonner"
 import EditarIngresoPanel from "@/components/forms/EditarIngresoPanel"
+import DocumentacionFexCard from "@/components/ingresos/DocumentacionFexCard"
+import PendientesAprobacionCard from "@/components/ingresos/PendientesAprobacionCard"
+import { articuloManualAprobado } from "@/lib/ingresos/pendientes"
 
 const SECTION_CLASS =
   "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
@@ -54,14 +57,19 @@ function Campo({ label, value }) {
 
 function ProveedorBadges({ ingreso }) {
   if (!ingreso?.proveedorCargaManual) return null
+  const aprobado = ingreso.proveedorValidado === true
 
   return (
     <div className="mb-4 flex flex-wrap gap-2">
       <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
         Proveedor manual
       </span>
-      <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-        Pendiente de validar
+      <span className={`rounded-full border px-3 py-1 text-xs font-bold ${
+        aprobado
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-amber-200 bg-amber-50 text-amber-800"
+      }`}>
+        {aprobado ? "Validado" : "Pendiente de validar"}
       </span>
     </div>
   )
@@ -69,29 +77,39 @@ function ProveedorBadges({ ingreso }) {
 
 function ServicioBadges({ ingreso }) {
   if (!ingreso?.servicioCargaManual) return null
+  const aprobado = ingreso.servicioValidado === true
 
   return (
     <div className="mb-4 flex flex-wrap gap-2">
       <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200">
         Servicio manual
       </span>
-      <span className="rounded-full border border-amber-200 bg-amber-100/70 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
-        Pendiente de validar
+      <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+        aprobado
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-amber-200 bg-amber-100/70 text-amber-800"
+      }`}>
+        {aprobado ? "Validado" : "Pendiente de validar"}
       </span>
     </div>
   )
 }
 
-function ArticuloBadges({ articulo }) {
+function ArticuloBadges({ articulo, ingreso }) {
   if (articulo?.origenDato !== "MANUAL") return null
+  const aprobado = articuloManualAprobado(ingreso, articulo)
 
   return (
     <div className="mt-2 flex flex-wrap gap-2">
       <span className="rounded-full border border-slate-300 bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200">
         Articulo manual
       </span>
-      <span className="rounded-full border border-amber-200 bg-amber-100/70 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
-        Pendiente de validar
+      <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+        aprobado
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-amber-200 bg-amber-100/70 text-amber-800"
+      }`}>
+        {aprobado ? "Validado" : "Pendiente de validar"}
       </span>
     </div>
   )
@@ -103,37 +121,6 @@ function grupoSubgrupoArticulo(articulo) {
   return `${mostrar(articulo?.articuloGrupo)} / ${mostrar(
     articulo?.articuloSubgrupo
   )}`
-}
-
-function tieneDato(value) {
-  return value !== null && value !== undefined && value !== ""
-}
-
-function PdfAction({ href, children, disabled, reason }) {
-  const className = disabled
-    ? "inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-slate-100 px-4 py-3 text-center text-sm font-semibold text-slate-400 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-500"
-    : "inline-flex w-full items-center justify-center rounded-lg border border-amber-300 bg-white px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition hover:border-amber-500 hover:bg-amber-50 hover:text-amber-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:border-amber-400/30 dark:bg-slate-950/40 dark:text-slate-100 dark:hover:bg-amber-400/10 dark:hover:text-amber-100"
-
-  if (disabled) {
-    return (
-      <div>
-        <button type="button" disabled className={className}>
-          {children}
-        </button>
-        {reason ? (
-          <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-200">
-            {reason}
-          </p>
-        ) : null}
-      </div>
-    )
-  }
-
-  return (
-    <a href={href} download className={className}>
-      {children}
-    </a>
-  )
 }
 
 export default function DetalleIngresoMaterialesPage() {
@@ -160,15 +147,6 @@ export default function DetalleIngresoMaterialesPage() {
   )
 
   const ingresoAnulado = ingreso?.estado === "ANULADO"
-  const tieneProcedencia = tieneDato(ingreso?.procedencia?.nombre)
-  const tieneProveedorPdf =
-    tieneDato(ingreso?.proveedorNombreCargado) ||
-    tieneDato(ingreso?.proveedorNombreValidado)
-  const tieneServicioPdf =
-    tieneDato(ingreso?.servicioNombreCargado) ||
-    tieneDato(ingreso?.servicioNombreValidado)
-  const tieneArticulosPdf = Boolean(ingreso?.articulos?.length)
-  const pdfBloqueado = ingresoAnulado || !tieneProcedencia
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -557,62 +535,12 @@ export default function DetalleIngresoMaterialesPage() {
           </section>
         )}
 
-        <section className={SECTION_CLASS}>
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-[#0F172A]">
-                Documentacion FEX
-              </h2>
-              <p className="mt-1 text-sm text-[#475569]">
-                Descarga los comprobantes individuales de Materiales para revision.
-              </p>
-            </div>
-            {!tieneProcedencia && !ingresoAnulado ? (
-              <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
-                Falta procedencia
-              </span>
-            ) : null}
-          </div>
+        <PendientesAprobacionCard
+          ingreso={ingreso}
+          onIngresoActualizado={setIngreso}
+        />
 
-          {ingresoAnulado ? (
-            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100">
-              No se pueden generar PDFs de ingresos anulados.
-            </div>
-          ) : !tieneProcedencia ? (
-            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100">
-              Para generar documentacion FEX, primero carga una procedencia en el ingreso.
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              <PdfAction
-                href={`/api/ingresos/materiales/${id}/pdf/proveedor`}
-                disabled={pdfBloqueado || !tieneProveedorPdf || !tieneArticulosPdf}
-                reason={
-                  !tieneProveedorPdf
-                    ? "No hay proveedor asociado."
-                    : !tieneArticulosPdf
-                      ? "No hay articulos asociados."
-                      : ""
-                }
-              >
-                Descargar PDF Proveedor
-              </PdfAction>
-              <PdfAction
-                href={`/api/ingresos/materiales/${id}/pdf/fletero`}
-                disabled={pdfBloqueado || !tieneProveedorPdf || !tieneServicioPdf}
-                reason={
-                  !tieneProveedorPdf
-                    ? "No hay proveedor asociado."
-                    : !tieneServicioPdf
-                      ? "No hay fletero o transporte asociado."
-                      : ""
-                }
-              >
-                Descargar PDF Fletero / Transporte
-              </PdfAction>
-            </div>
-          )}
-        </section>
+        <DocumentacionFexCard ingreso={ingreso} tipo="materiales" />
 
         <section className={SECTION_CLASS}>
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
@@ -685,7 +613,7 @@ export default function DetalleIngresoMaterialesPage() {
                           <td className="py-3 pr-4">
                             <div>
                               <span>{mostrar(articulo.articuloDescripcion)}</span>
-                              <ArticuloBadges articulo={articulo} />
+                              <ArticuloBadges articulo={articulo} ingreso={ingreso} />
                             </div>
                           </td>
                           <td className="py-3 pr-4">
@@ -746,7 +674,7 @@ export default function DetalleIngresoMaterialesPage() {
                         label="Artículo"
                         value={articulo.articuloDescripcion}
                       />
-                      <ArticuloBadges articulo={articulo} />
+                      <ArticuloBadges articulo={articulo} ingreso={ingreso} />
                       <Campo label="Código" value={articulo.articuloCodigo} />
                       <Campo
                         label="Cantidad"

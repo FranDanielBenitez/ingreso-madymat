@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { obtenerPendientesDetalle } from "@/lib/ingresos/pendientes"
 
 const SECTION_CLASS = "panel-surface"
 const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
 const FIELD_CLASS =
   "w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
 const BUTTON_SECONDARY_CLASS = "btn-secondary"
-const BUTTON_PRIMARY_CLASS = "btn-primary"
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 15, "TODOS"]
 
 function formatearFecha(value) {
@@ -44,21 +44,23 @@ function incluyeTexto(valor, termino) {
 function matchesMotivo(registro, motivo) {
   if (!motivo || motivo === "Todos") return true
 
-  const articulosManuales = (registro.articulos || []).some(
-    (articulo) => articulo.origenDato === "MANUAL"
-  )
+  const pendientes = registro.pendientes || obtenerPendientesDetalle(registro)
 
-  if (motivo === "Proveedor manual") return registro.proveedorCargaManual === true
-  if (motivo === "Servicio manual") return registro.servicioCargaManual === true
-  if (motivo === "Artículo manual") return articulosManuales
-  if (motivo === "Fuera de sugeridos") return registro.tieneFueraSugerido === true
+  if (motivo === "Proveedor manual") {
+    return pendientes.some((pendiente) => pendiente.tipo === "proveedor")
+  }
+  if (motivo === "Servicio manual") {
+    return pendientes.some((pendiente) => pendiente.tipo === "servicio")
+  }
+  if (motivo === "Artículo manual") {
+    return pendientes.some((pendiente) => pendiente.tipo === "articulo")
+  }
+  if (motivo === "Fuera de sugeridos") {
+    return pendientes.some((pendiente) => pendiente.tipo === "fueraSugerido")
+  }
 
   if (motivo === "Pendiente validar") {
-    return (
-      registro.proveedorValidado === false ||
-      registro.servicioValidado === false ||
-      registro.tieneCargaManual === true
-    )
+    return pendientes.length > 0
   }
 
   return true
@@ -110,25 +112,8 @@ function MotivoBadge({ children, variant = "amber" }) {
 }
 
 function motivosPendientes(registro) {
-  const motivos = []
-  const articulosManuales = (registro.articulos || []).some(
-    (articulo) => articulo.origenDato === "MANUAL"
-  )
-
-  if (registro.proveedorCargaManual) motivos.push("Proveedor manual")
-  if (registro.servicioCargaManual) motivos.push("Servicio manual")
-  if (articulosManuales) motivos.push("Artículo manual")
-  if (registro.tieneFueraSugerido) motivos.push("Fuera de sugeridos")
-
-  if (!registro.proveedorValidado || !registro.servicioValidado) {
-    motivos.push("Pendiente validar")
-  }
-
-  if (motivos.length === 0 && registro.tieneCargaManual) {
-    motivos.push("Carga manual")
-  }
-
-  return [...new Set(motivos)]
+  const pendientes = registro.pendientes || obtenerPendientesDetalle(registro)
+  return [...new Set(pendientes.map((pendiente) => pendiente.label))]
 }
 
 const DEFAULT_FILTROS = {

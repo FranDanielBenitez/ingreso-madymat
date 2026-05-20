@@ -147,9 +147,11 @@ export default function IngresoRollizosPage() {
   const [modoProveedor, setModoProveedor] = useState(MODO_SUGERIDOS)
   const [modoArticulo, setModoArticulo] = useState(MODO_SUGERIDOS)
   const [modoServicio, setModoServicio] = useState(MODO_SUGERIDOS)
+  const [modoHachador, setModoHachador] = useState(MODO_SUGERIDOS)
   const [proveedorCargaManual, setProveedorCargaManual] = useState(false)
   const [articuloCargaManual, setArticuloCargaManual] = useState(false)
   const [servicioCargaManual, setServicioCargaManual] = useState(false)
+  const [hachadorCargaManual, setHachadorCargaManual] = useState(false)
   const [cargandoDimensiones, setCargandoDimensiones] = useState({})
   const [dimensionErrors, setDimensionErrors] = useState({})
   const [reintentandoDimensiones, setReintentandoDimensiones] = useState(false)
@@ -257,6 +259,12 @@ export default function IngresoRollizosPage() {
       : "/api/dimensiones/servicios-logisticos?categoria=ROLLIZOS"
   }
 
+  function hachadorUrl(modo) {
+    return modo === MODO_TODOS
+      ? "/api/dimensiones/proveedores?modo=TODOS"
+      : "/api/dimensiones/hachadores?categoria=ROLLIZOS"
+  }
+
   function setCargandoDimension(nombre, value) {
     setCargandoDimensiones((prev) => ({
       ...prev,
@@ -314,6 +322,22 @@ export default function IngresoRollizosPage() {
     setValue("servicioManualNombre", "")
     setValue("servicioManualCuit", "")
     setValue("servicioManualObservacion", "")
+  }
+
+  function activarHachadorManual() {
+    setHachadorCargaManual(true)
+    setValue("hachadorCodigo", "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }
+
+  function volverABuscarHachador() {
+    setHachadorCargaManual(false)
+    setValue("hachadorManualNombre", "")
+    setValue("hachadorManualCuit", "")
+    setValue("hachadorManualCodigo", "")
+    setValue("hachadorManualObservacion", "")
   }
 
   async function cambiarModoProveedor(modo) {
@@ -379,6 +403,27 @@ export default function IngresoRollizosPage() {
     }
   }
 
+  async function cambiarModoHachador(modo) {
+    if (modo === modoHachador) return
+
+    setModoHachador(modo)
+    setValue("hachadorCodigo", "")
+    setCargandoDimension("hachador", true)
+
+    try {
+      const data = await fetchDimensionSegura(hachadorUrl(modo))
+      setHachadores(data)
+      setDimensionError("hachadores", "")
+      if (modo === MODO_TODOS) toast.info("Mostrando todos los hachadores")
+    } catch (err) {
+      const mensaje = err.message || "No se pudieron cargar hachadores"
+      setDimensionError("hachadores", mensaje)
+      toast.error(mensaje)
+    } finally {
+      setCargandoDimension("hachador", false)
+    }
+  }
+
   async function cargarDimensionesIniciales({ reintento = false } = {}) {
     try {
       console.log("Cargando dimensiones...")
@@ -401,7 +446,7 @@ export default function IngresoRollizosPage() {
         fetchDimensionSegura(proveedorUrl(modoProveedor)),
         fetchDimensionSegura(articuloUrl(modoArticulo)),
         fetchDimensionSegura(servicioUrl(tipoServicio, modoServicio)),
-        fetchDimensionSegura("/api/dimensiones/hachadores?categoria=ROLLIZOS"),
+        fetchDimensionSegura(hachadorUrl(modoHachador)),
         fetchDimensionSegura("/api/dimensiones/choferes"),
         fetchDimensionSegura("/api/dimensiones/porteros"),
         fetchDimensionSegura("/api/dimensiones/procedencias?tipo=ROLLIZOS"),
@@ -645,6 +690,11 @@ export default function IngresoRollizosPage() {
         return
       }
 
+      if (hachadorCargaManual && !String(values.hachadorManualNombre || "").trim()) {
+        toast.error("El nombre del hachador manual es obligatorio")
+        return
+      }
+
       setGuardando(true)
 
       const {
@@ -681,7 +731,15 @@ export default function IngresoRollizosPage() {
           observacion: values.servicioManualObservacion || "",
         },
         servicioModoBusqueda: modoServicio,
-        hachadorSeleccionado,
+        hachadorCargaManual,
+        hachadorSeleccionado: hachadorCargaManual ? null : hachadorSeleccionado,
+        hachadorManual: {
+          nombre: values.hachadorManualNombre || "",
+          cuit: values.hachadorManualCuit || "",
+          codigo: values.hachadorManualCodigo || "",
+          observacion: values.hachadorManualObservacion || "",
+        },
+        hachadorModoBusqueda: modoHachador,
         choferSeleccionado:
           tipoChofer === "INTERNO" ? choferSeleccionado : null,
         porteroSeleccionado,
@@ -770,6 +828,7 @@ export default function IngresoRollizosPage() {
     setProveedorCargaManual(false)
     setArticuloCargaManual(false)
     setServicioCargaManual(false)
+    setHachadorCargaManual(false)
     setFotoInputKeys((prev) => ({
       fotoCamionPatente: prev.fotoCamionPatente + 1,
       fotoMaterialCargado: prev.fotoMaterialCargado + 1,
@@ -1344,6 +1403,7 @@ export default function IngresoRollizosPage() {
             <div>
               <label className={LABEL_CLASS}>
                 Foto del camión / patente
+                <span className="text-red-600"> *</span>
               </label>
               <input
                 key={fotoInputKeys.fotoCamionPatente}
@@ -1384,6 +1444,7 @@ export default function IngresoRollizosPage() {
             <div>
               <label className={LABEL_CLASS}>
                 Foto del material cargado
+                <span className="text-red-600"> *</span>
               </label>
               <input
                 key={fotoInputKeys.fotoMaterialCargado}
@@ -1491,22 +1552,109 @@ export default function IngresoRollizosPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <input type="hidden" {...register("hachadorCodigo")} />
-              <SearchableSelect
-                label="Hachador"
-                value={hachadorCodigo}
-                options={hachadores}
-                onChange={(item) =>
-                  setValue("hachadorCodigo", item?.Codigo || "", {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  })
-                }
-                getOptionValue={(item) => item.Codigo}
-                getOptionLabel={(item) => item.RazonSocial}
-                getSearchText={(item) => `${item.Codigo} ${item.RazonSocial}`}
-                placeholder="Buscar hachador"
-              />
-              <CampoErrorDimension message={dimensionErrors.hachadores} />
+              {hachadorCargaManual ? (
+                <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 dark:border-amber-400/25 dark:bg-slate-800/60">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200">
+                          Hachador manual
+                        </span>
+                        <span className="rounded-full border border-amber-200 bg-amber-100/70 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+                          Pendiente de validar
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-[#475569]">
+                        El hachador quedara pendiente de aprobacion.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={volverABuscarHachador}
+                      className="rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-800 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
+                    >
+                      Volver a buscar en Bejerman
+                    </button>
+                  </div>
+                  <div className="mt-4 grid gap-3">
+                    <label>
+                      <span className={LABEL_CLASS}>
+                        Nombre / Razon social hachador *
+                      </span>
+                      <input
+                        type="text"
+                        {...register("hachadorManualNombre")}
+                        className={FIELD_CLASS}
+                        placeholder="Nombre del hachador"
+                      />
+                    </label>
+                    <label>
+                      <span className={LABEL_CLASS}>CUIT hachador</span>
+                      <input
+                        type="text"
+                        {...register("hachadorManualCuit")}
+                        className={FIELD_CLASS}
+                        placeholder="Opcional"
+                      />
+                    </label>
+                    <label>
+                      <span className={LABEL_CLASS}>Codigo hachador</span>
+                      <input
+                        type="text"
+                        {...register("hachadorManualCodigo")}
+                        className={FIELD_CLASS}
+                        placeholder="Opcional"
+                      />
+                    </label>
+                    <label>
+                      <span className={LABEL_CLASS}>
+                        Observacion hachador
+                      </span>
+                      <textarea
+                        {...register("hachadorManualObservacion")}
+                        className={TEXTAREA_CLASS}
+                        placeholder="Opcional"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <SearchableSelect
+                    label="Hachador"
+                    value={hachadorCodigo}
+                    options={hachadores}
+                    onChange={(item) =>
+                      setValue("hachadorCodigo", item?.Codigo || "", {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    getOptionValue={(item) => item.Codigo}
+                    getOptionLabel={(item) => item.RazonSocial}
+                    getSearchText={(item) =>
+                      `${item.Codigo} ${item.RazonSocial} ${item.CUIT || ""}`
+                    }
+                    placeholder="Buscar hachador"
+                    loading={cargandoDimensiones.hachador}
+                    modeControl={
+                      <ModoBusquedaInline
+                        value={modoHachador}
+                        onChange={cambiarModoHachador}
+                        disabled={cargandoDimensiones.hachador}
+                      />
+                    }
+                  />
+                  <CampoErrorDimension message={dimensionErrors.hachadores} />
+                  <button
+                    type="button"
+                    onClick={activarHachadorManual}
+                    className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                  >
+                    No encuentro el hachador / Cargar manualmente
+                  </button>
+                </>
+              )}
             </div>
 
             <div>
