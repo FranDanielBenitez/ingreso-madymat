@@ -62,6 +62,14 @@ function mostrar(value) {
   return String(value)
 }
 
+function mostrarViaje(registro) {
+  if (registro?.numeroViaje === null || registro?.numeroViaje === undefined) {
+    return "-"
+  }
+
+  return `Viaje N° ${registro.numeroViaje}`
+}
+
 function articuloPrincipal(registro) {
   return registro.articulos?.[0] || null
 }
@@ -409,6 +417,7 @@ export default function RegistrosPage() {
                       <th className="py-3 pr-4 font-semibold">ID</th>
                       <th className="py-3 pr-4 font-semibold">Fecha</th>
                       <th className="py-3 pr-4 font-semibold">Tipo</th>
+                      <th className="py-3 pr-4 font-semibold">N° viaje</th>
                       <th className="py-3 pr-4 font-semibold">Estado</th>
                       <th className="py-3 pr-4 font-semibold">Proveedor</th>
                       <th className="py-3 pr-4 font-semibold">Remito</th>
@@ -436,6 +445,9 @@ export default function RegistrosPage() {
                           </td>
                           <td className="py-3 pr-4">
                             {mostrar(registro.tipoIngreso?.codigo)}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {mostrarViaje(registro)}
                           </td>
                           <td className="py-3 pr-4">
                             <EstadoBadge estado={registro.estado} />
@@ -512,6 +524,10 @@ export default function RegistrosPage() {
                       </div>
 
                       <div className="mt-4 grid gap-2 text-sm text-[#475569]">
+                        <p>
+                          <span className="font-semibold">N° viaje:</span>{" "}
+                          {mostrarViaje(registro)}
+                        </p>
                         <p>
                           <span className="font-semibold">Proveedor:</span>{" "}
                           {mostrar(proveedorPrincipal(registro))}

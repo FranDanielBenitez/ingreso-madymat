@@ -4,6 +4,7 @@ import path from "node:path"
 import { prisma } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth"
 import { canCreateIngreso } from "@/lib/auth/permissions"
+import { obtenerSiguienteNumeroViaje } from "@/lib/ingresos/numero-viaje"
 
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
@@ -255,6 +256,7 @@ export async function POST(request) {
     const fechaIngreso = body.fechaIngreso
       ? combinarFechaHora(body.fechaIngreso, body.horaIngreso)
       : null
+    const fechaIngresoValue = fechaIngreso || new Date()
 
     if (body.fechaIngreso && !fechaIngreso) {
       return NextResponse.json(
@@ -418,15 +420,24 @@ export async function POST(request) {
       )
     }
 
-    const ingresoCreado = await prisma.ingreso.create({
-      data: {
-        fechaIngreso: fechaIngreso || new Date(),
+    const ingresoCreado = await prisma.$transaction(async (tx) => {
+      const viaje = await obtenerSiguienteNumeroViaje(
+        tx,
+        fechaIngresoValue,
+        tipoIngreso.id
+      )
 
-        estado: "REGISTRADO",
+      return tx.ingreso.create({
+        data: {
+          fechaIngreso: fechaIngresoValue,
+          periodoViaje: viaje.periodoViaje,
+          numeroViaje: viaje.numeroViaje,
 
-        tipoIngresoId: tipoIngreso.id,
-        categoriaFormularioId: categoriaFormulario.id,
-        procedenciaId: procedencia.id,
+          estado: "REGISTRADO",
+
+          tipoIngresoId: tipoIngreso.id,
+          categoriaFormularioId: categoriaFormulario.id,
+          procedenciaId: procedencia.id,
 
         remitoProveedor: limpiarTexto(body.remitoProveedor),
         observaciones: limpiarTexto(body.observaciones),
@@ -573,6 +584,7 @@ export async function POST(request) {
           })),
         },
 
+
         logs: {
           create: {
             usuarioId: usuarioPortero?.id || null,
@@ -596,6 +608,12 @@ export async function POST(request) {
         procedencia: true,
       },
     })
+  },
+  {
+    maxWait: 10000,
+    timeout: 20000,
+  }
+)
 
     let fotos = []
 

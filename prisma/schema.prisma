@@ -151,8 +151,12 @@ model Ingreso {
   procedencia               ProcedenciaDim?        @relation(fields: [procedenciaId], references: [id])
   registradoPor             UsuarioApp?            @relation("IngresoRegistradoPor", fields: [registradoPorId], references: [id])
   tipoIngreso               TipoIngreso            @relation(fields: [tipoIngresoId], references: [id])
+  numeroViaje               Int?                   @map("numero_viaje")
+  periodoViaje              String?                @map("periodo_viaje")
+
   validadoPor               UsuarioApp?            @relation("IngresoValidadoPor", fields: [validadoPorId], references: [id])
 
+  @@unique([tipoIngresoId, periodoViaje, numeroViaje])
   @@map("ingresos")
 }
 

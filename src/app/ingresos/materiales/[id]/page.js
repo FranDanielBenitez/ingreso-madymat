@@ -46,6 +46,14 @@ function mostrar(value) {
   return String(value)
 }
 
+function mostrarViaje(ingreso) {
+  if (ingreso?.numeroViaje === null || ingreso?.numeroViaje === undefined) {
+    return "-"
+  }
+
+  return `Viaje N° ${ingreso.numeroViaje}`
+}
+
 function Campo({ label, value }) {
   return (
     <div>
@@ -439,6 +447,16 @@ export default function DetalleIngresoMaterialesPage() {
               <h1 className="mt-1 text-3xl font-black text-[#0F172A]">
                 Ingreso de Materiales #{ingreso.id}
               </h1>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <span className="rounded-full border border-slate-300 bg-white/80 px-3 py-1 text-sm font-semibold text-[#475569]">
+                  {mostrarViaje(ingreso)}
+                </span>
+                {ingreso.periodoViaje ? (
+                  <span className="rounded-full border border-slate-300 bg-white/80 px-3 py-1 text-sm font-semibold text-[#475569]">
+                    Período: {ingreso.periodoViaje}
+                  </span>
+                ) : null}
+              </div>
             </div>
             <span
               className={`w-fit rounded-full border px-4 py-2 text-sm font-semibold ${
