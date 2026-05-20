@@ -29,65 +29,65 @@ export async function PATCH(request, context) {
 
     if (errorDato) return jsonError(errorDato, 400)
 
-    const ingreso = await prisma.$transaction(async (tx) => {
-      const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
+    await prisma.$transaction(
+      async (tx) => {
+        const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
 
-      if (!ingresoExistente) {
-        throw Object.assign(new Error("Ingreso no encontrado"), { status: 404 })
-      }
+        if (!ingresoExistente) {
+          throw Object.assign(new Error("Ingreso no encontrado"), { status: 404 })
+        }
 
-      if (ingresoExistente.estado === "ANULADO") {
-        throw Object.assign(new Error("No se puede aprobar un ingreso anulado"), {
-          status: 400,
+        if (ingresoExistente.estado === "ANULADO") {
+          throw Object.assign(new Error("No se puede aprobar un ingreso anulado"), {
+            status: 400,
+          })
+        }
+
+        const tienePendiente =
+          (ingresoExistente.proveedorCargaManual ||
+            ingresoExistente.proveedorFueraSugerido ||
+            ingresoExistente.proveedorOrigenDato === "MANUAL") &&
+          ingresoExistente.proveedorValidado !== true
+
+        if (!tienePendiente) {
+          throw Object.assign(
+            new Error("El proveedor no tiene pendientes de aprobacion"),
+            { status: 400 }
+          )
+        }
+
+        await tx.ingreso.update({
+          where: { id },
+          data: {
+            proveedorValidado: true,
+            proveedorCodigoValidado: datoValidado.codigo,
+            proveedorNombreValidado: datoValidado.nombre,
+            proveedorCuitValidado: datoValidado.cuit,
+          },
         })
+
+        await tx.ingresoLog.create({
+          data: {
+            ingresoId: id,
+            usuarioId: usuario.id,
+            estado: "PROVEEDOR_APROBADO",
+            detalle: `Proveedor aprobado por ${nombreUsuario(
+              usuario
+            )}. Original: ${
+              ingresoExistente.proveedorNombreCargado || "Sin nombre"
+            }. Validado: ${datoValidado.nombre}${
+              datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
+            }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
+          },
+        })
+      },
+      {
+        maxWait: 10000,
+        timeout: 20000,
       }
+    )
 
-      const tienePendiente =
-        (ingresoExistente.proveedorCargaManual ||
-          ingresoExistente.proveedorFueraSugerido ||
-          ingresoExistente.proveedorOrigenDato === "MANUAL") &&
-        ingresoExistente.proveedorValidado !== true
-
-      if (!tienePendiente) {
-        throw Object.assign(
-          new Error("El proveedor no tiene pendientes de aprobacion"),
-          { status: 400 }
-        )
-      }
-
-      await tx.ingreso.update({
-        where: { id },
-        data: {
-          proveedorValidado: true,
-          proveedorCodigoValidado: datoValidado.codigo,
-          proveedorNombreValidado: datoValidado.nombre,
-          proveedorCuitValidado: datoValidado.cuit,
-        },
-      })
-
-      await tx.ingresoLog.create({
-        data: {
-          ingresoId: id,
-          usuarioId: usuario.id,
-          estado: "PROVEEDOR_APROBADO",
-          detalle: `Proveedor aprobado por ${nombreUsuario(
-            usuario
-          )}. Original: ${
-            ingresoExistente.proveedorNombreCargado || "Sin nombre"
-          }. Validado: ${datoValidado.nombre}${
-            datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
-          }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
-        },
-      })
-
-      await prisma.$transaction(async (tx) => {
-  // validaciones
-  // update
-  // log
-})
-
-const ingreso = await actualizarFlagsPendientes(prisma, id)
-    })
+    const ingreso = await actualizarFlagsPendientes(prisma, id)
 
     return NextResponse.json({
       ok: true,

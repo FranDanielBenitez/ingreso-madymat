@@ -33,61 +33,67 @@ export async function PATCH(request, context) {
 
     if (errorDato) return jsonError(errorDato, 400)
 
-    await prisma.$transaction(async (tx) => {
-      const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
+    await prisma.$transaction(
+      async (tx) => {
+        const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
 
-      if (!ingresoExistente) {
-        throw Object.assign(new Error("Ingreso no encontrado"), { status: 404 })
-      }
+        if (!ingresoExistente) {
+          throw Object.assign(new Error("Ingreso no encontrado"), { status: 404 })
+        }
 
-      if (ingresoExistente.estado === "ANULADO") {
-        throw Object.assign(new Error("No se puede aprobar un ingreso anulado"), {
-          status: 400,
+        if (ingresoExistente.estado === "ANULADO") {
+          throw Object.assign(new Error("No se puede aprobar un ingreso anulado"), {
+            status: 400,
+          })
+        }
+
+        const articulo = ingresoExistente.articulos.find((item) => item.id === itemId)
+
+        if (!articulo) {
+          throw Object.assign(new Error("Articulo no encontrado en el ingreso"), {
+            status: 404,
+          })
+        }
+
+        if (
+          articulo.origenDato !== "MANUAL" ||
+          articuloManualAprobado(ingresoExistente, articulo)
+        ) {
+          throw Object.assign(
+            new Error("El articulo no tiene pendientes de aprobacion"),
+            { status: 400 }
+          )
+        }
+
+        await tx.ingresoArticulo.update({
+          where: { id: articulo.id },
+          data: {
+            articuloValidado: true,
+            articuloCodigoValidado: datoValidado.codigo,
+            articuloDescripcionValidada: datoValidado.descripcion,
+          },
         })
-      }
 
-      const articulo = ingresoExistente.articulos.find((item) => item.id === itemId)
-
-      if (!articulo) {
-        throw Object.assign(new Error("Articulo no encontrado en el ingreso"), {
-          status: 404,
+        await tx.ingresoLog.create({
+          data: {
+            ingresoId: id,
+            usuarioId: usuario.id,
+            estado: "ARTICULO_APROBADO",
+            detalle: `Articulo aprobado por ${nombreUsuario(usuario)}: Item #${
+              articulo.id
+            }. Original: ${
+              articulo.articuloDescripcion || "Sin descripcion"
+            }. Validado: ${datoValidado.descripcion}${
+              datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
+            }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
+          },
         })
+      },
+      {
+        maxWait: 10000,
+        timeout: 20000,
       }
-
-      if (
-        articulo.origenDato !== "MANUAL" ||
-        articuloManualAprobado(ingresoExistente, articulo)
-      ) {
-        throw Object.assign(
-          new Error("El articulo no tiene pendientes de aprobacion"),
-          { status: 400 }
-        )
-      }
-
-      await tx.ingresoArticulo.update({
-        where: { id: articulo.id },
-        data: {
-          articuloValidado: true,
-          articuloCodigoValidado: datoValidado.codigo,
-          articuloDescripcionValidada: datoValidado.descripcion,
-        },
-      })
-
-      await tx.ingresoLog.create({
-        data: {
-          ingresoId: id,
-          usuarioId: usuario.id,
-          estado: "ARTICULO_APROBADO",
-          detalle: `Articulo aprobado por ${nombreUsuario(usuario)}: Item #${
-            articulo.id
-          }. Original: ${
-            articulo.articuloDescripcion || "Sin descripcion"
-          }. Validado: ${datoValidado.descripcion}${
-            datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
-          }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
-        },
-      })
-    })
+    )
 
     const ingreso = await actualizarFlagsPendientes(prisma, id)
 

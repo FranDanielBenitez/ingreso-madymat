@@ -32,65 +32,65 @@ export async function PATCH(request, context) {
 
     if (errorDato) return jsonError(errorDato, 400)
 
-    const ingreso = await prisma.$transaction(async (tx) => {
-      const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
+    await prisma.$transaction(
+      async (tx) => {
+        const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
 
-      if (!ingresoExistente) {
-        throw Object.assign(new Error("Ingreso no encontrado"), { status: 404 })
-      }
+        if (!ingresoExistente) {
+          throw Object.assign(new Error("Ingreso no encontrado"), { status: 404 })
+        }
 
-      if (ingresoExistente.estado === "ANULADO") {
-        throw Object.assign(new Error("No se puede aprobar un ingreso anulado"), {
-          status: 400,
+        if (ingresoExistente.estado === "ANULADO") {
+          throw Object.assign(new Error("No se puede aprobar un ingreso anulado"), {
+            status: 400,
+          })
+        }
+
+        const tienePendiente =
+          (ingresoExistente.servicioCargaManual ||
+            ingresoExistente.servicioFueraSugerido ||
+            ingresoExistente.servicioOrigenDato === "MANUAL") &&
+          ingresoExistente.servicioValidado !== true
+
+        if (!tienePendiente) {
+          throw Object.assign(
+            new Error("El servicio logistico no tiene pendientes de aprobacion"),
+            { status: 400 }
+          )
+        }
+
+        await tx.ingreso.update({
+          where: { id },
+          data: {
+            servicioValidado: true,
+            servicioCodigoValidado: datoValidado.codigo,
+            servicioNombreValidado: datoValidado.nombre,
+            servicioCuitValidado: datoValidado.cuit,
+          },
         })
+
+        await tx.ingresoLog.create({
+          data: {
+            ingresoId: id,
+            usuarioId: usuario.id,
+            estado: "SERVICIO_APROBADO",
+            detalle: `Servicio logistico aprobado por ${nombreUsuario(
+              usuario
+            )}. Original: ${
+              ingresoExistente.servicioNombreCargado || "Sin nombre"
+            }. Validado: ${datoValidado.nombre}${
+              datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
+            }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
+          },
+        })
+      },
+      {
+        maxWait: 10000,
+        timeout: 20000,
       }
+    )
 
-      const tienePendiente =
-        (ingresoExistente.servicioCargaManual ||
-          ingresoExistente.servicioFueraSugerido ||
-          ingresoExistente.servicioOrigenDato === "MANUAL") &&
-        ingresoExistente.servicioValidado !== true
-
-      if (!tienePendiente) {
-        throw Object.assign(
-          new Error("El servicio logistico no tiene pendientes de aprobacion"),
-          { status: 400 }
-        )
-      }
-
-      await tx.ingreso.update({
-        where: { id },
-        data: {
-          servicioValidado: true,
-          servicioCodigoValidado: datoValidado.codigo,
-          servicioNombreValidado: datoValidado.nombre,
-          servicioCuitValidado: datoValidado.cuit,
-        },
-      })
-
-      await tx.ingresoLog.create({
-        data: {
-          ingresoId: id,
-          usuarioId: usuario.id,
-          estado: "SERVICIO_APROBADO",
-          detalle: `Servicio logistico aprobado por ${nombreUsuario(
-            usuario
-          )}. Original: ${
-            ingresoExistente.servicioNombreCargado || "Sin nombre"
-          }. Validado: ${datoValidado.nombre}${
-            datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
-          }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
-        },
-      })
-
-      await prisma.$transaction(async (tx) => {
-  // validaciones
-  // update
-  // log
-})
-
-const ingreso = await actualizarFlagsPendientes(prisma, id)
-    })
+    const ingreso = await actualizarFlagsPendientes(prisma, id)
 
     return NextResponse.json({
       ok: true,

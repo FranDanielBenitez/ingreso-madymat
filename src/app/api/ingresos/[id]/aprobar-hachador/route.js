@@ -29,58 +29,64 @@ export async function PATCH(request, context) {
 
     if (errorDato) return jsonError(errorDato, 400)
 
-    await prisma.$transaction(async (tx) => {
-      const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
+    await prisma.$transaction(
+      async (tx) => {
+        const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
 
-      if (!ingresoExistente) {
-        throw Object.assign(new Error("Ingreso no encontrado"), { status: 404 })
-      }
+        if (!ingresoExistente) {
+          throw Object.assign(new Error("Ingreso no encontrado"), { status: 404 })
+        }
 
-      if (ingresoExistente.estado === "ANULADO") {
-        throw Object.assign(new Error("No se puede aprobar un ingreso anulado"), {
-          status: 400,
+        if (ingresoExistente.estado === "ANULADO") {
+          throw Object.assign(new Error("No se puede aprobar un ingreso anulado"), {
+            status: 400,
+          })
+        }
+
+        const tienePendiente =
+          ingresoExistente.hachadorAplica === true &&
+          (ingresoExistente.hachadorCargaManual ||
+            ingresoExistente.hachadorFueraSugerido ||
+            ingresoExistente.hachadorOrigenDato === "MANUAL") &&
+          ingresoExistente.hachadorValidado !== true
+
+        if (!tienePendiente) {
+          throw Object.assign(
+            new Error("El hachador no tiene pendientes de aprobacion"),
+            { status: 400 }
+          )
+        }
+
+        await tx.ingreso.update({
+          where: { id },
+          data: {
+            hachadorValidado: true,
+            hachadorCodigoValidado: datoValidado.codigo,
+            hachadorNombreValidado: datoValidado.nombre,
+            hachadorCuitValidado: datoValidado.cuit,
+          },
         })
+
+        await tx.ingresoLog.create({
+          data: {
+            ingresoId: id,
+            usuarioId: usuario.id,
+            estado: "HACHADOR_APROBADO",
+            detalle: `Hachador aprobado por ${nombreUsuario(
+              usuario
+            )}. Original: ${
+              ingresoExistente.hachadorNombreCargado || "Sin nombre"
+            }. Validado: ${datoValidado.nombre}${
+              datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
+            }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
+          },
+        })
+      },
+      {
+        maxWait: 10000,
+        timeout: 20000,
       }
-
-      const tienePendiente =
-        ingresoExistente.hachadorAplica === true &&
-        (ingresoExistente.hachadorCargaManual ||
-          ingresoExistente.hachadorFueraSugerido ||
-          ingresoExistente.hachadorOrigenDato === "MANUAL") &&
-        ingresoExistente.hachadorValidado !== true
-
-      if (!tienePendiente) {
-        throw Object.assign(
-          new Error("El hachador no tiene pendientes de aprobacion"),
-          { status: 400 }
-        )
-      }
-
-      await tx.ingreso.update({
-        where: { id },
-        data: {
-          hachadorValidado: true,
-          hachadorCodigoValidado: datoValidado.codigo,
-          hachadorNombreValidado: datoValidado.nombre,
-          hachadorCuitValidado: datoValidado.cuit,
-        },
-      })
-
-      await tx.ingresoLog.create({
-        data: {
-          ingresoId: id,
-          usuarioId: usuario.id,
-          estado: "HACHADOR_APROBADO",
-          detalle: `Hachador aprobado por ${nombreUsuario(
-            usuario
-          )}. Original: ${
-            ingresoExistente.hachadorNombreCargado || "Sin nombre"
-          }. Validado: ${datoValidado.nombre}${
-            datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
-          }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
-        },
-      })
-    })
+    )
 
     const ingreso = await actualizarFlagsPendientes(prisma, id)
 
