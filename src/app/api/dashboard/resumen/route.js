@@ -20,9 +20,23 @@ const PENDIENTES_VALIDACION_WHERE = {
     { servicioCargaManual: true },
     { servicioValidado: false },
     {
+      AND: [
+        { hachadorAplica: true },
+        {
+          OR: [
+            { hachadorCargaManual: true },
+            { hachadorFueraSugerido: true },
+            { hachadorOrigenDato: "MANUAL" },
+          ],
+        },
+        { hachadorValidado: false },
+      ],
+    },
+    {
       articulos: {
         some: {
           origenDato: "MANUAL",
+          articuloValidado: false,
         },
       },
     },

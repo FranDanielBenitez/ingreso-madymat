@@ -80,3 +80,28 @@ export function validarIdIngreso(value) {
 export function observacionLog(observacion) {
   return observacion ? ` Observacion: ${observacion}.` : ""
 }
+
+export function limpiarDatoValidado(datoValidado = {}) {
+  return {
+    codigo: limpiarObservacion(datoValidado.codigo),
+    nombre: limpiarObservacion(datoValidado.nombre),
+    cuit: limpiarObservacion(datoValidado.cuit),
+    descripcion: limpiarObservacion(datoValidado.descripcion),
+  }
+}
+
+export function validarDatoEntidad(datoValidado, label = "dato validado") {
+  if (!datoValidado?.nombre) {
+    return `Debe indicar el nombre del ${label}`
+  }
+
+  return null
+}
+
+export function validarDatoArticulo(datoValidado) {
+  if (!datoValidado?.descripcion) {
+    return "Debe indicar la descripcion del articulo validado"
+  }
+
+  return null
+}

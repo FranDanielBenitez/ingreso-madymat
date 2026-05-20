@@ -10,13 +10,24 @@ const PENDIENTES_WHERE = {
     { proveedorValidado: false },
     { servicioCargaManual: true },
     { servicioValidado: false },
-    { hachadorCargaManual: true },
-    { hachadorFueraSugerido: true },
-    { hachadorValidado: false },
+    {
+      AND: [
+        { hachadorAplica: true },
+        {
+          OR: [
+            { hachadorCargaManual: true },
+            { hachadorFueraSugerido: true },
+            { hachadorOrigenDato: "MANUAL" },
+          ],
+        },
+        { hachadorValidado: false },
+      ],
+    },
     {
       articulos: {
         some: {
           origenDato: "MANUAL",
+          articuloValidado: false,
         },
       },
     },

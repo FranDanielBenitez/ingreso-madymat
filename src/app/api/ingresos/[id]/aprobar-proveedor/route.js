@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma"
 import {
   actualizarFlagsPendientes,
   jsonError,
+  limpiarDatoValidado,
   limpiarObservacion,
   nombreUsuario,
-  observacionLog,
   obtenerIngresoParaAprobacion,
+  validarDatoEntidad,
   validarIdIngreso,
   validarUsuarioAprobador,
 } from "@/lib/ingresos/aprobaciones"
@@ -23,6 +24,10 @@ export async function PATCH(request, context) {
 
     const body = await request.json().catch(() => ({}))
     const observacion = limpiarObservacion(body?.observacion)
+    const datoValidado = limpiarDatoValidado(body?.datoValidado)
+    const errorDato = validarDatoEntidad(datoValidado, "proveedor validado")
+
+    if (errorDato) return jsonError(errorDato, 400)
 
     const ingreso = await prisma.$transaction(async (tx) => {
       const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
@@ -54,15 +59,9 @@ export async function PATCH(request, context) {
         where: { id },
         data: {
           proveedorValidado: true,
-          proveedorCodigoValidado:
-            ingresoExistente.proveedorCodigoValidado ||
-            ingresoExistente.proveedorCodigoBejerman,
-          proveedorNombreValidado:
-            ingresoExistente.proveedorNombreValidado ||
-            ingresoExistente.proveedorNombreCargado,
-          proveedorCuitValidado:
-            ingresoExistente.proveedorCuitValidado ||
-            ingresoExistente.proveedorCuitCargado,
+          proveedorCodigoValidado: datoValidado.codigo,
+          proveedorNombreValidado: datoValidado.nombre,
+          proveedorCuitValidado: datoValidado.cuit,
         },
       })
 
@@ -71,13 +70,23 @@ export async function PATCH(request, context) {
           ingresoId: id,
           usuarioId: usuario.id,
           estado: "PROVEEDOR_APROBADO",
-          detalle: `Proveedor aprobado por ${nombreUsuario(usuario)}.${observacionLog(
-            observacion
-          )}`,
+          detalle: `Proveedor aprobado por ${nombreUsuario(
+            usuario
+          )}. Original: ${
+            ingresoExistente.proveedorNombreCargado || "Sin nombre"
+          }. Validado: ${datoValidado.nombre}${
+            datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
+          }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
         },
       })
 
-      return actualizarFlagsPendientes(tx, id)
+      await prisma.$transaction(async (tx) => {
+  // validaciones
+  // update
+  // log
+})
+
+const ingreso = await actualizarFlagsPendientes(prisma, id)
     })
 
     return NextResponse.json({

@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma"
 import {
   actualizarFlagsPendientes,
   jsonError,
+  limpiarDatoValidado,
   limpiarObservacion,
   nombreUsuario,
-  observacionLog,
   obtenerIngresoParaAprobacion,
+  validarDatoEntidad,
   validarIdIngreso,
   validarUsuarioAprobador,
 } from "@/lib/ingresos/aprobaciones"
@@ -23,8 +24,12 @@ export async function PATCH(request, context) {
 
     const body = await request.json().catch(() => ({}))
     const observacion = limpiarObservacion(body?.observacion)
+    const datoValidado = limpiarDatoValidado(body?.datoValidado)
+    const errorDato = validarDatoEntidad(datoValidado, "hachador validado")
 
-    const ingreso = await prisma.$transaction(async (tx) => {
+    if (errorDato) return jsonError(errorDato, 400)
+
+    await prisma.$transaction(async (tx) => {
       const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
 
       if (!ingresoExistente) {
@@ -55,15 +60,9 @@ export async function PATCH(request, context) {
         where: { id },
         data: {
           hachadorValidado: true,
-          hachadorCodigoValidado:
-            ingresoExistente.hachadorCodigoValidado ||
-            ingresoExistente.hachadorCodigoBejerman,
-          hachadorNombreValidado:
-            ingresoExistente.hachadorNombreValidado ||
-            ingresoExistente.hachadorNombreCargado,
-          hachadorCuitValidado:
-            ingresoExistente.hachadorCuitValidado ||
-            ingresoExistente.hachadorCuitCargado,
+          hachadorCodigoValidado: datoValidado.codigo,
+          hachadorNombreValidado: datoValidado.nombre,
+          hachadorCuitValidado: datoValidado.cuit,
         },
       })
 
@@ -72,14 +71,18 @@ export async function PATCH(request, context) {
           ingresoId: id,
           usuarioId: usuario.id,
           estado: "HACHADOR_APROBADO",
-          detalle: `Hachador aprobado por ${nombreUsuario(usuario)}.${observacionLog(
-            observacion
-          )}`,
+          detalle: `Hachador aprobado por ${nombreUsuario(
+            usuario
+          )}. Original: ${
+            ingresoExistente.hachadorNombreCargado || "Sin nombre"
+          }. Validado: ${datoValidado.nombre}${
+            datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
+          }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
         },
       })
-
-      return actualizarFlagsPendientes(tx, id)
     })
+
+    const ingreso = await actualizarFlagsPendientes(prisma, id)
 
     return NextResponse.json({
       ok: true,

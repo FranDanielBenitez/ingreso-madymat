@@ -55,6 +55,22 @@ function Campo({ label, value }) {
   )
 }
 
+function CampoValidado({ label, original, validado }) {
+  const tieneValidado = validado !== null && validado !== undefined && validado !== ""
+
+  return (
+    <div>
+      <p className={LABEL_CLASS}>{label}</p>
+      <p className={VALUE_CLASS}>{mostrar(tieneValidado ? validado : original)}</p>
+      {tieneValidado && mostrar(original) !== mostrar(validado) ? (
+        <p className="mt-1 text-xs font-medium text-[#64748B]">
+          Original cargado: {mostrar(original)}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 function ProveedorBadges({ ingreso }) {
   if (!ingreso?.proveedorCargaManual) return null
   const aprobado = ingreso.proveedorValidado === true
@@ -306,8 +322,16 @@ export default function DetalleIngresoMaterialesPage() {
             label="Categoria"
             value={articulo.categoriaFormulario || "Sin categoria"}
           />
-          <Campo label="Articulo" value={articulo.articuloDescripcion} />
-          <Campo label="Codigo" value={articulo.articuloCodigo} />
+          <CampoValidado
+            label="Articulo"
+            original={articulo.articuloDescripcion}
+            validado={articulo.articuloDescripcionValidada}
+          />
+          <CampoValidado
+            label="Codigo"
+            original={articulo.articuloCodigo}
+            validado={articulo.articuloCodigoValidado}
+          />
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-3">
@@ -566,9 +590,21 @@ export default function DetalleIngresoMaterialesPage() {
           </h2>
           <ProveedorBadges ingreso={ingreso} />
           <div className="grid gap-4 md:grid-cols-4">
-            <Campo label="Codigo" value={ingreso.proveedorCodigoBejerman} />
-            <Campo label="Razon social" value={ingreso.proveedorNombreCargado} />
-            <Campo label="CUIT" value={ingreso.proveedorCuitCargado} />
+            <CampoValidado
+              label="Codigo"
+              original={ingreso.proveedorCodigoBejerman}
+              validado={ingreso.proveedorCodigoValidado}
+            />
+            <CampoValidado
+              label="Razon social"
+              original={ingreso.proveedorNombreCargado}
+              validado={ingreso.proveedorNombreValidado}
+            />
+            <CampoValidado
+              label="CUIT"
+              original={ingreso.proveedorCuitCargado}
+              validado={ingreso.proveedorCuitValidado}
+            />
             <Campo
               label="Grupo / Subgrupo"
               value={`${mostrar(ingreso.proveedorGrupoBejerman)} / ${mostrar(
@@ -612,12 +648,28 @@ export default function DetalleIngresoMaterialesPage() {
                           </td>
                           <td className="py-3 pr-4">
                             <div>
-                              <span>{mostrar(articulo.articuloDescripcion)}</span>
+                              <span>
+                                {mostrar(
+                                  articulo.articuloDescripcionValidada ||
+                                    articulo.articuloDescripcion
+                                )}
+                              </span>
+                              {articulo.articuloDescripcionValidada &&
+                              articulo.articuloDescripcionValidada !==
+                                articulo.articuloDescripcion ? (
+                                <p className="mt-1 text-xs text-[#64748B]">
+                                  Original cargado:{" "}
+                                  {mostrar(articulo.articuloDescripcion)}
+                                </p>
+                              ) : null}
                               <ArticuloBadges articulo={articulo} ingreso={ingreso} />
                             </div>
                           </td>
                           <td className="py-3 pr-4">
-                            {mostrar(articulo.articuloCodigo)}
+                            {mostrar(
+                              articulo.articuloCodigoValidado ||
+                                articulo.articuloCodigo
+                            )}
                           </td>
                           <td className="py-3 pr-4">
                             {mostrar(articulo.cantidad)}
@@ -672,10 +724,26 @@ export default function DetalleIngresoMaterialesPage() {
                       />
                       <Campo
                         label="Artículo"
-                        value={articulo.articuloDescripcion}
+                        value={
+                          articulo.articuloDescripcionValidada ||
+                          articulo.articuloDescripcion
+                        }
                       />
+                      {articulo.articuloDescripcionValidada &&
+                      articulo.articuloDescripcionValidada !==
+                        articulo.articuloDescripcion ? (
+                        <p className="text-xs text-[#64748B]">
+                          Original cargado: {mostrar(articulo.articuloDescripcion)}
+                        </p>
+                      ) : null}
                       <ArticuloBadges articulo={articulo} ingreso={ingreso} />
-                      <Campo label="Código" value={articulo.articuloCodigo} />
+                      <Campo
+                        label="Código"
+                        value={
+                          articulo.articuloCodigoValidado ||
+                          articulo.articuloCodigo
+                        }
+                      />
                       <Campo
                         label="Cantidad"
                         value={`${mostrar(articulo.cantidad)} ${mostrar(
@@ -721,8 +789,16 @@ export default function DetalleIngresoMaterialesPage() {
           <ServicioBadges ingreso={ingreso} />
           <div className="grid gap-4 md:grid-cols-3">
             <Campo label="Tipo servicio" value={ingreso.tipoServicioLogistico} />
-            <Campo label="Servicio logistico" value={ingreso.servicioNombreCargado} />
-            <Campo label="CUIT servicio" value={ingreso.servicioCuitCargado} />
+            <CampoValidado
+              label="Servicio logistico"
+              original={ingreso.servicioNombreCargado}
+              validado={ingreso.servicioNombreValidado}
+            />
+            <CampoValidado
+              label="CUIT servicio"
+              original={ingreso.servicioCuitCargado}
+              validado={ingreso.servicioCuitValidado}
+            />
             <Campo label="Patente camion" value={ingreso.patenteCamion} />
             <Campo label="Patente acoplado" value={ingreso.patenteAcoplado} />
           </div>

@@ -8,21 +8,21 @@ datasource db {
 }
 
 model UsuarioApp {
-  id                  Int          @id @default(autoincrement())
+  id                  Int             @id @default(autoincrement())
   nombre              String
-  email               String       @unique
-  usuario             String?      @unique @map("usuario")
-  passwordHash        String?      @map("password_hash")
-  rol                 RolUsuario   @default(PORTERIA)
-  activo              Boolean      @default(true)
-  legajoSjala         Int?         @map("legajo_sjala")
-  nombreSjala         String?      @map("nombre_sjala")
-  seccionSjala        String?      @map("seccion_sjala")
-  createdAt           DateTime     @default(now()) @map("created_at")
-  updatedAt           DateTime     @updatedAt @map("updated_at")
+  email               String          @unique
+  usuario             String?         @unique @map("usuario")
+  passwordHash        String?         @map("password_hash")
+  rol                 RolUsuario      @default(PORTERIA)
+  activo              Boolean         @default(true)
+  legajoSjala         Int?            @map("legajo_sjala")
+  nombreSjala         String?         @map("nombre_sjala")
+  seccionSjala        String?         @map("seccion_sjala")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
   logs                IngresoLog[]
-  ingresosRegistrados Ingreso[]    @relation("IngresoRegistradoPor")
-  ingresosValidados   Ingreso[]    @relation("IngresoValidadoPor")
+  ingresosRegistrados Ingreso[]       @relation("IngresoRegistradoPor")
+  ingresosValidados   Ingreso[]       @relation("IngresoValidadoPor")
   sesiones            UsuarioSesion[]
   roles               UsuarioRol[]
 
@@ -41,12 +41,12 @@ model UsuarioRol {
 }
 
 model UsuarioSesion {
-  id         Int        @id @default(autoincrement())
-  usuarioId  Int        @map("usuario_id")
-  token      String     @unique
-  expiresAt  DateTime   @map("expires_at")
-  createdAt  DateTime   @default(now()) @map("created_at")
-  usuario    UsuarioApp @relation(fields: [usuarioId], references: [id])
+  id        Int        @id @default(autoincrement())
+  usuarioId Int        @map("usuario_id")
+  token     String     @unique
+  expiresAt DateTime   @map("expires_at")
+  createdAt DateTime   @default(now()) @map("created_at")
+  usuario   UsuarioApp @relation(fields: [usuarioId], references: [id])
 
   @@map("usuario_sesiones")
 }
@@ -157,22 +157,25 @@ model Ingreso {
 }
 
 model IngresoArticulo {
-  id                  Int        @id @default(autoincrement())
-  ingresoId           Int        @map("ingreso_id")
-  origenDato          OrigenDato @default(BEJERMAN) @map("origen_dato")
-  articuloGen         String?    @map("articulo_gen")
-  articuloCodigo      String?    @map("articulo_codigo")
-  articuloClase       String?    @map("articulo_clase")
-  articuloDescripcion String?    @map("articulo_descripcion")
-  articuloProceso     String?    @map("articulo_proceso")
-  articuloGrupo       String?    @map("articulo_grupo")
-  articuloSubgrupo    String?    @map("articulo_subgrupo")
-  categoriaFormulario String?    @map("categoria_formulario")
-  cantidad            Decimal    @db.Decimal(12, 3)
-  unidad              String
-  createdAt           DateTime   @default(now()) @map("created_at")
-  updatedAt           DateTime   @updatedAt @map("updated_at")
-  ingreso             Ingreso    @relation(fields: [ingresoId], references: [id])
+  id                          Int        @id @default(autoincrement())
+  ingresoId                   Int        @map("ingreso_id")
+  origenDato                  OrigenDato @default(BEJERMAN) @map("origen_dato")
+  articuloGen                 String?    @map("articulo_gen")
+  articuloCodigo              String?    @map("articulo_codigo")
+  articuloCodigoValidado      String?    @map("articulo_codigo_validado")
+  articuloClase               String?    @map("articulo_clase")
+  articuloDescripcion         String?    @map("articulo_descripcion")
+  articuloDescripcionValidada String?    @map("articulo_descripcion_validada")
+  articuloProceso             String?    @map("articulo_proceso")
+  articuloGrupo               String?    @map("articulo_grupo")
+  articuloSubgrupo            String?    @map("articulo_subgrupo")
+  articuloValidado            Boolean    @default(false) @map("articulo_validado")
+  categoriaFormulario         String?    @map("categoria_formulario")
+  cantidad                    Decimal    @db.Decimal(12, 3)
+  unidad                      String
+  createdAt                   DateTime   @default(now()) @map("created_at")
+  updatedAt                   DateTime   @updatedAt @map("updated_at")
+  ingreso                     Ingreso    @relation(fields: [ingresoId], references: [id])
 
   @@map("ingreso_articulos")
 }

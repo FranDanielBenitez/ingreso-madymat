@@ -35,6 +35,17 @@ function elegir(...values) {
   return values.find((value) => value !== null && value !== undefined && value !== "") || "-"
 }
 
+function articuloCodigoPdf(articulo) {
+  return elegir(articulo?.articuloCodigoValidado, articulo?.articuloCodigo)
+}
+
+function articuloDescripcionPdf(articulo) {
+  return elegir(
+    articulo?.articuloDescripcionValidada,
+    articulo?.articuloDescripcion
+  )
+}
+
 function tieneDato(value) {
   return value !== null && value !== undefined && value !== ""
 }
@@ -88,22 +99,22 @@ function dataProveedor(ingreso) {
   }
 
   const items = ingreso.articulos.map((articulo) => {
-    if (!articulo.articuloDescripcion || !articulo.cantidad || !articulo.unidad) {
+    if (articuloDescripcionPdf(articulo) === "-" || !articulo.cantidad || !articulo.unidad) {
       throw pdfError(400, "Faltan datos minimos para generar el PDF")
     }
 
     return {
-      codigoArticulo: mostrar(articulo.articuloCodigo),
-      descripcionArticulo: mostrar(articulo.articuloDescripcion),
+      codigoArticulo: mostrar(articuloCodigoPdf(articulo)),
+      descripcionArticulo: mostrar(articuloDescripcionPdf(articulo)),
       cantidad: formatCantidad(articulo.cantidad),
       unidad: mostrar(articulo.unidad),
     }
   })
 
   return {
-    razonSocialEmisor: elegir(ingreso.proveedorNombreCargado, ingreso.proveedorNombreValidado),
-    codigoProveedor: elegir(ingreso.proveedorCodigoBejerman, ingreso.proveedorCodigoValidado),
-    cuitEmisor: elegir(ingreso.proveedorCuitCargado, ingreso.proveedorCuitValidado),
+    razonSocialEmisor: elegir(ingreso.proveedorNombreValidado, ingreso.proveedorNombreCargado),
+    codigoProveedor: elegir(ingreso.proveedorCodigoValidado, ingreso.proveedorCodigoBejerman),
+    cuitEmisor: elegir(ingreso.proveedorCuitValidado, ingreso.proveedorCuitCargado),
     descripcionComprobante: PDF_CONFIG.proveedor.descripcion,
     numeroComprobante: mostrar(ingreso.remitoProveedor),
     fechaEmision: formatFecha(ingreso.fechaIngreso),
@@ -117,16 +128,16 @@ function dataFletero(ingreso) {
   validarServicio(ingreso)
 
   const proveedorNombre = elegir(
-    ingreso.proveedorNombreCargado,
-    ingreso.proveedorNombreValidado
+    ingreso.proveedorNombreValidado,
+    ingreso.proveedorNombreCargado
   )
 
   return {
-    razonSocialEmisor: elegir(ingreso.servicioNombreCargado, ingreso.servicioNombreValidado),
-    codigoProveedor: elegir(ingreso.servicioCodigoBejerman, ingreso.servicioCodigoValidado),
+    razonSocialEmisor: elegir(ingreso.servicioNombreValidado, ingreso.servicioNombreCargado),
+    codigoProveedor: elegir(ingreso.servicioCodigoValidado, ingreso.servicioCodigoBejerman),
     dominio: mostrar(ingreso.patenteCamion),
     nombreChofer: mostrar(ingreso.choferNombreCargado),
-    cuitEmisor: elegir(ingreso.servicioCuitCargado, ingreso.servicioCuitValidado),
+    cuitEmisor: elegir(ingreso.servicioCuitValidado, ingreso.servicioCuitCargado),
     descripcionComprobante: PDF_CONFIG.fletero.descripcion,
     numeroComprobante: mostrar(ingreso.remitoProveedor),
     fechaEmision: formatFecha(ingreso.fechaIngreso),

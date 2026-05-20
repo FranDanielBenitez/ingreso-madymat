@@ -42,6 +42,10 @@ function filtroTexto(value) {
     : null
 }
 
+function agregarGrupoOr(where, condiciones) {
+  where.AND = [...(where.AND || []), { OR: condiciones }]
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -73,7 +77,10 @@ export async function GET(request) {
     }
 
     if (proveedor) {
-      where.proveedorNombreCargado = proveedor
+      agregarGrupoOr(where, [
+        { proveedorNombreCargado: proveedor },
+        { proveedorNombreValidado: proveedor },
+      ])
     }
 
     if (remito) {
@@ -81,10 +88,10 @@ export async function GET(request) {
     }
 
     if (patente) {
-      where.OR = [
+      agregarGrupoOr(where, [
         { patenteCamion: patente },
         { patenteAcoplado: patente },
-      ]
+      ])
     }
 
     const data = await prisma.ingreso.findMany({

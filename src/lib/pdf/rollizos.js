@@ -40,6 +40,17 @@ function elegir(...values) {
   return values.find((value) => value !== null && value !== undefined && value !== "") || "-"
 }
 
+function articuloCodigoPdf(articulo) {
+  return elegir(articulo?.articuloCodigoValidado, articulo?.articuloCodigo)
+}
+
+function articuloDescripcionPdf(articulo) {
+  return elegir(
+    articulo?.articuloDescripcionValidada,
+    articulo?.articuloDescripcion
+  )
+}
+
 function formatFecha(value) {
   if (!value) return "-"
 
@@ -70,7 +81,7 @@ function validarMinimos(ingreso) {
     throw pdfError(400, "Faltan datos m\u00ednimos para generar el PDF")
   }
 
-  if (!articulo?.articuloDescripcion || !articulo?.cantidad || !articulo?.unidad) {
+  if (articuloDescripcionPdf(articulo) === "-" || !articulo?.cantidad || !articulo?.unidad) {
     throw pdfError(400, "Faltan datos m\u00ednimos para generar el PDF")
   }
 }
@@ -82,9 +93,9 @@ function emisorPorTipo(ingreso, tipoPdf) {
     }
 
     return {
-      razonSocialEmisor: elegir(ingreso.proveedorNombreCargado, ingreso.proveedorNombreValidado),
-      codigoProveedor: elegir(ingreso.proveedorCodigoBejerman, ingreso.proveedorCodigoValidado),
-      cuitEmisor: elegir(ingreso.proveedorCuitCargado, ingreso.proveedorCuitValidado),
+      razonSocialEmisor: elegir(ingreso.proveedorNombreValidado, ingreso.proveedorNombreCargado),
+      codigoProveedor: elegir(ingreso.proveedorCodigoValidado, ingreso.proveedorCodigoBejerman),
+      cuitEmisor: elegir(ingreso.proveedorCuitValidado, ingreso.proveedorCuitCargado),
     }
   }
 
@@ -94,11 +105,11 @@ function emisorPorTipo(ingreso, tipoPdf) {
     }
 
     return {
-      razonSocialEmisor: elegir(ingreso.servicioNombreCargado, ingreso.servicioNombreValidado),
-      codigoProveedor: elegir(ingreso.servicioCodigoBejerman, ingreso.servicioCodigoValidado),
+      razonSocialEmisor: elegir(ingreso.servicioNombreValidado, ingreso.servicioNombreCargado),
+      codigoProveedor: elegir(ingreso.servicioCodigoValidado, ingreso.servicioCodigoBejerman),
       dominio: mostrar(ingreso.patenteCamion),
       nombreChofer: mostrar(ingreso.choferNombreCargado),
-      cuitEmisor: elegir(ingreso.servicioCuitCargado, ingreso.servicioCuitValidado),
+      cuitEmisor: elegir(ingreso.servicioCuitValidado, ingreso.servicioCuitCargado),
     }
   }
 
@@ -107,9 +118,9 @@ function emisorPorTipo(ingreso, tipoPdf) {
   }
 
   return {
-    razonSocialEmisor: elegir(ingreso.hachadorNombreCargado, ingreso.hachadorNombreValidado),
-    codigoProveedor: elegir(ingreso.hachadorCodigoBejerman, ingreso.hachadorCodigoValidado),
-    cuitEmisor: elegir(ingreso.hachadorCuitCargado, ingreso.hachadorCuitValidado),
+    razonSocialEmisor: elegir(ingreso.hachadorNombreValidado, ingreso.hachadorNombreCargado),
+    codigoProveedor: elegir(ingreso.hachadorCodigoValidado, ingreso.hachadorCodigoBejerman),
+    cuitEmisor: elegir(ingreso.hachadorCuitValidado, ingreso.hachadorCuitCargado),
   }
 }
 
@@ -122,8 +133,8 @@ function dataPorTipo(ingreso, tipoPdf) {
     descripcionComprobante: config.descripcion,
     numeroComprobante: mostrar(ingreso.remitoProveedor),
     fechaEmision: formatFecha(ingreso.fechaIngreso),
-    codigoArticulo: mostrar(articulo?.articuloCodigo),
-    descripcionArticulo: mostrar(articulo?.articuloDescripcion),
+    codigoArticulo: mostrar(articuloCodigoPdf(articulo)),
+    descripcionArticulo: mostrar(articuloDescripcionPdf(articulo)),
     cantidad: formatCantidad(articulo?.cantidad),
     unidad: mostrar(articulo?.unidad),
     procedencia: mostrar(ingreso.procedencia?.nombre),

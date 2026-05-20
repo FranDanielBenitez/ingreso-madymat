@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma"
 import {
   actualizarFlagsPendientes,
   jsonError,
+  limpiarDatoValidado,
   limpiarObservacion,
   nombreUsuario,
-  observacionLog,
   obtenerIngresoParaAprobacion,
+  validarDatoArticulo,
   validarIdIngreso,
   validarUsuarioAprobador,
 } from "@/lib/ingresos/aprobaciones"
@@ -27,8 +28,12 @@ export async function PATCH(request, context) {
 
     const body = await request.json().catch(() => ({}))
     const observacion = limpiarObservacion(body?.observacion)
+    const datoValidado = limpiarDatoValidado(body?.datoValidado)
+    const errorDato = validarDatoArticulo(datoValidado)
 
-    const ingreso = await prisma.$transaction(async (tx) => {
+    if (errorDato) return jsonError(errorDato, 400)
+
+    await prisma.$transaction(async (tx) => {
       const ingresoExistente = await obtenerIngresoParaAprobacion(tx, id)
 
       if (!ingresoExistente) {
@@ -59,6 +64,15 @@ export async function PATCH(request, context) {
         )
       }
 
+      await tx.ingresoArticulo.update({
+        where: { id: articulo.id },
+        data: {
+          articuloValidado: true,
+          articuloCodigoValidado: datoValidado.codigo,
+          articuloDescripcionValidada: datoValidado.descripcion,
+        },
+      })
+
       await tx.ingresoLog.create({
         data: {
           ingresoId: id,
@@ -66,14 +80,16 @@ export async function PATCH(request, context) {
           estado: "ARTICULO_APROBADO",
           detalle: `Articulo aprobado por ${nombreUsuario(usuario)}: Item #${
             articulo.id
-          } - ${articulo.articuloDescripcion || "Sin descripcion"}.${observacionLog(
-            observacion
-          )}`,
+          }. Original: ${
+            articulo.articuloDescripcion || "Sin descripcion"
+          }. Validado: ${datoValidado.descripcion}${
+            datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
+          }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
         },
       })
-
-      return actualizarFlagsPendientes(tx, id)
     })
+
+    const ingreso = await actualizarFlagsPendientes(prisma, id)
 
     return NextResponse.json({
       ok: true,

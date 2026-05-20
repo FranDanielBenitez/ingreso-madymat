@@ -55,6 +55,22 @@ function Campo({ label, value }) {
   )
 }
 
+function CampoValidado({ label, original, validado }) {
+  const tieneValidado = validado !== null && validado !== undefined && validado !== ""
+
+  return (
+    <div>
+      <p className={LABEL_CLASS}>{label}</p>
+      <p className={VALUE_CLASS}>{mostrar(tieneValidado ? validado : original)}</p>
+      {tieneValidado && mostrar(original) !== mostrar(validado) ? (
+        <p className="mt-1 text-xs font-medium text-[#64748B]">
+          Original cargado: {mostrar(original)}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 function ProveedorBadges({ ingreso }) {
   if (!ingreso?.proveedorCargaManual) return null
   const aprobado = ingreso.proveedorValidado === true
@@ -379,9 +395,21 @@ export default function DetalleIngresoRollizosPage() {
           </h2>
           <ProveedorBadges ingreso={ingreso} />
           <div className="grid gap-4 md:grid-cols-4">
-            <Campo label="Código" value={ingreso.proveedorCodigoBejerman} />
-            <Campo label="Razón social" value={ingreso.proveedorNombreCargado} />
-            <Campo label="CUIT" value={ingreso.proveedorCuitCargado} />
+            <CampoValidado
+              label="Código"
+              original={ingreso.proveedorCodigoBejerman}
+              validado={ingreso.proveedorCodigoValidado}
+            />
+            <CampoValidado
+              label="Razón social"
+              original={ingreso.proveedorNombreCargado}
+              validado={ingreso.proveedorNombreValidado}
+            />
+            <CampoValidado
+              label="CUIT"
+              original={ingreso.proveedorCuitCargado}
+              validado={ingreso.proveedorCuitValidado}
+            />
             <Campo
               label="Grupo / Subgrupo"
               value={`${mostrar(ingreso.proveedorGrupoBejerman)} / ${mostrar(
@@ -397,8 +425,16 @@ export default function DetalleIngresoRollizosPage() {
           </h2>
           <ArticuloBadges articulo={articuloPrincipal} ingreso={ingreso} />
           <div className="grid gap-4 md:grid-cols-4">
-            <Campo label="Artículo" value={articuloPrincipal?.articuloDescripcion} />
-            <Campo label="Código" value={articuloPrincipal?.articuloCodigo} />
+            <CampoValidado
+              label="Artículo"
+              original={articuloPrincipal?.articuloDescripcion}
+              validado={articuloPrincipal?.articuloDescripcionValidada}
+            />
+            <CampoValidado
+              label="Código"
+              original={articuloPrincipal?.articuloCodigo}
+              validado={articuloPrincipal?.articuloCodigoValidado}
+            />
             <Campo label="Cantidad" value={articuloPrincipal?.cantidad} />
             <Campo label="Unidad" value={articuloPrincipal?.unidad} />
           </div>
@@ -411,8 +447,16 @@ export default function DetalleIngresoRollizosPage() {
           <ServicioBadges ingreso={ingreso} />
           <div className="grid gap-4 md:grid-cols-3">
             <Campo label="Tipo servicio" value={ingreso.tipoServicioLogistico} />
-            <Campo label="Servicio logístico" value={ingreso.servicioNombreCargado} />
-            <Campo label="CUIT servicio" value={ingreso.servicioCuitCargado} />
+            <CampoValidado
+              label="Servicio logístico"
+              original={ingreso.servicioNombreCargado}
+              validado={ingreso.servicioNombreValidado}
+            />
+            <CampoValidado
+              label="CUIT servicio"
+              original={ingreso.servicioCuitCargado}
+              validado={ingreso.servicioCuitValidado}
+            />
             <Campo label="Patente camión" value={ingreso.patenteCamion} />
             <Campo label="Patente acoplado" value={ingreso.patenteAcoplado} />
           </div>
@@ -435,9 +479,21 @@ export default function DetalleIngresoRollizosPage() {
             Hachador
           </h2>
           <div className="grid gap-4 md:grid-cols-3">
-            <Campo label="Código" value={ingreso.hachadorCodigoBejerman} />
-            <Campo label="Nombre" value={ingreso.hachadorNombreCargado} />
-            <Campo label="CUIT" value={ingreso.hachadorCuitCargado} />
+            <CampoValidado
+              label="Código"
+              original={ingreso.hachadorCodigoBejerman}
+              validado={ingreso.hachadorCodigoValidado}
+            />
+            <CampoValidado
+              label="Nombre"
+              original={ingreso.hachadorNombreCargado}
+              validado={ingreso.hachadorNombreValidado}
+            />
+            <CampoValidado
+              label="CUIT"
+              original={ingreso.hachadorCuitCargado}
+              validado={ingreso.hachadorCuitValidado}
+            />
           </div>
         </section>
 

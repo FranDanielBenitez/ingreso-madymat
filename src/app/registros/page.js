@@ -70,7 +70,12 @@ function descripcionArticulos(registro) {
   const total = registro.articulos?.length || 0
   if (total > 1) return `${total} ítems`
 
-  return articuloPrincipal(registro)?.articuloDescripcion
+  const articulo = articuloPrincipal(registro)
+  return articulo?.articuloDescripcionValidada || articulo?.articuloDescripcion
+}
+
+function proveedorPrincipal(registro) {
+  return registro.proveedorNombreValidado || registro.proveedorNombreCargado
 }
 
 function cantidadArticulos(registro) {
@@ -437,7 +442,7 @@ export default function RegistrosPage() {
                           </td>
                           <td className="py-3 pr-4">
                             <div className="flex flex-col">
-                              <span>{mostrar(registro.proveedorNombreCargado)}</span>
+                              <span>{mostrar(proveedorPrincipal(registro))}</span>
                               <ProveedorManualBadge registro={registro} />
                             </div>
                           </td>
@@ -509,7 +514,7 @@ export default function RegistrosPage() {
                       <div className="mt-4 grid gap-2 text-sm text-[#475569]">
                         <p>
                           <span className="font-semibold">Proveedor:</span>{" "}
-                          {mostrar(registro.proveedorNombreCargado)}
+                          {mostrar(proveedorPrincipal(registro))}
                         </p>
                         <ProveedorManualBadge registro={registro} />
                         <p>

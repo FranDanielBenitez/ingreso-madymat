@@ -34,6 +34,10 @@ function detalleLog(log) {
 export function articuloManualAprobado(ingreso, articulo) {
   if (!articulo) return false
 
+  if (articulo.articuloValidado === true) {
+    return true
+  }
+
   if (String(articulo.origenDato || "").toUpperCase() === "MANUAL_VALIDADO") {
     return true
   }

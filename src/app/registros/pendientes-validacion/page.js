@@ -33,7 +33,12 @@ function descripcionArticulos(registro) {
   const total = registro.articulos?.length || 0
   if (total > 1) return `${total} items`
 
-  return articuloPrincipal(registro)?.articuloDescripcion
+  const articulo = articuloPrincipal(registro)
+  return articulo?.articuloDescripcionValidada || articulo?.articuloDescripcion
+}
+
+function proveedorPrincipal(registro) {
+  return registro.proveedorNombreValidado || registro.proveedorNombreCargado
 }
 
 function incluyeTexto(valor, termino) {
@@ -49,12 +54,19 @@ function matchesMotivo(registro, motivo) {
   if (motivo === "Proveedor manual") {
     return pendientes.some((pendiente) => pendiente.tipo === "proveedor")
   }
+
   if (motivo === "Servicio manual") {
     return pendientes.some((pendiente) => pendiente.tipo === "servicio")
   }
+
+  if (motivo === "Hachador manual") {
+    return pendientes.some((pendiente) => pendiente.tipo === "hachador")
+  }
+
   if (motivo === "Artículo manual") {
     return pendientes.some((pendiente) => pendiente.tipo === "articulo")
   }
+
   if (motivo === "Fuera de sugeridos") {
     return pendientes.some((pendiente) => pendiente.tipo === "fueraSugerido")
   }
@@ -152,7 +164,7 @@ export default function PendientesValidacionPage() {
 
       if (
         !incluyeTexto(
-          registro.proveedorNombreCargado,
+          proveedorPrincipal(registro),
           filterValues.proveedor
         )
       ) {
@@ -328,6 +340,7 @@ export default function PendientesValidacionPage() {
                 >
                   <option>Todos</option>
                   <option>Proveedor manual</option>
+                  <option>Hachador manual</option>
                   <option>Servicio manual</option>
                   <option>Artículo manual</option>
                   <option>Fuera de sugeridos</option>
@@ -481,7 +494,7 @@ export default function PendientesValidacionPage() {
                             <EstadoBadge estado={registro.estado} />
                           </td>
                           <td className="py-3 pr-4">
-                            {mostrar(registro.proveedorNombreCargado)}
+                            {mostrar(proveedorPrincipal(registro))}
                           </td>
                           <td className="py-3 pr-4">
                             {mostrar(registro.remitoProveedor)}
@@ -556,7 +569,7 @@ export default function PendientesValidacionPage() {
                       <div className="mt-4 grid gap-2 text-sm text-[#475569]">
                         <p>
                           <span className="font-semibold">Proveedor:</span>{" "}
-                          {mostrar(registro.proveedorNombreCargado)}
+                          {mostrar(proveedorPrincipal(registro))}
                         </p>
                         <p>
                           <span className="font-semibold">Remito:</span>{" "}
