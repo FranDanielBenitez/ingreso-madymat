@@ -1,0 +1,53 @@
+@echo off
+title Actualizar Madymat
+echo ==========================================
+echo   ACTUALIZACION FORZADA MADYMAT
+echo ==========================================
+echo.
+
+echo [1/8] Deteniendo app si esta corriendo...
+taskkill /F /IM node.exe >nul 2>&1
+
+echo.
+echo [2/8] Entrando al proyecto...
+cd /d C:\IngresoMadymat\app
+
+echo.
+echo [3/8] Detectando rama actual...
+for /f %%b in ('git rev-parse --abbrev-ref HEAD') do set BRANCH=%%b
+echo Rama actual: %BRANCH%
+
+echo.
+echo [4/8] Trayendo cambios desde GitHub...
+git fetch origin
+
+echo.
+echo [5/8] Forzando codigo local igual a GitHub...
+git reset --hard origin/%BRANCH%
+
+echo.
+echo [6/8] Instalando dependencias...
+npm.cmd install
+
+echo.
+echo [7/8] Aplicando migraciones y regenerando Prisma Client...
+npx.cmd prisma migrate deploy
+npx.cmd prisma generate
+
+echo.
+echo [8/8] Generando build de produccion...
+npm.cmd run build
+
+echo.
+echo Iniciando Madymat nuevamente...
+schtasks /Run /TN "Iniciar Madymat"
+
+echo.
+echo ==========================================
+echo   MADYMAT ACTUALIZADO CORRECTAMENTE
+echo ==========================================
+echo.
+echo Abrir en navegador:
+echo http://localhost:3000/login
+echo.
+pause

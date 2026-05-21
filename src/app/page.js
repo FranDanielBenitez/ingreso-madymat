@@ -249,7 +249,7 @@ export default function Home() {
                   href={acceso.href}
                   className="quick-access-card group panel-surface panel-surface-soft flex min-h-32 flex-col items-center justify-center gap-3 text-center hover:-translate-y-0.5 hover:border-amber-300 hover:bg-white hover:shadow-md focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-100"
                 >
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-[#CBD5E1] bg-white text-slate-500 group-hover:border-amber-300 group-hover:bg-amber-50 group-hover:text-amber-700 dark:text-slate-300 dark:group-hover:text-amber-200">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-[#CBD5E1] bg-white text-slate-700 group-hover:border-amber-300 group-hover:bg-amber-50 group-hover:text-amber-800 dark:text-slate-300 dark:group-hover:text-amber-200">
                     <Icon className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <h3 className="text-sm font-black leading-5 text-[#0F172A] group-hover:text-amber-800 dark:group-hover:text-amber-100">

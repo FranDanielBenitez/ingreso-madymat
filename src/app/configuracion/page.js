@@ -94,7 +94,7 @@ export default function ConfiguracionPage() {
                 href={modulo.href}
                 className="quick-access-card panel-surface panel-surface-soft group flex items-start gap-4 hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-100"
               >
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#CBD5E1] bg-white text-slate-600 group-hover:border-amber-300 group-hover:bg-amber-50 group-hover:text-amber-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:group-hover:border-amber-400/40 dark:group-hover:bg-amber-400/10 dark:group-hover:text-amber-200">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#CBD5E1] bg-white text-slate-700 group-hover:border-amber-300 group-hover:bg-amber-50 group-hover:text-amber-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:group-hover:border-amber-400/40 dark:group-hover:bg-amber-400/10 dark:group-hover:text-amber-200">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <span>
