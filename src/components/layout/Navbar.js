@@ -18,12 +18,19 @@ import {
 import { GiWoodPile, GiWoodBeam } from "react-icons/gi"
 
 const LINKS = [
-  { href: "/", label: "Inicio", icon: FiHome },
+  { href: "/", label: "Inicio", icon: FiHome, iconOnly: true },
   { href: "/ingresos/rollizos", label: "Rollizos", icon: GiWoodPile },
   { href: "/ingresos/materiales", label: "Materiales", icon: GiWoodBeam },
   { href: "/registros", label: "Registros", icon: FiList },
   { href: "/registros/pendientes-validacion", label: "Pendientes", icon: FiAlertTriangle },
   { href: "/manual", label: "Manual", icon: FiBookOpen },
+]
+
+const ROL_PRINCIPAL = [
+  { rol: "IT_TECNICO", label: "IT" },
+  { rol: "ADMINISTRADOR", label: "Admin" },
+  { rol: "PROVEEDORES_AUDITOR", label: "Pago a Proveedores" },
+  { rol: "DATA_ENTRY", label: "Porteria" },
 ]
 
 function ThemeIcon({ dark }) {
@@ -138,7 +145,7 @@ export default function Navbar() {
             : "max-h-96 translate-y-0 opacity-100"
         }`}
       >
-        <nav className="mx-auto flex max-w-[92rem] items-center gap-3 px-4 py-3 sm:px-6 lg:px-6">
+        <nav className="mx-auto flex max-w-[92rem] flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-6">
           <Link
             href="/"
             className="flex shrink-0 items-center gap-4"
@@ -162,83 +169,106 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1 pr-12">
-            {LINKS.map((link) => {
-              const activo =
-                link.href === "/"
-                  ? pathname === "/"
-                  : link.href === "/registros"
-                    ? pathname === "/registros"
-                    : pathname?.startsWith(link.href)
+          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-3 pr-12 lg:flex-nowrap">
+            <div className="flex min-w-0 flex-wrap items-center gap-1 lg:flex-nowrap">
+              {LINKS.map((link) => {
+                const activo =
+                  link.href === "/"
+                    ? pathname === "/"
+                    : link.href === "/registros"
+                      ? pathname === "/registros"
+                      : pathname?.startsWith(link.href)
 
-              const Icon = link.icon
+                const Icon = link.icon
 
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`nav-link nav-link-compact shrink-0 ${activo ? "nav-link-active" : ""}`}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  <span>{link.label}</span>
-                </Link>
-              )
-            })}
-            {mostrarConfiguracion && (
-              <Link
-                href="/configuracion"
-                className={`btn-icon ${
-                  pathname?.startsWith("/configuracion")
-                    ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100"
-                    : ""
-                }`}
-                aria-label="Configuracion"
-                title="Configuracion"
-              >
-                <FiSettings className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            )}
-            <span
-              aria-hidden="true"
-              className="mx-1 h-8 w-px shrink-0 bg-gradient-to-b from-transparent via-[#CBD5E1] to-transparent"
-            />
-            <button
-              type="button"
-              onClick={cambiarTema}
-              className="btn-icon shrink-0"
-              aria-label={`Cambiar a modo ${theme === "dark" ? "claro" : "oscuro"}`}
-              title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
-            >
-              <ThemeIcon dark={theme === "dark"} />
-            </button>
-            {!cargandoUsuario && (
-              <div className="ml-1 flex shrink-0 items-center gap-1">
-                {usuario && (
-                  <span
-                    className="hidden max-w-32 truncate whitespace-nowrap text-sm font-semibold text-[#0F172A] 2xl:inline"
-                    title={`${usuario.nombre} - ${(usuario.roles || []).join(", ")}`}
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`nav-link nav-link-compact shrink-0 ${
+                      link.iconOnly ? "px-3" : ""
+                    } ${activo ? "nav-link-active" : ""}`}
+                    aria-label={link.iconOnly ? link.label : undefined}
+                    title={link.iconOnly ? link.label : undefined}
                   >
-                    {usuario.usuario || usuario.nombre}
-                  </span>
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {!link.iconOnly ? <span>{link.label}</span> : null}
+                  </Link>
+                )
+              })}
+              {mostrarConfiguracion && (
+                <Link
+                  href="/configuracion"
+                  className={`btn-icon shrink-0 ${
+                    pathname?.startsWith("/configuracion")
+                      ? "border-[#F3171B]/30 bg-[#F3171B]/10 text-[#D90F14] dark:border-[#F3171B]/35 dark:bg-[#F3171B]/15 dark:text-red-100"
+                      : ""
+                  }`}
+                  aria-label="Configuracion"
+                  title="Configuracion"
+                >
+                  <FiSettings className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              )}
+            </div>
+
+            <div className="flex shrink-0 items-center">
+              <button
+                type="button"
+                onClick={cambiarTema}
+                className="btn-icon shrink-0"
+                aria-label={`Cambiar a modo ${theme === "dark" ? "claro" : "oscuro"}`}
+                title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
+              >
+                <ThemeIcon dark={theme === "dark"} />
+              </button>
+            </div>
+
+            {!cargandoUsuario && (
+              <div className="flex min-w-0 shrink-0 items-center gap-2">
+                {usuario && (
+                  <div
+                    className="flex min-w-0 max-w-[13rem] items-center gap-2 rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-[#0F172A] shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 sm:max-w-[16rem]"
+                    title={`${usuario.nombre || nombreVisible(usuario)} - ${(usuario.roles || []).join(", ")}`}
+                  >
+                    <span className="min-w-0 truncate text-sm font-black">
+                      {nombreVisible(usuario)}
+                    </span>
+                    <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-bold text-[#475569] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      {rolPrincipal(usuario)}
+                    </span>
+                  </div>
                 )}
                 <button
                   type="button"
                   onClick={cerrarSesion}
                   className="btn-secondary gap-2 px-3 py-2 text-sm"
                   title="Cerrar sesion"
+                  aria-label="Cerrar sesion"
                 >
                   <FiLogOut className="h-4 w-4" aria-hidden="true" />
-                  <span>Salir</span>
+                  <span className="hidden sm:inline">Salir</span>
                 </button>
               </div>
             )}
             {cargandoUsuario && (
-              <div className="ml-1 h-9 w-16 shrink-0 rounded-xl border border-[#CBD5E1] bg-white/70" />
+              <div className="h-10 w-40 shrink-0 rounded-xl border border-[#CBD5E1] bg-white/70 dark:border-slate-700 dark:bg-slate-900/70" />
             )}
           </div>
         </nav>
       </header>
     </>
   )
+}
+
+function rolPrincipal(usuario) {
+  const roles = usuario?.roles || []
+  const encontrado = ROL_PRINCIPAL.find((item) => roles.includes(item.rol))
+
+  return encontrado?.label || "Usuario"
+}
+
+function nombreVisible(usuario) {
+  return usuario?.usuario || usuario?.nombre || "Usuario"
 }
 
