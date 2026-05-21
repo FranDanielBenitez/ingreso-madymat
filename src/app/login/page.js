@@ -115,7 +115,7 @@ export default function LoginPage() {
       />
 
       <section className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-6 py-10 lg:grid-cols-[1.08fr_0.92fr] lg:px-8">
-        <div className="space-y-8">
+        <div className="flex flex-col justify-center gap-8 lg:min-h-[34rem]">
           <div className="inline-flex rounded-3xl border border-white/10 bg-white/8 px-5 py-4 shadow-2xl shadow-black/20 backdrop-blur">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -144,16 +144,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            {["Portería", "Proveedores", "Auditoría"].map((item) => (
-              <span
-                key={item}
-                className="rounded-full border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-slate-100"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
         </div>
 
         <div className="w-full">
