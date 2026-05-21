@@ -52,32 +52,52 @@ export default function Navbar() {
     const isDark = document.documentElement.classList.contains("dark")
     const oculto =
       localStorage.getItem("ingreso-madymat-navbar-oculto") === "true"
+    const usuarioGuardado = leerUsuarioGuardado()
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(isDark ? "dark" : "light")
     setNavbarOculto(oculto)
-  }, [])
+    if (usuarioGuardado) {
+      setUsuario(usuarioGuardado)
+    }
+  }, [pathname])
 
   useEffect(() => {
+    if (pathname === "/login") {
+      return
+    }
+
     async function cargarUsuario() {
+      setCargandoUsuario(true)
+
       try {
         const response = await fetch("/api/auth/me")
         const result = await response.json()
 
         if (response.ok && result.ok) {
-          setUsuario(result.user)
+          const usuarioActual = normalizarUsuarioNavbar(result.user || result.usuario)
+
+          setUsuario(usuarioActual)
+          guardarUsuarioNavbar(usuarioActual)
         } else {
-          setUsuario(null)
+          if (response.status === 401) {
+            setUsuario(null)
+            localStorage.removeItem("ingreso-madymat-user")
+          }
         }
       } catch (error) {
-        setUsuario(null)
+        const usuarioGuardado = leerUsuarioGuardado()
+
+        if (usuarioGuardado) {
+          setUsuario(usuarioGuardado)
+        }
       } finally {
         setCargandoUsuario(false)
       }
     }
 
     cargarUsuario()
-  }, [])
+  }, [pathname])
 
   const mostrarConfiguracion =
     !cargandoUsuario &&
@@ -86,6 +106,7 @@ export default function Navbar() {
 
   async function cerrarSesion() {
     await fetch("/api/auth/logout", { method: "POST" })
+    localStorage.removeItem("ingreso-madymat-user")
     window.location.href = "/login"
   }
 
@@ -139,16 +160,16 @@ export default function Navbar() {
       </button>
 
       <header
-        className={`sticky top-0 z-30 overflow-hidden border-b border-[#CBD5E1] bg-white/95 shadow-sm backdrop-blur transition-[max-height,transform,opacity] duration-300 ease-in-out ${
+        className={`sticky top-0 z-30 border-b border-[#CBD5E1] bg-white/95 shadow-sm backdrop-blur transition-[max-height,transform,opacity] duration-300 ease-in-out ${
           navbarOculto
-            ? "max-h-0 -translate-y-full border-transparent opacity-0"
-            : "max-h-96 translate-y-0 opacity-100"
+            ? "max-h-0 -translate-y-full overflow-hidden border-transparent opacity-0"
+            : "max-h-96 translate-y-0 overflow-visible opacity-100"
         }`}
       >
-        <nav className="mx-auto flex max-w-[92rem] flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-6">
+        <nav className="flex w-full flex-wrap items-center gap-3 px-4 py-2.5 sm:px-6 lg:flex-nowrap">
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-4"
+            className="flex shrink-0 items-center gap-3"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -158,19 +179,19 @@ export default function Navbar() {
                   : "/Logo%20Envases%20dark.png"
               }
               alt="Puebla Envases"
-              className="h-9 w-auto object-contain object-left"
+              className="h-8 w-auto object-contain object-left xl:h-9"
             />
             <span
               aria-hidden="true"
               className="hidden h-9 w-px bg-gradient-to-b from-transparent via-[#F3171B]/45 to-transparent sm:block"
             />
-            <span className="hidden whitespace-nowrap text-base font-black tracking-tight text-[#0F172A] sm:block">
+            <span className="hidden whitespace-nowrap text-sm font-black tracking-tight text-[#0F172A] xl:block 2xl:text-base">
               Ingreso Madymat
             </span>
           </Link>
 
-          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-3 pr-12 lg:flex-nowrap">
-            <div className="flex min-w-0 flex-wrap items-center gap-1 lg:flex-nowrap">
+          <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 pr-12 lg:flex-nowrap">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1 overflow-hidden lg:flex-nowrap">
               {LINKS.map((link) => {
                 const activo =
                   link.href === "/"
@@ -192,10 +213,17 @@ export default function Navbar() {
                     title={link.iconOnly ? link.label : undefined}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
-                    {!link.iconOnly ? <span>{link.label}</span> : null}
+                    {!link.iconOnly ? (
+                      <span className="hidden whitespace-nowrap xl:inline">
+                        {link.label}
+                      </span>
+                    ) : null}
                   </Link>
                 )
               })}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1">
               {mostrarConfiguracion && (
                 <Link
                   href="/configuracion"
@@ -210,9 +238,6 @@ export default function Navbar() {
                   <FiSettings className="h-4 w-4" aria-hidden="true" />
                 </Link>
               )}
-            </div>
-
-            <div className="flex shrink-0 items-center">
               <button
                 type="button"
                 onClick={cambiarTema}
@@ -225,16 +250,16 @@ export default function Navbar() {
             </div>
 
             {!cargandoUsuario && (
-              <div className="flex min-w-0 shrink-0 items-center gap-2">
+              <div className="flex min-w-0 shrink-0 items-center gap-1.5">
                 {usuario && (
                   <div
-                    className="flex min-w-0 max-w-[13rem] items-center gap-2 rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-[#0F172A] shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 sm:max-w-[16rem]"
+                    className="flex min-w-0 max-w-[11.5rem] items-center gap-2 rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-[#0F172A] shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 2xl:max-w-[16rem]"
                     title={`${usuario.nombre || nombreVisible(usuario)} - ${(usuario.roles || []).join(", ")}`}
                   >
                     <span className="min-w-0 truncate text-sm font-black">
                       {nombreVisible(usuario)}
                     </span>
-                    <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-bold text-[#475569] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    <span className="hidden shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-bold text-[#475569] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 2xl:inline-flex">
                       {rolPrincipal(usuario)}
                     </span>
                   </div>
@@ -242,12 +267,14 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={cerrarSesion}
-                  className="btn-secondary gap-2 px-3 py-2 text-sm"
-                  title="Cerrar sesion"
-                  aria-label="Cerrar sesion"
+                  className="btn-icon group relative shrink-0"
+                  title="Salir"
+                  aria-label="Salir"
                 >
                   <FiLogOut className="h-4 w-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">Salir</span>
+                  <span className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-50 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-[#0F172A] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    Salir
+                  </span>
                 </button>
               </div>
             )}
@@ -262,13 +289,55 @@ export default function Navbar() {
 }
 
 function rolPrincipal(usuario) {
-  const roles = usuario?.roles || []
+  const roles = normalizarRolesNavbar(usuario?.roles || usuario?.rol)
   const encontrado = ROL_PRINCIPAL.find((item) => roles.includes(item.rol))
 
   return encontrado?.label || "Usuario"
 }
 
 function nombreVisible(usuario) {
-  return usuario?.usuario || usuario?.nombre || "Usuario"
+  return usuario?.nombre || usuario?.usuario || "Usuario"
+}
+
+function normalizarRolesNavbar(value) {
+  const roles = Array.isArray(value) ? value : [value].filter(Boolean)
+
+  return roles
+    .map((item) => (typeof item === "string" ? item : item?.rol))
+    .filter(Boolean)
+    .map((rol) => {
+      const clave = String(rol).toUpperCase()
+
+      if (clave === "ADMIN") return "ADMINISTRADOR"
+      if (clave === "PORTERIA") return "DATA_ENTRY"
+      if (clave === "PROVEEDORES") return "PROVEEDORES_AUDITOR"
+      if (clave === "SISTEMAS") return "IT_TECNICO"
+
+      return clave
+    })
+}
+
+function normalizarUsuarioNavbar(value) {
+  if (!value) return null
+
+  return {
+    ...value,
+    roles: normalizarRolesNavbar(value.roles || value.rol),
+  }
+}
+
+function leerUsuarioGuardado() {
+  try {
+    const raw = localStorage.getItem("ingreso-madymat-user")
+    return normalizarUsuarioNavbar(raw ? JSON.parse(raw) : null)
+  } catch {
+    return null
+  }
+}
+
+function guardarUsuarioNavbar(usuario) {
+  if (!usuario) return
+
+  localStorage.setItem("ingreso-madymat-user", JSON.stringify(usuario))
 }
 

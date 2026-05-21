@@ -69,6 +69,13 @@ export default function LoginPage() {
       }
 
       toast.success("Inicio de sesión correcto")
+      if (result.user) {
+        localStorage.setItem(
+          "ingreso-madymat-user",
+          JSON.stringify(result.user)
+        )
+      }
+
       router.replace("/")
       router.refresh()
     } catch (error) {
