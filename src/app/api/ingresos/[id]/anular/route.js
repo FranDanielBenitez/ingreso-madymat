@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getCurrentUser } from "@/lib/auth"
+import { crearDetalleLog } from "@/lib/ingresos/logs"
 
 const INCLUDE_INGRESO = {
   articulos: true,
@@ -13,6 +15,7 @@ const INCLUDE_INGRESO = {
 
 export async function PATCH(request, context) {
   try {
+    const usuario = await getCurrentUser()
     const params = await context.params
     const id = Number(params.id)
 
@@ -76,9 +79,13 @@ export async function PATCH(request, context) {
       await tx.ingresoLog.create({
         data: {
           ingresoId: id,
-          usuarioId: null,
+          usuarioId: usuario?.id || null,
           estado: "ANULADO",
-          detalle: `Ingreso anulado. Motivo: ${motivo}`,
+          detalle: crearDetalleLog(
+            usuario,
+            `anulo ingreso #${id}`,
+            `Motivo: ${motivo}.`
+          ),
         },
       })
 

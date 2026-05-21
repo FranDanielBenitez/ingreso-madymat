@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getCurrentUser } from "@/lib/auth"
+import { crearDetalleLog } from "@/lib/ingresos/logs"
 
 const INCLUDE_INGRESO = {
   articulos: {
@@ -60,6 +62,7 @@ function agregarCambio(cambios, label, anterior, nuevo) {
 
 export async function PATCH(request, context) {
   try {
+    const usuario = await getCurrentUser()
     const params = await context.params
     const id = Number(params.id)
     const itemId = Number(params.itemId)
@@ -176,13 +179,15 @@ export async function PATCH(request, context) {
       )
     }
 
-    const detalleLog = `Item actualizado: ${valorLog(
-      item.articuloDescripcion
-    )} (Codigo: ${valorLog(item.articuloCodigo)}, Categoria: ${valorLog(
-      item.categoriaFormulario
-    )}). ${cambios.join(
-      "; "
-    )}. Motivo: ${motivo}.`
+    const detalleLog = crearDetalleLog(
+      usuario,
+      `edito item de ingreso #${id}`,
+      `Item actualizado: ${valorLog(
+        item.articuloDescripcion
+      )} (Codigo: ${valorLog(item.articuloCodigo)}, Categoria: ${valorLog(
+        item.categoriaFormulario
+      )}). Cambios: ${cambios.join("; ")}. Motivo: ${motivo}.`
+    )
 
     const ingreso = await prisma.$transaction(async (tx) => {
       await tx.ingresoArticulo.update({
@@ -193,7 +198,7 @@ export async function PATCH(request, context) {
       await tx.ingresoLog.create({
         data: {
           ingresoId: id,
-          usuarioId: null,
+          usuarioId: usuario?.id || null,
           estado: ingresoExistente.estado,
           detalle: detalleLog,
         },

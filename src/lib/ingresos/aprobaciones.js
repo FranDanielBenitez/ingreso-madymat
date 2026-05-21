@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
 import { canApprovePendientes } from "@/lib/auth/permissions"
 import { flagsPendientesReales } from "@/lib/ingresos/pendientes"
+import { nombreUsuarioLog } from "@/lib/ingresos/logs"
 
 export const INCLUDE_INGRESO_APROBACION = {
   articulos: {
@@ -49,7 +50,7 @@ export async function validarUsuarioAprobador() {
 }
 
 export function nombreUsuario(usuario) {
-  return usuario?.nombre || usuario?.usuario || usuario?.email || "usuario"
+  return nombreUsuarioLog(usuario)
 }
 
 export async function obtenerIngresoParaAprobacion(tx, id) {

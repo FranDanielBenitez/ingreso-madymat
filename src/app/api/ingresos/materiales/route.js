@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth"
 import { canCreateIngreso } from "@/lib/auth/permissions"
 import { obtenerSiguienteNumeroViaje } from "@/lib/ingresos/numero-viaje"
+import { crearDetalleLog } from "@/lib/ingresos/logs"
 
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
@@ -595,15 +596,25 @@ export async function POST(request) {
 
         logs: {
           create: {
-            usuarioId: usuarioPortero?.id || null,
+            usuarioId: currentUser.id || null,
             estado: "REGISTRADO",
-            detalle: `Ingreso de materiales registrado desde formulario web. Portero: ${
-              portero?.NombreCompleto || "Sin portero informado"
-            }. Items cargados: ${items.length}${
-              detallesModoBusqueda.length
-                ? `. ${detallesModoBusqueda.join(" ")}`
-                : ""
-            }`,
+            detalle: crearDetalleLog(
+              currentUser,
+              "registro ingreso de Materiales",
+              `Remito: ${remitoProveedor || "-"}. Viaje: #${
+                viaje.numeroViaje || "-"
+              }. Portero: ${
+                portero?.NombreCompleto || "Sin portero informado"
+              }. Items cargados: ${items.length}.${
+                proveedorCargaManual || servicioCargaManual || itemsManuales > 0
+                  ? " El ingreso contiene datos pendientes de aprobacion."
+                  : ""
+              }${
+                detallesModoBusqueda.length
+                  ? ` ${detallesModoBusqueda.join(" ")}`
+                  : ""
+              }`
+            ),
           },
         },
       },

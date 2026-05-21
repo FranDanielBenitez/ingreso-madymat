@@ -5,6 +5,7 @@ import path from "node:path"
 import { getCurrentUser } from "@/lib/auth"
 import { canCreateIngreso } from "@/lib/auth/permissions"
 import { obtenerSiguienteNumeroViaje } from "@/lib/ingresos/numero-viaje"
+import { crearDetalleLog } from "@/lib/ingresos/logs"
 
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
@@ -624,15 +625,29 @@ export async function POST(request) {
 
         logs: {
           create: {
-            usuarioId: usuarioPortero?.id || null,
+            usuarioId: currentUser.id || null,
             estado: "REGISTRADO",
-            detalle: `Ingreso de rollizos registrado desde formulario web. Portero: ${
-              portero?.NombreCompleto || "Sin portero informado"
-            }${
-              detallesModoBusqueda.length
-                ? `. ${detallesModoBusqueda.join(" ")}`
-                : ""
-            }`,
+            detalle: crearDetalleLog(
+              currentUser,
+              "registro ingreso de Rollizos",
+              `Remito: ${remitoProveedor || "-"}. Viaje: #${
+                viaje.numeroViaje || "-"
+              }. Portero: ${
+                portero?.NombreCompleto || "Sin portero informado"
+              }.${
+                proveedorCargaManual ||
+                articuloCargaManual ||
+                servicioCargaManual ||
+                hachadorCargaManual ||
+                hachadorFueraSugerido
+                  ? " El ingreso contiene datos pendientes de aprobacion."
+                  : ""
+              }${
+                detallesModoBusqueda.length
+                  ? ` ${detallesModoBusqueda.join(" ")}`
+                  : ""
+              }`
+            ),
           },
         },
       },

@@ -5,13 +5,13 @@ import {
   jsonError,
   limpiarDatoValidado,
   limpiarObservacion,
-  nombreUsuario,
   obtenerIngresoParaAprobacion,
   validarDatoArticulo,
   validarIdIngreso,
   validarUsuarioAprobador,
 } from "@/lib/ingresos/aprobaciones"
 import { articuloManualAprobado } from "@/lib/ingresos/pendientes"
+import { crearDetalleLog } from "@/lib/ingresos/logs"
 
 export async function PATCH(request, context) {
   try {
@@ -79,13 +79,17 @@ export async function PATCH(request, context) {
             ingresoId: id,
             usuarioId: usuario.id,
             estado: "ARTICULO_APROBADO",
-            detalle: `Articulo aprobado por ${nombreUsuario(usuario)}: Item #${
-              articulo.id
-            }. Original: ${
-              articulo.articuloDescripcion || "Sin descripcion"
-            }. Validado: ${datoValidado.descripcion}${
-              datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
-            }. Observacion: ${observacion || "Aprobado desde detalle de ingreso."}`,
+            detalle: crearDetalleLog(
+              usuario,
+              "aprobo articulo",
+              `Item #${articulo.id}. Original: ${
+                articulo.articuloDescripcion || "Sin descripcion"
+              }. Validado: ${datoValidado.descripcion}${
+                datoValidado.codigo ? ` (${datoValidado.codigo})` : ""
+              }. Observacion: ${
+                observacion || "Aprobado desde detalle de ingreso."
+              }.`
+            ),
           },
         })
       },
