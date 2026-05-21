@@ -1,0 +1,13 @@
+BEGIN;
+
+DELETE FROM public.ingreso_logs;
+DELETE FROM public.ingreso_fotos;
+DELETE FROM public.ingreso_articulos;
+DELETE FROM public.ingresos;
+
+ALTER SEQUENCE public.ingreso_logs_id_seq RESTART WITH 1;
+ALTER SEQUENCE public.ingreso_fotos_id_seq RESTART WITH 1;
+ALTER SEQUENCE public.ingreso_articulos_id_seq RESTART WITH 1;
+ALTER SEQUENCE public.ingresos_id_seq RESTART WITH 1;
+
+COMMIT;
