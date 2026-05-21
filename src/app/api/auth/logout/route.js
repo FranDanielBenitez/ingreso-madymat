@@ -24,7 +24,7 @@ export async function POST() {
       maxAge: 0,
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.COOKIE_SECURE === "true",
     })
 
     return response

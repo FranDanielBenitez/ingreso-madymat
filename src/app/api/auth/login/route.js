@@ -3,9 +3,11 @@ import {
   getUserByLoginIdentifier,
   verifyPassword,
   createSession,
-  setSessionCookie,
   getUserRoles,
 } from "@/lib/auth"
+
+const SESSION_COOKIE_NAME = "ingreso_madymat_session"
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24
 
 export async function POST(request) {
   try {
@@ -79,7 +81,16 @@ export async function POST(request) {
       },
     })
 
-    await setSessionCookie(token)
+    response.cookies.set({
+      name: SESSION_COOKIE_NAME,
+      value: token,
+      path: "/",
+      maxAge: SESSION_MAX_AGE_SECONDS,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.COOKIE_SECURE === "true",
+    })
+
     return response
   } catch (error) {
     console.error("Error iniciando sesion:", error)
