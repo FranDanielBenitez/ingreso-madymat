@@ -10,13 +10,13 @@ function tieneDato(value) {
 
 function PdfAction({ href, children, disabled, reason }) {
   const className = disabled
-    ? "inline-flex min-h-16 w-full cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400"
-    : "inline-flex min-h-16 w-full items-center justify-between gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3 text-left text-sm font-bold text-[#0F172A] shadow-sm transition hover:border-amber-400 hover:bg-amber-50 hover:text-amber-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:border-amber-400/50 dark:hover:bg-amber-400/10 dark:hover:text-amber-100"
+    ? "inline-flex min-h-16 w-full cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400"
+    : "inline-flex min-h-16 w-full items-center justify-between gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3 text-left text-sm font-bold text-[#0F172A] shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 focus:border-[#F3171B] focus:ring-2 focus:ring-red-100 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:border-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-50"
 
   const content = (
     <>
       <span className="inline-flex items-center gap-3">
-        <FaFilePdf className={disabled ? "text-slate-400" : "text-[#B91C1C]"} />
+        <FaFilePdf className={disabled ? "text-slate-400" : "text-[#B91C1C] dark:text-red-300"} />
         <span>{children}</span>
       </span>
       {disabled ? <FiLock /> : <FiDownload />}
@@ -96,7 +96,7 @@ export default function DocumentacionFexCard({ ingreso, tipo }) {
           </p>
         </div>
         {estadoBloqueado ? (
-          <span className="w-fit rounded-full border border-amber-300/70 bg-amber-50/70 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100">
+          <span className="w-fit rounded-full border border-amber-300/70 bg-amber-50/70 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-100">
             {tienePendientes ? "PDFs bloqueados" : "PDFs no disponibles"}
           </span>
         ) : (
@@ -109,7 +109,7 @@ export default function DocumentacionFexCard({ ingreso, tipo }) {
       <div
         className={`mt-4 rounded-xl border p-4 text-sm ${
           estadoBloqueado
-            ? "border-amber-200/80 bg-amber-50/50 text-amber-900 dark:border-amber-400/25 dark:bg-slate-800/60 dark:text-slate-200"
+            ? "border-amber-200/80 bg-amber-50/50 text-amber-900 dark:border-amber-400/20 dark:bg-slate-800/60 dark:text-slate-200"
             : "border-slate-200 bg-slate-50 text-[#475569] dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
         }`}
       >

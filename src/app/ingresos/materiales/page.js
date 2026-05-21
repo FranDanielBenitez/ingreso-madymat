@@ -9,11 +9,11 @@ import SearchableSelect, {
 } from "@/components/forms/SearchableSelect"
 
 const SECTION_CLASS = "panel-surface"
-const LABEL_CLASS = "mb-1 block font-semibold text-[#0F172A]"
+const LABEL_CLASS = "mb-1 block font-semibold text-[#0F172A] dark:text-slate-100"
 const FIELD_CLASS =
-  "w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+  "w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-red-950/40"
 const TEXTAREA_CLASS =
-  "min-h-28 w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+  "min-h-28 w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-red-950/40"
 const MODO_SUGERIDOS = "SUGERIDOS"
 const MODO_TODOS = "TODOS"
 

@@ -4,11 +4,10 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { FiCheck, FiX } from "react-icons/fi"
 
-const SECTION_CLASS =
-  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
-const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
+const SECTION_CLASS = "panel-surface"
+const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A] dark:text-slate-100"
 const FIELD_CLASS =
-  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-red-950/40"
 
 function SwitchControl({ checked, disabled, onChange, trueLabel = "Si", falseLabel = "No" }) {
   const label = checked ? trueLabel : falseLabel

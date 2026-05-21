@@ -8,10 +8,9 @@ import DocumentacionFexCard from "@/components/ingresos/DocumentacionFexCard"
 import PendientesAprobacionCard from "@/components/ingresos/PendientesAprobacionCard"
 import { articuloManualAprobado } from "@/lib/ingresos/pendientes"
 
-const SECTION_CLASS =
-  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
-const LABEL_CLASS = "text-sm font-semibold text-[#475569]"
-const VALUE_CLASS = "mt-1 text-base font-bold text-[#0F172A]"
+const SECTION_CLASS = "panel-surface"
+const LABEL_CLASS = "text-sm font-semibold text-[#475569] dark:text-slate-300"
+const VALUE_CLASS = "mt-1 text-base font-bold text-[#0F172A] dark:text-slate-100"
 
 const TITULOS_FOTO = {
   CAMION_PATENTE: "Camión / patente",
@@ -71,7 +70,7 @@ function CampoValidado({ label, original, validado }) {
       <p className={LABEL_CLASS}>{label}</p>
       <p className={VALUE_CLASS}>{mostrar(tieneValidado ? validado : original)}</p>
       {tieneValidado && mostrar(original) !== mostrar(validado) ? (
-        <p className="mt-1 text-xs font-medium text-[#64748B]">
+        <p className="mt-1 text-xs font-medium text-[#64748B] dark:text-slate-300">
           Original cargado: {mostrar(original)}
         </p>
       ) : null}
@@ -85,13 +84,13 @@ function ProveedorBadges({ ingreso }) {
 
   return (
     <div className="mb-4 flex flex-wrap gap-2">
-      <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+      <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
         Proveedor manual
       </span>
       <span className={`rounded-full border px-3 py-1 text-xs font-bold ${
         aprobado
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-amber-200 bg-amber-50 text-amber-800"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200"
+          : "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200"
       }`}>
         {aprobado ? "Validado" : "Pendiente de validar"}
       </span>
@@ -110,8 +109,8 @@ function ServicioBadges({ ingreso }) {
       </span>
       <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
         aprobado
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-amber-200 bg-amber-100/70 text-amber-800"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200"
+          : "border-amber-200 bg-amber-100/70 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200"
       }`}>
         {aprobado ? "Validado" : "Pendiente de validar"}
       </span>
@@ -130,8 +129,8 @@ function ArticuloBadges({ articulo, ingreso }) {
       </span>
       <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
         aprobado
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-amber-200 bg-amber-100/70 text-amber-800"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200"
+          : "border-amber-200 bg-amber-100/70 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200"
       }`}>
         {aprobado ? "Validado" : "Pendiente de validar"}
       </span>

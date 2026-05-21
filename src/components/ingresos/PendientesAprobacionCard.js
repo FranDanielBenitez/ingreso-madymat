@@ -324,7 +324,7 @@ export default function PendientesAprobacionCard({ ingreso, onIngresoActualizado
       </div>
 
       {!puedeAprobar ? (
-        <p className="mt-4 rounded-xl border border-amber-200/70 bg-white/70 p-4 text-sm font-semibold text-amber-900 dark:border-amber-400/20 dark:bg-slate-800/60 dark:text-slate-200">
+        <p className="mt-4 rounded-xl border border-amber-200/70 bg-white/80 p-4 text-sm font-semibold text-amber-900 dark:border-amber-400/20 dark:bg-slate-800/60 dark:text-slate-200">
           Pendiente de revision por Pago a Proveedores.
         </p>
       ) : null}
@@ -374,7 +374,7 @@ export default function PendientesAprobacionCard({ ingreso, onIngresoActualizado
                 </div>
 
                 {puedeAprobar && endpoint ? (
-                  <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/40">
+                  <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/60">
                     <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm font-bold text-[#0F172A] dark:text-slate-100">
                         Dato validado
@@ -387,7 +387,7 @@ export default function PendientesAprobacionCard({ ingreso, onIngresoActualizado
                             [key]: !prev[key],
                           }))
                         }
-                        className="w-fit text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-200"
+                        className="w-fit text-sm font-semibold text-amber-800 hover:text-amber-900 dark:text-amber-200 dark:hover:text-amber-100"
                       >
                         {manualMode[key]
                           ? "Buscar en Bejerman"

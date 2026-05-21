@@ -109,6 +109,13 @@ textarea {
   background-color: #ffffff;
 }
 
+.btn-secondary:disabled,
+.btn-primary:disabled,
+.btn-icon:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .btn-icon {
   display: inline-flex;
   align-items: center;
@@ -204,6 +211,10 @@ textarea {
   background-color: rgba(245, 158, 11, 0.12) !important;
 }
 
+.dark [class*="bg-amber-100"] {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+}
+
 .dark [class*="border-amber-200"] {
   border-color: rgba(245, 158, 11, 0.35) !important;
 }
@@ -216,6 +227,14 @@ textarea {
   border-color: rgba(248, 113, 113, 0.35) !important;
 }
 
+.dark [class*="bg-emerald-50"] {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+.dark [class*="border-emerald-200"] {
+  border-color: rgba(52, 211, 153, 0.35) !important;
+}
+
 .dark [class*="text-[#0F172A]"],
 .dark [class*="text-slate-900"],
 .dark [class*="text-slate-800"],
@@ -224,9 +243,27 @@ textarea {
 }
 
 .dark [class*="text-[#475569]"],
+.dark [class*="text-[#64748B]"],
 .dark [class*="text-slate-600"],
-.dark [class*="text-slate-500"] {
+.dark [class*="text-slate-500"],
+.dark [class*="text-slate-400"] {
   color: var(--text-muted) !important;
+}
+
+.dark [class*="text-amber-700"],
+.dark [class*="text-amber-800"],
+.dark [class*="text-amber-900"] {
+  color: #fcd34d !important;
+}
+
+.dark [class*="text-emerald-700"],
+.dark [class*="text-emerald-800"] {
+  color: #86efac !important;
+}
+
+.dark [class*="text-red-700"],
+.dark [class*="text-red-800"] {
+  color: #fca5a5 !important;
 }
 
 .dark [class*="border-[#CBD5E1]"],
@@ -244,13 +281,49 @@ textarea {
   color: #f8fafc !important;
 }
 
+.dark input:disabled,
+.dark select:disabled,
+.dark textarea:disabled {
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
+}
+
 .dark input::placeholder,
-.dark textarea::placeholder {
+.dark textarea::placeholder,
+.dark select::placeholder {
   color: #94a3b8 !important;
 }
 
 .dark table tr:hover {
   background-color: rgba(243, 23, 27, 0.12) !important;
+}
+
+.dark .btn-secondary,
+.dark .btn-icon {
+  background-color: #111827;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+.dark .btn-secondary:hover,
+.dark .btn-secondary:focus-visible,
+.dark .btn-icon:hover,
+.dark .btn-icon:focus-visible {
+  background-color: #1e293b;
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+}
+
+.dark .badge-neutral {
+  background-color: rgba(30, 41, 59, 0.75);
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.dark .badge-warning {
+  background-color: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.34);
+  color: #fcd34d;
 }
 
 .quick-access-card {

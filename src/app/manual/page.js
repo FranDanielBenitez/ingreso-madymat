@@ -23,22 +23,22 @@ const TAB_CLASS =
 
 function SeccionManual({ seccion }) {
   return (
-    <article className="rounded-2xl border border-[#CBD5E1] bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
-      <h3 className="text-lg font-black text-[#0F172A] dark:text-slate-100">
+    <article className="rounded-2xl border border-slate-300 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+      <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">
         {seccion.titulo}
       </h3>
 
       {seccion.texto ? (
-        <p className="mt-3 leading-7 text-[#475569] dark:text-slate-300">
+        <p className="mt-3 leading-7 text-slate-700 dark:text-slate-300">
           {seccion.texto}
         </p>
       ) : null}
 
       {seccion.pasos ? (
-        <ol className="mt-4 space-y-3 text-[#475569] dark:text-slate-300">
+        <ol className="mt-4 space-y-3 text-slate-700 dark:text-slate-300">
           {seccion.pasos.map((paso, index) => (
             <li key={paso} className="flex gap-3">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#CBD5E1] bg-[#F5F7FA] text-sm font-black text-[#0F172A] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-slate-300 bg-slate-50 text-sm font-black text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                 {index + 1}
               </span>
               <span className="pt-0.5 leading-6">{paso}</span>
@@ -48,7 +48,7 @@ function SeccionManual({ seccion }) {
       ) : null}
 
       {seccion.items ? (
-        <ul className="mt-4 space-y-2 text-[#475569] dark:text-slate-300">
+        <ul className="mt-4 space-y-2 text-slate-700 dark:text-slate-300">
           {seccion.items.map((item) => (
             <li key={item} className="flex gap-2 leading-6">
               <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#F3171B]" />
@@ -66,7 +66,7 @@ function PreguntasFrecuentes() {
     <section className={SECTION_CLASS}>
       <div className="flex items-center gap-2">
         <FiHelpCircle className="h-5 w-5 text-[#F3171B]" aria-hidden="true" />
-        <h2 className="text-2xl font-black text-[#0F172A] dark:text-slate-100">
+        <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100">
           Preguntas frecuentes
         </h2>
       </div>
@@ -75,15 +75,15 @@ function PreguntasFrecuentes() {
         {preguntasFrecuentesManual.map((item, index) => (
           <article
             key={item.pregunta}
-            className="rounded-2xl border border-[#CBD5E1] bg-white p-5 dark:border-slate-700 dark:bg-slate-900/70"
+            className="rounded-2xl border border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900/70"
           >
             <p className="text-sm font-black uppercase text-[#F3171B]">
               Pregunta {index + 1}
             </p>
-            <h3 className="mt-2 font-black text-[#0F172A] dark:text-slate-100">
+            <h3 className="mt-2 font-black text-slate-900 dark:text-slate-100">
               {item.pregunta}
             </h3>
-            <p className="mt-3 leading-6 text-[#475569] dark:text-slate-300">
+            <p className="mt-3 leading-6 text-slate-700 dark:text-slate-300">
               {item.respuesta}
             </p>
           </article>
@@ -155,7 +155,7 @@ export default function ManualPage() {
           <p className="text-sm font-black uppercase tracking-wide text-[#F3171B]">
             AYUDA
           </p>
-          <h1 className="mt-2 text-2xl font-black text-[#0F172A] dark:text-slate-100">
+          <h1 className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
             Cargando manual...
           </h1>
         </section>
@@ -164,7 +164,7 @@ export default function ManualPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F7FA] p-6 dark:bg-slate-950">
+    <main className="min-h-screen bg-slate-100 p-6 dark:bg-slate-950">
       <div className="mx-auto max-w-7xl space-y-6">
         <section className={SECTION_CLASS}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -173,10 +173,10 @@ export default function ManualPage() {
                 <FiBookOpen className="h-5 w-5" aria-hidden="true" />
                 {manualMeta.categoria}
               </div>
-              <h1 className="mt-2 text-3xl font-black text-[#0F172A] dark:text-slate-100">
+              <h1 className="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">
                 {manualMeta.titulo}
               </h1>
-              <p className="mt-3 text-lg leading-8 text-[#475569] dark:text-slate-300">
+              <p className="mt-3 text-lg leading-8 text-slate-700 dark:text-slate-300">
                 {manualMeta.descripcion}
               </p>
             </div>
@@ -197,7 +197,7 @@ export default function ManualPage() {
               <Link
                 key={enlace.href}
                 href={enlace.href}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#CBD5E1] bg-white px-4 py-2 text-sm font-bold text-[#0F172A] transition hover:border-[#F3171B] hover:text-[#D90F14] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-900 transition hover:border-[#F3171B] hover:text-[#D90F14] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               >
                 {enlace.label}
                 <FiExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -219,7 +219,7 @@ export default function ManualPage() {
                   className={`${TAB_CLASS} ${
                     activo
                       ? "border-[#F3171B] bg-[#F3171B] text-white"
-                      : "border-[#CBD5E1] bg-white text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      : "border-slate-300 bg-white text-slate-900 hover:border-[#F3171B] hover:text-[#D90F14] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                   }`}
                 >
                   {item.tab}
@@ -232,10 +232,10 @@ export default function ManualPage() {
             <p className="text-sm font-black uppercase tracking-wide text-[#F3171B]">
               {perfil.tab}
             </p>
-            <h2 className="mt-1 text-2xl font-black text-[#0F172A] dark:text-slate-100">
+            <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
               {perfil.titulo}
             </h2>
-            <p className="mt-2 max-w-3xl leading-7 text-[#475569] dark:text-slate-300">
+            <p className="mt-2 max-w-3xl leading-7 text-slate-700 dark:text-slate-300">
               {perfil.descripcion}
             </p>
           </div>

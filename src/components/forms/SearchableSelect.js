@@ -13,17 +13,17 @@ export function ModoBusquedaInline({ value, onChange, disabled = false }) {
   const mostrandoTodos = value === "TODOS"
 
   return (
-    <div className="flex items-center gap-1 text-xs text-[#64748B]">
+    <div className="flex items-center gap-1 text-xs text-[#64748B] dark:text-slate-300">
       <span>Mostrando:</span>
-      <span className="font-semibold text-[#0F172A]">
+      <span className="font-semibold text-[#0F172A] dark:text-slate-100">
         {mostrandoTodos ? "Todos" : "Sugeridos"}
       </span>
-      <span className="text-[#CBD5E1]">|</span>
+      <span className="text-[#CBD5E1] dark:text-slate-600">|</span>
       <button
         type="button"
         onClick={() => onChange(mostrandoTodos ? "SUGERIDOS" : "TODOS")}
         disabled={disabled}
-        className="font-semibold text-[#475569] underline-offset-4 hover:text-[#D90F14] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+        className="font-semibold text-[#475569] underline-offset-4 hover:text-[#D90F14] hover:underline disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:text-red-200"
       >
         {mostrandoTodos ? "Ver sugeridos" : "Ver todos"}
       </button>
@@ -100,7 +100,7 @@ export default function SearchableSelect({
   return (
     <div ref={wrapperRef} className="relative">
       <div className="mb-1 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <label className="font-semibold text-[#0F172A]">{label}</label>
+        <label className="font-semibold text-[#0F172A] dark:text-slate-100">{label}</label>
         {modeControl}
       </div>
 
@@ -118,7 +118,7 @@ export default function SearchableSelect({
           }}
           disabled={disabled || loading}
           placeholder={loading ? "Cargando..." : placeholder}
-          className="w-full rounded-lg border border-[#CBD5E1] bg-white p-3 pr-24 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+          className="w-full rounded-lg border border-[#CBD5E1] bg-white p-3 pr-24 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-50 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-red-950/40"
         />
 
         {selectedOption ? (
@@ -126,7 +126,7 @@ export default function SearchableSelect({
             type="button"
             onClick={limpiar}
             disabled={disabled || loading}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#64748B] hover:text-[#D90F14] disabled:cursor-not-allowed"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#64748B] hover:text-[#D90F14] disabled:cursor-not-allowed dark:text-slate-300 dark:hover:text-red-200"
           >
             Limpiar
           </button>
@@ -134,7 +134,7 @@ export default function SearchableSelect({
       </div>
 
       {open && !disabled && !loading ? (
-        <div className="absolute z-30 mt-2 max-h-72 w-full overflow-auto rounded-xl border border-[#CBD5E1] bg-white p-1 shadow-lg shadow-slate-200">
+        <div className="absolute z-30 mt-2 max-h-72 w-full overflow-auto rounded-xl border border-[#CBD5E1] bg-white p-1 shadow-lg shadow-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30">
           {resultados.length > 0 ? (
             resultados.map((option) => {
               const optionValue = getOptionValue(option)
@@ -144,14 +144,14 @@ export default function SearchableSelect({
                   key={optionValue}
                   type="button"
                   onClick={() => seleccionar(option)}
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[#0F172A] hover:bg-[#F5F7FA]"
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[#0F172A] hover:bg-[#F5F7FA] dark:text-slate-100 dark:hover:bg-slate-800"
                 >
                   {getOptionLabel(option)}
                 </button>
               )
             })
           ) : (
-            <p className="px-3 py-2 text-sm text-[#64748B]">{emptyText}</p>
+            <p className="px-3 py-2 text-sm text-[#64748B] dark:text-slate-300">{emptyText}</p>
           )}
         </div>
       ) : null}

@@ -4,13 +4,12 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
-const SECTION_CLASS =
-  "rounded-2xl border border-[#CBD5E1] bg-white p-6 shadow-sm shadow-slate-200/70"
-const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A]"
+const SECTION_CLASS = "panel-surface"
+const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A] dark:text-slate-100"
 const FIELD_CLASS =
-  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+  "w-full rounded-lg border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-red-950/40"
 const FIELD_COMPACT_CLASS =
-  "w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+  "w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-red-950/40"
 
 const ROLES = [
   { value: "DATA_ENTRY", label: "Data Entry" },
@@ -41,7 +40,7 @@ function RolesCheckboxes({ value, onChange, compact = false, columns = 2 }) {
       {ROLES.map((rol) => (
         <label
           key={rol.value}
-          className={`inline-flex items-center gap-2 rounded-lg border border-[#CBD5E1] bg-white font-semibold text-[#0F172A] ${
+          className={`inline-flex items-center gap-2 rounded-lg border border-[#CBD5E1] bg-white font-semibold text-[#0F172A] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 ${
             compact ? "px-2.5 py-2 text-xs" : "px-3 py-2 text-sm"
           }`}
         >
