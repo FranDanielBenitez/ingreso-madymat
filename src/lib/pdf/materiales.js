@@ -5,6 +5,7 @@ import {
   obtenerMotivosPendientes,
   tienePendientesSinAprobar,
 } from "@/lib/ingresos/pendientes"
+import { mostrarTipoUnidadLogistica } from "@/lib/ingresos/unidad-logistica"
 
 const PDF_CONFIG = {
   proveedor: {
@@ -119,6 +120,10 @@ function dataProveedor(ingreso) {
     numeroComprobante: mostrar(ingreso.remitoProveedor),
     fechaEmision: formatFecha(ingreso.fechaIngreso),
     procedencia: mostrar(ingreso.procedencia?.nombre),
+    observaciones: mostrar(ingreso.observaciones),
+    tipoUnidadLogistica: mostrarTipoUnidadLogistica(
+      ingreso.tipoUnidadLogistica
+    ),
     items,
   }
 }
@@ -142,6 +147,10 @@ function dataFletero(ingreso) {
     numeroComprobante: mostrar(ingreso.remitoProveedor),
     fechaEmision: formatFecha(ingreso.fechaIngreso),
     procedencia: mostrar(ingreso.procedencia?.nombre),
+    observaciones: mostrar(ingreso.observaciones),
+    tipoUnidadLogistica: mostrarTipoUnidadLogistica(
+      ingreso.tipoUnidadLogistica
+    ),
     codigoArticulo: "FLETEMAT",
     proveedorMaterialProcedencia: `${proveedorNombre} - ${ingreso.procedencia.nombre}`,
     cantidad: "1",

@@ -7,6 +7,7 @@ import EditarIngresoPanel from "@/components/forms/EditarIngresoPanel"
 import DocumentacionFexCard from "@/components/ingresos/DocumentacionFexCard"
 import PendientesAprobacionCard from "@/components/ingresos/PendientesAprobacionCard"
 import { articuloManualAprobado } from "@/lib/ingresos/pendientes"
+import { mostrarTipoUnidadLogistica } from "@/lib/ingresos/unidad-logistica"
 
 const SECTION_CLASS = "panel-surface"
 const LABEL_CLASS = "text-sm font-semibold text-[#475569] dark:text-slate-300"
@@ -806,6 +807,10 @@ export default function DetalleIngresoMaterialesPage() {
           <ServicioBadges ingreso={ingreso} />
           <div className="grid gap-4 md:grid-cols-3">
             <Campo label="Tipo servicio" value={ingreso.tipoServicioLogistico} />
+            <Campo
+              label="Tipo de unidad"
+              value={mostrarTipoUnidadLogistica(ingreso.tipoUnidadLogistica)}
+            />
             <CampoValidado
               label="Servicio logistico"
               original={ingreso.servicioNombreCargado}

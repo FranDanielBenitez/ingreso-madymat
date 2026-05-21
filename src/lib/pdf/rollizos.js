@@ -5,6 +5,7 @@ import {
   obtenerMotivosPendientes,
   tienePendientesSinAprobar,
 } from "@/lib/ingresos/pendientes"
+import { mostrarTipoUnidadLogistica } from "@/lib/ingresos/unidad-logistica"
 
 const PDF_CONFIG = {
   proveedor: {
@@ -138,6 +139,10 @@ function dataPorTipo(ingreso, tipoPdf) {
     cantidad: formatCantidad(articulo?.cantidad),
     unidad: mostrar(articulo?.unidad),
     procedencia: mostrar(ingreso.procedencia?.nombre),
+    observaciones: mostrar(ingreso.observaciones),
+    tipoUnidadLogistica: mostrarTipoUnidadLogistica(
+      ingreso.tipoUnidadLogistica
+    ),
   }
 }
 

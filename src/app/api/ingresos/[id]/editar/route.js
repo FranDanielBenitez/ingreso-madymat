@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth"
 import { crearDetalleLog } from "@/lib/ingresos/logs"
+import {
+  mostrarTipoUnidadLogistica,
+  normalizarTipoUnidadLogistica,
+} from "@/lib/ingresos/unidad-logistica"
 
 const INCLUDE_INGRESO = {
   articulos: {
@@ -182,6 +186,20 @@ export async function PATCH(request, context) {
     const patenteAcoplado =
       limpiarTexto(body?.patenteAcoplado)?.toUpperCase() || null
     const observaciones = limpiarTexto(body?.observaciones)
+    const tipoUnidadLogistica = normalizarTipoUnidadLogistica(
+      body?.tipoUnidadLogistica
+    )
+
+    if (!tipoUnidadLogistica) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "Debe seleccionar si el viaje corresponde a Chasis o Equipo.",
+        },
+        { status: 400 }
+      )
+    }
+
     const ingresoData = {}
     const articuloData = {}
     const cambios = []
@@ -275,6 +293,19 @@ export async function PATCH(request, context) {
         "Observaciones",
         ingresoExistente.observaciones,
         observaciones
+      )
+    }
+
+    if (
+      textoComparacion(ingresoExistente.tipoUnidadLogistica) !==
+      textoComparacion(tipoUnidadLogistica)
+    ) {
+      ingresoData.tipoUnidadLogistica = tipoUnidadLogistica
+      agregarCambio(
+        cambios,
+        "Tipo de unidad",
+        mostrarTipoUnidadLogistica(ingresoExistente.tipoUnidadLogistica),
+        mostrarTipoUnidadLogistica(tipoUnidadLogistica)
       )
     }
 

@@ -274,6 +274,7 @@ export default function IngresoMaterialesPage() {
       horaIngreso: horaActual(),
       tipoServicio: "FLETERO",
       tipoChofer: "EXTERNO",
+      tipoUnidadLogistica: "",
       procedenciaId: "",
     },
   })
@@ -739,6 +740,7 @@ export default function IngresoMaterialesPage() {
       horaIngreso: horaActual(),
       tipoServicio: "FLETERO",
       tipoChofer: "EXTERNO",
+      tipoUnidadLogistica: "",
       procedenciaId: "",
     })
     setArticulosPorCategoria({})
@@ -834,6 +836,13 @@ export default function IngresoMaterialesPage() {
 
     if (tipoChofer === "EXTERNO" && !String(values.choferNombreExterno || "").trim()) {
       toast.error("El nombre del chofer externo es obligatorio")
+      return
+    }
+
+    if (!["CHASIS", "EQUIPO"].includes(values.tipoUnidadLogistica)) {
+      toast.error(
+        "No se puede guardar: debe seleccionar si corresponde a Chasis o Equipo."
+      )
       return
     }
 
@@ -1462,6 +1471,29 @@ export default function IngresoMaterialesPage() {
                 <option value="FLETERO">Fletero</option>
                 <option value="TRANSPORTE">Transporte</option>
               </select>
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>Tipo de unidad logistica *</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "CHASIS", label: "Chasis" },
+                  { value: "EQUIPO", label: "Equipo" },
+                ].map((item) => (
+                  <label
+                    key={item.value}
+                    className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#CBD5E1] bg-white px-4 py-3 text-sm font-bold text-[#0F172A] transition hover:border-[#F3171B] has-[:checked]:border-[#F3171B] has-[:checked]:bg-red-50 has-[:checked]:text-[#D90F14] dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:has-[:checked]:bg-red-950/30"
+                  >
+                    <input
+                      type="radio"
+                      value={item.value}
+                      {...register("tipoUnidadLogistica")}
+                      className="h-4 w-4 accent-[#F3171B]"
+                    />
+                    {item.label}
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div>

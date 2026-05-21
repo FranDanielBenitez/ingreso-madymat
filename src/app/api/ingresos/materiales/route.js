@@ -6,6 +6,10 @@ import { getCurrentUser } from "@/lib/auth"
 import { canCreateIngreso } from "@/lib/auth/permissions"
 import { obtenerSiguienteNumeroViaje } from "@/lib/ingresos/numero-viaje"
 import { crearDetalleLog } from "@/lib/ingresos/logs"
+import {
+  mostrarTipoUnidadLogistica,
+  normalizarTipoUnidadLogistica,
+} from "@/lib/ingresos/unidad-logistica"
 
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
@@ -284,6 +288,20 @@ export async function POST(request) {
       )
     }
 
+    const tipoUnidadLogistica = normalizarTipoUnidadLogistica(
+      body.tipoUnidadLogistica
+    )
+
+    if (!tipoUnidadLogistica) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "Debe seleccionar si el viaje corresponde a Chasis o Equipo.",
+        },
+        { status: 400 }
+      )
+    }
+
     if (!Number.isInteger(procedenciaId) || procedenciaId <= 0) {
       return NextResponse.json(
         { ok: false, message: "La procedencia es obligatoria" },
@@ -450,6 +468,7 @@ export async function POST(request) {
 
         remitoProveedor,
         observaciones: limpiarTexto(body.observaciones),
+        tipoUnidadLogistica,
 
         proveedorOrigenDato: proveedorCargaManual ? "MANUAL" : "BEJERMAN",
         proveedorCodigoBejerman: proveedorCargaManual
@@ -603,7 +622,9 @@ export async function POST(request) {
               "registro ingreso de Materiales",
               `Remito: ${remitoProveedor || "-"}. Viaje: #${
                 viaje.numeroViaje || "-"
-              }. Portero: ${
+              }. Tipo de unidad: ${mostrarTipoUnidadLogistica(
+                tipoUnidadLogistica
+              )}. Portero: ${
                 portero?.NombreCompleto || "Sin portero informado"
               }. Items cargados: ${items.length}.${
                 proveedorCargaManual || servicioCargaManual || itemsManuales > 0

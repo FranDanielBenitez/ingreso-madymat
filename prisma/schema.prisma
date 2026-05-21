@@ -86,6 +86,7 @@ model Ingreso {
   procedenciaId             Int?                   @map("procedencia_id")
   remitoProveedor           String?                @map("remito_proveedor")
   observaciones             String?
+  tipoUnidadLogistica       String?                @map("tipo_unidad_logistica")
   proveedorOrigenDato       OrigenDato             @default(BEJERMAN) @map("proveedor_origen_dato")
   proveedorCodigoBejerman   String?                @map("proveedor_codigo_bejerman")
   proveedorNombreCargado    String                 @map("proveedor_nombre_cargado")

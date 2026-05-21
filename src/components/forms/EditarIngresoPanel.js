@@ -32,6 +32,7 @@ export default function EditarIngresoPanel({
     unidad: valorInicial(articulo?.unidad),
     patenteCamion: valorInicial(ingreso.patenteCamion),
     patenteAcoplado: valorInicial(ingreso.patenteAcoplado),
+    tipoUnidadLogistica: valorInicial(ingreso.tipoUnidadLogistica),
     observaciones: valorInicial(ingreso.observaciones),
     choferNombreCargado: valorInicial(ingreso.choferNombreCargado),
     choferDocumentoCargado: valorInicial(ingreso.choferDocumentoCargado),
@@ -109,6 +110,11 @@ export default function EditarIngresoPanel({
       return
     }
 
+    if (!["CHASIS", "EQUIPO"].includes(values.tipoUnidadLogistica)) {
+      toast.error("Debe seleccionar si el viaje corresponde a Chasis o Equipo.")
+      return
+    }
+
     try {
       setGuardando(true)
 
@@ -117,6 +123,7 @@ export default function EditarIngresoPanel({
         remitoProveedor: values.remitoProveedor,
         patenteCamion: values.patenteCamion,
         patenteAcoplado: values.patenteAcoplado,
+        tipoUnidadLogistica: values.tipoUnidadLogistica,
         observaciones: values.observaciones,
         choferNombreCargado: values.choferNombreCargado,
         choferDocumentoCargado: values.choferDocumentoCargado,
@@ -265,6 +272,20 @@ export default function EditarIngresoPanel({
             onChange={actualizarCampo}
             className={`${FIELD_CLASS} uppercase`}
           />
+        </label>
+
+        <label>
+          <span className={LABEL_CLASS}>Tipo de unidad *</span>
+          <select
+            name="tipoUnidadLogistica"
+            value={values.tipoUnidadLogistica}
+            onChange={actualizarCampo}
+            className={FIELD_CLASS}
+          >
+            <option value="">Seleccionar unidad</option>
+            <option value="CHASIS">Chasis</option>
+            <option value="EQUIPO">Equipo</option>
+          </select>
         </label>
 
         {choferManual ? (

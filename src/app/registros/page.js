@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { mostrarTipoUnidadLogistica } from "@/lib/ingresos/unidad-logistica"
 
 const SECTION_CLASS = "panel-surface"
 const LABEL_CLASS = "mb-1 block text-sm font-semibold text-[#0F172A] dark:text-slate-100"
@@ -603,6 +604,10 @@ export default function RegistrosPage() {
                         <p>
                           <span className="font-semibold">Patente:</span>{" "}
                           {mostrar(registro.patenteCamion)}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Unidad:</span>{" "}
+                          {mostrarTipoUnidadLogistica(registro.tipoUnidadLogistica)}
                         </p>
                       </div>
 
