@@ -52,6 +52,27 @@ function articuloDescripcionPdf(articulo) {
   )
 }
 
+function porcentajePdf(articulo, totalArticulos) {
+  const value = articulo?.porcentajeParticipacion
+
+  if ((value === null || value === undefined || value === "") && totalArticulos === 1) {
+    return "100%"
+  }
+
+  if (value === null || value === undefined || value === "") {
+    return "-"
+  }
+
+  const numero = Number(value)
+
+  if (Number.isNaN(numero)) return `${value}%`
+
+  return `${new Intl.NumberFormat("es-AR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(numero)}%`
+}
+
 function formatFecha(value) {
   if (!value) return "-"
 
@@ -75,16 +96,53 @@ function formatCantidad(value) {
   }).format(numero)
 }
 
-function validarMinimos(ingreso) {
-  const articulo = ingreso.articulos?.[0]
+function unidadTotalViaje(articulos) {
+  const unidades = [
+    ...new Set(
+      articulos
+        .map((articulo) => articulo.unidad)
+        .filter((unidad) => unidad !== null && unidad !== undefined && unidad !== "")
+    ),
+  ]
 
+  return unidades.length === 1 ? unidades[0] : "-"
+}
+
+function totalCantidadArticulos(articulos) {
+  return articulos.reduce((total, articulo) => {
+    const cantidad = Number(articulo.cantidad)
+    return Number.isNaN(cantidad) ? total : total + cantidad
+  }, 0)
+}
+
+function itemsPdf(ingreso) {
+  const articulos = ingreso.articulos || []
+
+  return articulos.map((articulo) => {
+    if (articuloDescripcionPdf(articulo) === "-" || !articulo?.cantidad || !articulo?.unidad) {
+      throw pdfError(400, "Faltan datos m\u00ednimos para generar el PDF")
+    }
+
+    return {
+      codigoArticulo: mostrar(articuloCodigoPdf(articulo)),
+      descripcionArticulo: mostrar(articuloDescripcionPdf(articulo)),
+      porcentaje: porcentajePdf(articulo, articulos.length),
+      cantidad: formatCantidad(articulo.cantidad),
+      unidad: mostrar(articulo.unidad),
+    }
+  })
+}
+
+function validarMinimos(ingreso) {
   if (!ingreso.remitoProveedor || !ingreso.fechaIngreso || !ingreso.procedencia?.nombre) {
     throw pdfError(400, "Faltan datos m\u00ednimos para generar el PDF")
   }
 
-  if (articuloDescripcionPdf(articulo) === "-" || !articulo?.cantidad || !articulo?.unidad) {
-    throw pdfError(400, "Faltan datos m\u00ednimos para generar el PDF")
+  if (!ingreso.articulos?.length) {
+    throw pdfError(400, "No hay articulos asociados al ingreso")
   }
+
+  itemsPdf(ingreso)
 }
 
 function emisorPorTipo(ingreso, tipoPdf) {
@@ -127,22 +185,22 @@ function emisorPorTipo(ingreso, tipoPdf) {
 
 function dataPorTipo(ingreso, tipoPdf) {
   const config = PDF_CONFIG[tipoPdf]
-  const articulo = ingreso.articulos?.[0]
+  const articulos = ingreso.articulos || []
+  const items = itemsPdf(ingreso)
 
   return {
     ...emisorPorTipo(ingreso, tipoPdf),
     descripcionComprobante: config.descripcion,
     numeroComprobante: mostrar(ingreso.remitoProveedor),
     fechaEmision: formatFecha(ingreso.fechaIngreso),
-    codigoArticulo: mostrar(articuloCodigoPdf(articulo)),
-    descripcionArticulo: mostrar(articuloDescripcionPdf(articulo)),
-    cantidad: formatCantidad(articulo?.cantidad),
-    unidad: mostrar(articulo?.unidad),
+    cantidadTotalViaje: formatCantidad(totalCantidadArticulos(articulos)),
+    unidadTotalViaje: mostrar(unidadTotalViaje(articulos)),
     procedencia: mostrar(ingreso.procedencia?.nombre),
     observaciones: mostrar(ingreso.observaciones),
     tipoUnidadLogistica: mostrarTipoUnidadLogistica(
       ingreso.tipoUnidadLogistica
     ),
+    items,
   }
 }
 
