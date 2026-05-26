@@ -190,6 +190,7 @@ export default function IngresoRollizosPage() {
   const procedenciaId = watch("procedenciaId")
   const tipoServicio = watch("tipoServicio")
   const tipoChofer = watch("tipoChofer")
+  const servicioPropio = tipoServicio === "PROPIO"
   const fotoCamionPatente = watch("fotoCamionPatente")
   const fotoMaterialCargado = watch("fotoMaterialCargado")
   const fotoRemitoFisico = watch("fotoRemitoFisico")
@@ -544,6 +545,15 @@ export default function IngresoRollizosPage() {
   useEffect(() => {
     if (!tipoServicio) return
 
+    if (tipoServicio === "PROPIO") {
+      setServicioCargaManual(false)
+      setServicios([])
+      setValue("servicioCodigo", "")
+      setValue("tipoChofer", "INTERNO")
+      setDimensionError("servicios", "")
+      return
+    }
+
     cargarServiciosPorTipo(tipoServicio)
   }, [tipoServicio, modoServicio])
 
@@ -685,22 +695,35 @@ export default function IngresoRollizosPage() {
         return
       }
 
-      if (servicioCargaManual && !String(values.servicioManualNombre || "").trim()) {
+      if (
+        !servicioPropio &&
+        servicioCargaManual &&
+        !String(values.servicioManualNombre || "").trim()
+      ) {
         toast.error("El nombre del servicio manual es obligatorio")
         return
       }
 
-      if (!servicioCargaManual && !servicioSeleccionado) {
+      if (!servicioPropio && !servicioCargaManual && !servicioSeleccionado) {
         toast.error("No se pudo seleccionar servicio. Reintenta la carga de datos.")
         return
       }
 
-      if (tipoChofer === "INTERNO" && !choferSeleccionado) {
+      if (servicioPropio && !String(values.choferNombreExterno || "").trim()) {
+        toast.error("Debe ingresar el chofer o responsable del traslado propio.")
+        return
+      }
+
+      if (!servicioPropio && tipoChofer === "INTERNO" && !choferSeleccionado) {
         toast.error("Debes seleccionar un chofer interno")
         return
       }
 
-      if (tipoChofer === "EXTERNO" && !String(values.choferNombreExterno || "").trim()) {
+      if (
+        !servicioPropio &&
+        tipoChofer === "EXTERNO" &&
+        !String(values.choferNombreExterno || "").trim()
+      ) {
         toast.error("El nombre del chofer externo es obligatorio")
         return
       }
@@ -739,8 +762,9 @@ export default function IngresoRollizosPage() {
           observacion: values.articuloManualObservacion || "",
         },
         articuloModoBusqueda: modoArticulo,
-        servicioCargaManual,
-        servicioSeleccionado: servicioCargaManual ? null : servicioSeleccionado,
+        servicioCargaManual: servicioPropio ? false : servicioCargaManual,
+        servicioSeleccionado:
+          servicioPropio || servicioCargaManual ? null : servicioSeleccionado,
         servicioManual: {
           nombre: values.servicioManualNombre || "",
           cuit: values.servicioManualCuit || "",
@@ -757,7 +781,7 @@ export default function IngresoRollizosPage() {
         },
         hachadorModoBusqueda: modoHachador,
         choferSeleccionado:
-          tipoChofer === "INTERNO" ? choferSeleccionado : null,
+          !servicioPropio && tipoChofer === "INTERNO" ? choferSeleccionado : null,
         porteroSeleccionado,
         procedenciaId: procedenciaSeleccionada.id,
         procedenciaSeleccionada,
@@ -1231,6 +1255,7 @@ export default function IngresoRollizosPage() {
               >
                 <option value="FLETERO">Fletero</option>
                 <option value="TRANSPORTE">Transporte</option>
+                <option value="PROPIO">Propio</option>
               </select>
             </div>
 
@@ -1257,6 +1282,12 @@ export default function IngresoRollizosPage() {
               </div>
             </div>
 
+            {servicioPropio ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-[#475569] dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 md:col-span-2">
+                Usar esta opciÃ³n cuando el traslado sea realizado por personal
+                o vehÃ­culo propio de la empresa.
+              </div>
+            ) : (
             <div>
               <input type="hidden" {...register("servicioCodigo")} />
               {servicioCargaManual ? (
@@ -1356,7 +1387,9 @@ export default function IngresoRollizosPage() {
                 </>
               )}
             </div>
+            )}
 
+            {!servicioPropio ? (
             <div>
               <label className={LABEL_CLASS}>Tipo de chofer *</label>
               <select
@@ -1367,8 +1400,19 @@ export default function IngresoRollizosPage() {
                 <option value="EXTERNO">Externo</option>
               </select>
             </div>
+            ) : null}
 
-            {tipoChofer === "INTERNO" ? (
+            {servicioPropio ? (
+              <div className="md:col-span-2">
+                <label className={LABEL_CLASS}>Chofer / Responsable *</label>
+                <input
+                  type="text"
+                  {...register("choferNombreExterno")}
+                  className={FIELD_CLASS}
+                  placeholder="Nombre del empleado o responsable del traslado"
+                />
+              </div>
+            ) : tipoChofer === "INTERNO" ? (
               <div>
                 <label className={LABEL_CLASS}>Chofer interno</label>
                 <select

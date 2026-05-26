@@ -6,6 +6,10 @@ export const TIPOS_PENDIENTE = {
   FUERA_SUGERIDO: "fueraSugerido",
 }
 
+function esServicioPropio(ingreso) {
+  return String(ingreso?.tipoServicioLogistico || "").toUpperCase() === "PROPIO"
+}
+
 const MOTIVOS = {
   [TIPOS_PENDIENTE.PROVEEDOR]: "Proveedor pendiente de aprobacion",
   [TIPOS_PENDIENTE.SERVICIO]: "Servicio logistico pendiente de aprobacion",
@@ -72,6 +76,7 @@ export function obtenerPendientesDetalle(ingreso) {
   }
 
   if (
+    !esServicioPropio(ingreso) &&
     tieneDatoManualORevision({
       cargaManual: ingreso.servicioCargaManual,
       fueraSugerido: ingreso.servicioFueraSugerido,

@@ -288,6 +288,7 @@ export default function IngresoMaterialesPage() {
     name: "tipoServicio",
     defaultValue: "FLETERO",
   })
+  const servicioPropio = tipoServicio === "PROPIO"
   const tipoChofer = useWatch({
     control,
     name: "tipoChofer",
@@ -489,6 +490,17 @@ export default function IngresoMaterialesPage() {
 
   useEffect(() => {
     async function cargarServicios() {
+      if (tipoServicio === "PROPIO") {
+        setLoadingLogistica(false)
+        setServicioCargaManual(false)
+        setServicios([])
+        setValue("servicioCodigo", "")
+        setValue("tipoChofer", "INTERNO")
+        setErrorLogistica("")
+        setDimensionError("servicios", "")
+        return
+      }
+
       setLoadingLogistica(true)
       setErrorLogistica("")
       setValue("servicioCodigo", "")
@@ -824,17 +836,35 @@ export default function IngresoMaterialesPage() {
       return
     }
 
-    if (!servicioCargaManual && !servicioSeleccionado) {
+    if (
+      !servicioPropio &&
+      servicioCargaManual &&
+      !String(values.servicioManualNombre || "").trim()
+    ) {
+      toast.error("El nombre del servicio manual es obligatorio")
+      return
+    }
+
+    if (!servicioPropio && !servicioCargaManual && !servicioSeleccionado) {
       toast.error("No se pudo seleccionar servicio. Reintenta la carga de datos.")
       return
     }
 
-    if (tipoChofer === "INTERNO" && !choferSeleccionado) {
+    if (servicioPropio && !String(values.choferNombreExterno || "").trim()) {
+      toast.error("Debe ingresar el chofer o responsable del traslado propio.")
+      return
+    }
+
+    if (!servicioPropio && tipoChofer === "INTERNO" && !choferSeleccionado) {
       toast.error("Debes seleccionar un chofer interno")
       return
     }
 
-    if (tipoChofer === "EXTERNO" && !String(values.choferNombreExterno || "").trim()) {
+    if (
+      !servicioPropio &&
+      tipoChofer === "EXTERNO" &&
+      !String(values.choferNombreExterno || "").trim()
+    ) {
       toast.error("El nombre del chofer externo es obligatorio")
       return
     }
@@ -895,8 +925,9 @@ export default function IngresoMaterialesPage() {
         },
         proveedorModoBusqueda: modoProveedor,
         items: itemsPreparados,
-        servicioCargaManual,
-        servicioSeleccionado: servicioCargaManual ? null : servicioSeleccionado,
+        servicioCargaManual: servicioPropio ? false : servicioCargaManual,
+        servicioSeleccionado:
+          servicioPropio || servicioCargaManual ? null : servicioSeleccionado,
         servicioManual: {
           nombre: values.servicioManualNombre || "",
           cuit: values.servicioManualCuit || "",
@@ -904,7 +935,7 @@ export default function IngresoMaterialesPage() {
         },
         servicioModoBusqueda: modoServicio,
         choferSeleccionado:
-          tipoChofer === "INTERNO" ? choferSeleccionado : null,
+          !servicioPropio && tipoChofer === "INTERNO" ? choferSeleccionado : null,
         porteroSeleccionado,
         fotosRegistro: {
           camionPatente: metadataArchivo(fotoCamionPatenteFile),
@@ -1470,6 +1501,7 @@ export default function IngresoMaterialesPage() {
               <select {...register("tipoServicio")} className={FIELD_CLASS}>
                 <option value="FLETERO">Fletero</option>
                 <option value="TRANSPORTE">Transporte</option>
+                <option value="PROPIO">Propio</option>
               </select>
             </div>
 
@@ -1496,6 +1528,12 @@ export default function IngresoMaterialesPage() {
               </div>
             </div>
 
+            {servicioPropio ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-[#475569] dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 md:col-span-2">
+                Usar esta opcion cuando el traslado sea realizado por personal
+                o vehiculo propio de la empresa.
+              </div>
+            ) : (
             <div>
               <input type="hidden" {...register("servicioCodigo")} />
               {servicioCargaManual ? (
@@ -1595,7 +1633,9 @@ export default function IngresoMaterialesPage() {
                 </>
               )}
             </div>
+            )}
 
+            {!servicioPropio ? (
             <div>
               <label className={LABEL_CLASS}>Tipo de chofer *</label>
               <select {...register("tipoChofer")} className={FIELD_CLASS}>
@@ -1603,8 +1643,19 @@ export default function IngresoMaterialesPage() {
                 <option value="EXTERNO">Externo</option>
               </select>
             </div>
+            ) : null}
 
-            {tipoChofer === "INTERNO" ? (
+            {servicioPropio ? (
+              <div className="md:col-span-2">
+                <label className={LABEL_CLASS}>Chofer / Responsable *</label>
+                <input
+                  type="text"
+                  {...register("choferNombreExterno")}
+                  className={FIELD_CLASS}
+                  placeholder="Nombre del empleado o responsable del traslado"
+                />
+              </div>
+            ) : tipoChofer === "INTERNO" ? (
               <div>
                 <label className={LABEL_CLASS}>Chofer interno</label>
                 <select {...register("choferLegajo")} className={FIELD_CLASS}>

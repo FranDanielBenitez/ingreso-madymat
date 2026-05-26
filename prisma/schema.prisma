@@ -254,6 +254,7 @@ enum OrigenDato {
 enum TipoServicioLogistico {
   FLETERO
   TRANSPORTE
+  PROPIO
 }
 
 enum TipoChofer {
