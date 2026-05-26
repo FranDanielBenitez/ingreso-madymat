@@ -1196,8 +1196,8 @@ export default function IngresoRollizosPage() {
             Proveedor y material
           </h2>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className={proveedorCargaManual ? "md:col-span-2" : ""}>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <div className="lg:col-span-6">
               <input
                 type="hidden"
                 {...register("proveedorCodigo")}
@@ -1300,7 +1300,7 @@ export default function IngresoRollizosPage() {
               )}
             </div>
 
-            <div>
+            <div className="lg:col-span-4">
               <label className={LABEL_CLASS}>Cantidad total viaje *</label>
               <input
                 type="text"
@@ -1310,7 +1310,7 @@ export default function IngresoRollizosPage() {
               />
             </div>
 
-            <div>
+            <div className="lg:col-span-2">
               <label className={LABEL_CLASS}>Unidad total *</label>
               <input
                 type="text"
@@ -1320,28 +1320,8 @@ export default function IngresoRollizosPage() {
               />
             </div>
 
-            <div className="md:col-span-2">
-              <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-sm text-[#475569] dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={multiplesArticulos}
-                  onChange={(event) => cambiarMultiplesArticulos(event.target.checked)}
-                  className="mt-1 h-4 w-4 accent-[#F3171B]"
-                />
-                <span>
-                  <span className="block font-bold text-[#0F172A] dark:text-slate-100">
-                    La carga contiene mas de un articulo
-                  </span>
-                  <span>
-                    Use esta opcion cuando un mismo viaje incluya mas de un tipo
-                    de rollizo.
-                  </span>
-                </span>
-              </label>
-            </div>
-
             {!multiplesArticulos ? (
-              <div className={articuloCargaManual ? "md:col-span-2" : ""}>
+              <div className="lg:col-span-6">
                 <input
                   type="hidden"
                   {...register("articuloCodigo")}
@@ -1437,8 +1417,36 @@ export default function IngresoRollizosPage() {
                   </>
                 )}
               </div>
-            ) : (
-              <div className="md:col-span-2">
+            ) : null}
+
+            <div
+              className={
+                multiplesArticulos
+                  ? "lg:col-span-6 lg:col-start-7"
+                  : "lg:col-span-6"
+              }
+            >
+              <label className="flex min-h-[92px] cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-sm text-[#475569] transition hover:border-slate-300 hover:bg-white dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-900">
+                <input
+                  type="checkbox"
+                  checked={multiplesArticulos}
+                  onChange={(event) => cambiarMultiplesArticulos(event.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-[#F3171B]"
+                />
+                <span className="min-w-0">
+                  <span className="block font-bold text-[#0F172A] dark:text-slate-100">
+                    La carga contiene más de un artículo
+                  </span>
+                  <span className="mt-1 block leading-relaxed">
+                    Use esta opción cuando un mismo viaje incluya más de un tipo
+                    de rollizo.
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            {multiplesArticulos ? (
+              <div className="lg:col-span-12">
                 <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-900/40">
                   {itemsRollizos.map((item, index) => {
                     const articuloItem = articulos.find(
@@ -1630,7 +1638,7 @@ export default function IngresoRollizosPage() {
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </section>
 

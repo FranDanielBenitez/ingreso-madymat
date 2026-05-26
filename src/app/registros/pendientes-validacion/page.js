@@ -412,7 +412,7 @@ export default function PendientesValidacionPage() {
             </div>
 
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-600 dark:text-slate-300">
                 {itemsPorPagina === "TODOS"
                   ? "Mostrando todos los pendientes"
                   : `Mostrando ${
@@ -631,7 +631,7 @@ export default function PendientesValidacionPage() {
               </div>
 
               <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-600 dark:text-slate-300">
                   {itemsPorPagina === "TODOS"
                     ? "Mostrando todos los pendientes"
                     : `Mostrando ${
@@ -648,13 +648,13 @@ export default function PendientesValidacionPage() {
                       disabled={paginaActualValida === 1}
                       className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
                         paginaActualValida === 1
-                          ? "border-slate-200 bg-slate-100 text-slate-500"
-                          : "border-[#CBD5E1] bg-white text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+                          ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500"
+                          : "border-slate-300 bg-white text-slate-800 hover:border-[#F3171B] hover:text-[#D90F14] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-red-400 dark:hover:text-red-300"
                       }`}
                     >
                       Anterior
                     </button>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                       Página {paginaActualValida} de {totalPaginas}
                     </span>
                     <button
@@ -663,8 +663,8 @@ export default function PendientesValidacionPage() {
                       disabled={paginaActualValida === totalPaginas}
                       className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
                         paginaActualValida === totalPaginas
-                          ? "border-slate-200 bg-slate-100 text-slate-500"
-                          : "border-[#CBD5E1] bg-white text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14]"
+                          ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500"
+                          : "border-slate-300 bg-white text-slate-800 hover:border-[#F3171B] hover:text-[#D90F14] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-red-400 dark:hover:text-red-300"
                       }`}
                     >
                       Siguiente
