@@ -1284,8 +1284,8 @@ export default function IngresoRollizosPage() {
 
             {servicioPropio ? (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-[#475569] dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 md:col-span-2">
-                Usar esta opciÃ³n cuando el traslado sea realizado por personal
-                o vehÃ­culo propio de la empresa.
+                Usar esta opción cuando el traslado sea realizado por personal
+                o vehículo propio de la empresa.
               </div>
             ) : (
             <div>

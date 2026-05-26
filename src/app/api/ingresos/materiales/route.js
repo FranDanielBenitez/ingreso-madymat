@@ -280,6 +280,11 @@ export async function POST(request) {
     const chofer = body.choferSeleccionado
     const portero = body.porteroSeleccionado
     const remitoProveedor = limpiarTexto(body.remitoProveedor)
+    const tipoServicioLogistico = limpiarTexto(body.tipoServicio)
+    const servicioPropio = tipoServicioLogistico === "PROPIO"
+    const servicioCargaManualEfectivo = servicioPropio ? false : servicioCargaManual
+    const servicioFueraSugeridoEfectivo = servicioPropio ? false : servicioCargaManual
+    const choferResponsablePropio = limpiarTexto(body.choferNombreExterno)
 
     if (!remitoProveedor) {
       return NextResponse.json(
@@ -341,14 +346,24 @@ export async function POST(request) {
       )
     }
 
-    if (servicioCargaManual && !servicioManualNombre) {
+    if (servicioPropio && !choferResponsablePropio) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "Debe ingresar el chofer o responsable del traslado propio.",
+        },
+        { status: 400 }
+      )
+    }
+
+    if (!servicioPropio && servicioCargaManual && !servicioManualNombre) {
       return NextResponse.json(
         { ok: false, message: "Debe indicar el nombre del servicio manual" },
         { status: 400 }
       )
     }
 
-    if (!servicioCargaManual && !servicio) {
+    if (!servicioPropio && !servicioCargaManual && !servicio) {
       return NextResponse.json(
         { ok: false, message: "Debe seleccionar un servicio logistico" },
         { status: 400 }
@@ -415,13 +430,17 @@ export async function POST(request) {
       }
     }
 
-    if (!servicioCargaManual && body.servicioModoBusqueda === "TODOS") {
+    if (
+      !servicioPropio &&
+      !servicioCargaManual &&
+      body.servicioModoBusqueda === "TODOS"
+    ) {
       detallesModoBusqueda.push(
         "Servicio logistico seleccionado desde modo Todos."
       )
     }
 
-    if (servicioCargaManual) {
+    if (!servicioPropio && servicioCargaManual) {
       detallesModoBusqueda.push(
         "Servicio logistico cargado manualmente, pendiente de validar."
       )
@@ -499,54 +518,68 @@ export async function POST(request) {
           : limpiarTexto(proveedor.CUIT),
         proveedorValidado: !proveedorCargaManual,
 
-        tipoServicioLogistico: body.tipoServicio || null,
+        tipoServicioLogistico,
 
-        servicioOrigenDato: servicioCargaManual ? "MANUAL" : "BEJERMAN",
-        servicioCodigoBejerman: servicioCargaManual
+        servicioOrigenDato: servicioPropio
+          ? null
+          : servicioCargaManualEfectivo
+            ? "MANUAL"
+            : "BEJERMAN",
+        servicioCodigoBejerman: servicioPropio || servicioCargaManualEfectivo
           ? null
           : limpiarTexto(servicio.Codigo),
-        servicioNombreCargado: servicioCargaManual
-          ? servicioManualNombre
-          : limpiarTexto(servicio.RazonSocial),
-        servicioCuitCargado: servicioCargaManual
-          ? servicioManualCuit
-          : limpiarTexto(servicio.CUIT),
-        servicioGrupoBejerman: servicioCargaManual
+        servicioNombreCargado: servicioPropio
+          ? null
+          : servicioCargaManualEfectivo
+            ? servicioManualNombre
+            : limpiarTexto(servicio.RazonSocial),
+        servicioCuitCargado: servicioPropio
+          ? null
+          : servicioCargaManualEfectivo
+            ? servicioManualCuit
+            : limpiarTexto(servicio.CUIT),
+        servicioGrupoBejerman: servicioPropio || servicioCargaManualEfectivo
           ? null
           : limpiarTexto(servicio.Grupo),
-        servicioSubgrupoBejerman: servicioCargaManual
+        servicioSubgrupoBejerman: servicioPropio || servicioCargaManualEfectivo
           ? null
           : limpiarTexto(servicio.SubGrupo),
-        servicioFueraSugerido: servicioCargaManual,
-        servicioCargaManual,
-        servicioCodigoValidado: servicioCargaManual
+        servicioFueraSugerido: servicioFueraSugeridoEfectivo,
+        servicioCargaManual: servicioCargaManualEfectivo,
+        servicioCodigoValidado: servicioPropio || servicioCargaManualEfectivo
           ? null
           : limpiarTexto(servicio.Codigo),
-        servicioNombreValidado: servicioCargaManual
+        servicioNombreValidado: servicioPropio || servicioCargaManualEfectivo
           ? null
           : limpiarTexto(servicio.RazonSocial),
-        servicioCuitValidado: servicioCargaManual
+        servicioCuitValidado: servicioPropio || servicioCargaManualEfectivo
           ? null
           : limpiarTexto(servicio.CUIT),
-        servicioValidado: !servicioCargaManual,
+        servicioValidado: servicioPropio || !servicioCargaManualEfectivo,
 
         tipoChofer,
-        choferOrigenDato: choferInterno ? "SJALA" : "MANUAL",
+        choferOrigenDato: !servicioPropio && choferInterno ? "SJALA" : "MANUAL",
         choferLegajoSjala:
-          choferInterno && chofer?.Legajo ? Number(chofer.Legajo) : null,
-        choferNombreCargado: choferInterno
+          !servicioPropio && choferInterno && chofer?.Legajo
+            ? Number(chofer.Legajo)
+            : null,
+        choferNombreCargado: !servicioPropio && choferInterno
           ? limpiarTexto(chofer?.NombreCompleto)
-          : limpiarTexto(body.choferNombreExterno),
-        choferDocumentoCargado: choferExterno
+          : choferResponsablePropio,
+        choferDocumentoCargado: !servicioPropio && choferExterno
           ? limpiarTexto(body.choferDocumentoExterno)
           : null,
-        choferCargaManual: choferExterno,
+        choferCargaManual: !servicioPropio && choferExterno,
         choferLegajoValidado:
-          choferInterno && chofer?.Legajo ? Number(chofer.Legajo) : null,
-        choferNombreValidado: choferInterno
-          ? limpiarTexto(chofer?.NombreCompleto)
-          : null,
-        choferValidado: choferInterno,
+          !servicioPropio && choferInterno && chofer?.Legajo
+            ? Number(chofer.Legajo)
+            : null,
+        choferNombreValidado: servicioPropio
+          ? choferResponsablePropio
+          : choferInterno
+            ? limpiarTexto(chofer?.NombreCompleto)
+            : null,
+        choferValidado: servicioPropio || choferInterno,
 
         patenteCamion: limpiarTexto(body.patenteCamion)?.toUpperCase(),
         patenteAcoplado: limpiarTexto(body.patenteAcoplado)?.toUpperCase(),
@@ -566,12 +599,12 @@ export async function POST(request) {
         hachadorValidado: false,
 
         tieneCargaManual:
-          choferExterno ||
+          (!servicioPropio && choferExterno) ||
           proveedorCargaManual ||
-          servicioCargaManual ||
+          servicioCargaManualEfectivo ||
           itemsManuales > 0,
         tieneFueraSugerido:
-          proveedorCargaManual || servicioCargaManual || itemsManuales > 0,
+          proveedorCargaManual || servicioFueraSugeridoEfectivo || itemsManuales > 0,
 
         pdfGenerado: false,
 
@@ -627,7 +660,9 @@ export async function POST(request) {
               )}. Portero: ${
                 portero?.NombreCompleto || "Sin portero informado"
               }. Items cargados: ${items.length}.${
-                proveedorCargaManual || servicioCargaManual || itemsManuales > 0
+                proveedorCargaManual ||
+                servicioCargaManualEfectivo ||
+                itemsManuales > 0
                   ? " El ingreso contiene datos pendientes de aprobacion."
                   : ""
               }${
