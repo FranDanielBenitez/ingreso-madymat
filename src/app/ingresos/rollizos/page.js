@@ -32,6 +32,29 @@ function normalizarCantidad(value) {
   return Number.isNaN(numero) ? 0 : numero
 }
 
+function crearItemRollizo(overrides = {}) {
+  return {
+    id: `${Date.now()}-${Math.random()}`,
+    articuloCodigo: "",
+    articuloCargaManual: false,
+    articuloManualDescripcion: "",
+    articuloManualCodigo: "",
+    articuloManualObservacion: "",
+    porcentajeParticipacion: "100",
+    unidad: "TN",
+    ...overrides,
+  }
+}
+
+function formatearCantidad(value) {
+  if (!value || Number.isNaN(value)) return "0"
+
+  return new Intl.NumberFormat("es-AR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  }).format(value)
+}
+
 async function fetchDimensionSegura(url) {
   const response = await fetch(url)
   const json = await response.json().catch(() => null)
@@ -162,6 +185,8 @@ export default function IngresoRollizosPage() {
     fotoRemitoFisico: 0,
     fotoAdicional: 0,
   })
+  const [multiplesArticulos, setMultiplesArticulos] = useState(false)
+  const [itemsRollizos, setItemsRollizos] = useState([crearItemRollizo()])
 
   const {
     register,
@@ -183,6 +208,9 @@ export default function IngresoRollizosPage() {
 
   const proveedorCodigo = watch("proveedorCodigo")
   const articuloCodigo = watch("articuloCodigo")
+  const articuloManualDescripcion = watch("articuloManualDescripcion")
+  const articuloManualCodigo = watch("articuloManualCodigo")
+  const articuloManualObservacion = watch("articuloManualObservacion")
   const servicioCodigo = watch("servicioCodigo")
   const hachadorCodigo = watch("hachadorCodigo")
   const choferLegajo = watch("choferLegajo")
@@ -195,6 +223,8 @@ export default function IngresoRollizosPage() {
   const fotoMaterialCargado = watch("fotoMaterialCargado")
   const fotoRemitoFisico = watch("fotoRemitoFisico")
   const fotoAdicional = watch("fotoAdicional")
+  const cantidadTotalViaje = normalizarCantidad(watch("cantidad"))
+  const unidadTotalViaje = watch("unidad") || "TN"
 
   const proveedorSeleccionado = useMemo(
     () => proveedores.find((item) => item.Codigo === proveedorCodigo) || null,
@@ -238,6 +268,17 @@ export default function IngresoRollizosPage() {
   )
 
   const hayErroresDimensiones = Object.values(dimensionErrors).some(Boolean)
+  const porcentajeTotalItems = useMemo(
+    () =>
+      itemsRollizos.reduce(
+        (total, item) =>
+          total + Number(String(item.porcentajeParticipacion || "").replace(",", ".")),
+        0
+      ),
+    [itemsRollizos]
+  )
+  const porcentajeCorrecto = Math.abs(porcentajeTotalItems - 100) <= 0.01
+  const cantidadDistribuida = cantidadTotalViaje * porcentajeTotalItems / 100
 
   function proveedorUrl(modo) {
     return modo === MODO_TODOS
@@ -311,6 +352,82 @@ export default function IngresoRollizosPage() {
     setValue("articuloManualObservacion", "")
   }
 
+  function cambiarMultiplesArticulos(checked) {
+    setMultiplesArticulos(checked)
+
+    if (checked) {
+      setItemsRollizos([
+        crearItemRollizo({
+          articuloCodigo: articuloCodigo || "",
+          articuloCargaManual,
+          articuloManualDescripcion: articuloManualDescripcion || "",
+          articuloManualCodigo: articuloManualCodigo || "",
+          articuloManualObservacion: articuloManualObservacion || "",
+          porcentajeParticipacion: "100",
+          unidad: unidadTotalViaje || "TN",
+        }),
+      ])
+      return
+    }
+
+    const primerItem = itemsRollizos[0]
+    if (!primerItem) return
+
+    setArticuloCargaManual(Boolean(primerItem.articuloCargaManual))
+    setValue("articuloCodigo", primerItem.articuloCargaManual ? "" : primerItem.articuloCodigo || "")
+    setValue("articuloManualDescripcion", primerItem.articuloManualDescripcion || "")
+    setValue("articuloManualCodigo", primerItem.articuloManualCodigo || "")
+    setValue("articuloManualObservacion", primerItem.articuloManualObservacion || "")
+    setValue("unidad", primerItem.unidad || "TN")
+  }
+
+  function actualizarItemRollizo(id, cambios) {
+    setItemsRollizos((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...cambios } : item))
+    )
+  }
+
+  function seleccionarArticuloItem(id, articuloItem) {
+    actualizarItemRollizo(id, {
+      articuloCodigo: articuloItem?.Codigo || "",
+      unidad: articuloItem?.Clase || unidadTotalViaje || "TN",
+    })
+  }
+
+  function activarArticuloManualItem(id) {
+    actualizarItemRollizo(id, {
+      articuloCargaManual: true,
+      articuloCodigo: "",
+    })
+  }
+
+  function volverABuscarArticuloItem(id) {
+    actualizarItemRollizo(id, {
+      articuloCargaManual: false,
+      articuloManualDescripcion: "",
+      articuloManualCodigo: "",
+      articuloManualObservacion: "",
+    })
+  }
+
+  function agregarItemRollizo() {
+    setItemsRollizos((prev) => [
+      ...prev,
+      crearItemRollizo({
+        porcentajeParticipacion: "",
+        unidad: unidadTotalViaje || "TN",
+      }),
+    ])
+  }
+
+  function quitarItemRollizo(id) {
+    setItemsRollizos((prev) => {
+      if (prev.length === 1) return prev
+
+      return prev.filter((item) => item.id !== id)
+    })
+  }
+
   function activarServicioManual() {
     setServicioCargaManual(true)
     setValue("servicioCodigo", "", {
@@ -368,6 +485,11 @@ export default function IngresoRollizosPage() {
 
     setModoArticulo(modo)
     setValue("articuloCodigo", "")
+    setItemsRollizos((prev) =>
+      prev.map((item) =>
+        item.articuloCargaManual ? item : { ...item, articuloCodigo: "" }
+      )
+    )
     setCargandoDimension("articulo", true)
 
     try {
@@ -654,6 +776,7 @@ export default function IngresoRollizosPage() {
       }
 
       if (
+        !multiplesArticulos &&
         articuloCargaManual &&
         !String(values.articuloManualDescripcion || "").trim()
       ) {
@@ -666,7 +789,7 @@ export default function IngresoRollizosPage() {
         return
       }
 
-      if (!articuloCargaManual && !articuloSeleccionado) {
+      if (!multiplesArticulos && !articuloCargaManual && !articuloSeleccionado) {
         toast.error("No se pudo seleccionar articulo. Reintenta la carga de datos.")
         return
       }
@@ -680,6 +803,60 @@ export default function IngresoRollizosPage() {
 
       if (!String(values.unidad || "").trim()) {
         toast.error("La unidad es obligatoria")
+        return
+      }
+
+      const itemsPreparados = multiplesArticulos
+        ? itemsRollizos.map((item) => {
+            const articuloItem = articulos.find(
+              (articuloOption) => articuloOption.Codigo === item.articuloCodigo
+            )
+
+            return {
+              articuloCargaManual: item.articuloCargaManual,
+              articuloSeleccionado: item.articuloCargaManual ? null : articuloItem,
+              articuloManual: {
+                descripcion: item.articuloManualDescripcion || "",
+                codigo: item.articuloManualCodigo || "",
+                observacion: item.articuloManualObservacion || "",
+              },
+              articuloModoBusqueda: modoArticulo,
+              porcentajeParticipacion: item.porcentajeParticipacion,
+              unidad: item.unidad || values.unidad || "TN",
+            }
+          })
+        : [
+            {
+              articuloCargaManual,
+              articuloSeleccionado: articuloCargaManual ? null : articuloSeleccionado,
+              articuloManual: {
+                descripcion: values.articuloManualDescripcion || "",
+                codigo: values.articuloManualCodigo || "",
+                observacion: values.articuloManualObservacion || "",
+              },
+              articuloModoBusqueda: modoArticulo,
+              porcentajeParticipacion: 100,
+              unidad: values.unidad || "TN",
+            },
+          ]
+
+      const itemsInvalidos = itemsPreparados.some(
+        (item) =>
+          !item.porcentajeParticipacion ||
+          Number(String(item.porcentajeParticipacion).replace(",", ".")) <= 0 ||
+          !String(item.unidad || "").trim() ||
+          (item.articuloCargaManual
+            ? !String(item.articuloManual.descripcion || "").trim()
+            : !item.articuloSeleccionado)
+      )
+
+      if (itemsPreparados.length === 0 || itemsInvalidos) {
+        toast.error("Debe cargar articulo, porcentaje y unidad en todos los items.")
+        return
+      }
+
+      if (multiplesArticulos && !porcentajeCorrecto) {
+        toast.error("La suma de porcentajes debe ser 100% para guardar.")
         return
       }
 
@@ -762,6 +939,7 @@ export default function IngresoRollizosPage() {
           observacion: values.articuloManualObservacion || "",
         },
         articuloModoBusqueda: modoArticulo,
+        items: itemsPreparados,
         servicioCargaManual: servicioPropio ? false : servicioCargaManual,
         servicioSeleccionado:
           servicioPropio || servicioCargaManual ? null : servicioSeleccionado,
@@ -868,6 +1046,8 @@ export default function IngresoRollizosPage() {
     setPreviewsFotos({})
     setProveedorCargaManual(false)
     setArticuloCargaManual(false)
+    setMultiplesArticulos(false)
+    setItemsRollizos([crearItemRollizo()])
     setServicioCargaManual(false)
     setHachadorCargaManual(false)
     setFotoInputKeys((prev) => ({
@@ -1120,105 +1300,8 @@ export default function IngresoRollizosPage() {
               )}
             </div>
 
-            <div className={articuloCargaManual ? "md:col-span-2" : ""}>
-              <input
-                type="hidden"
-                {...register("articuloCodigo")}
-              />
-              {articuloCargaManual ? (
-                <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 dark:border-amber-400/25 dark:bg-slate-800/60">
-                  <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full border border-slate-300 bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-200">
-                          Articulo manual
-                        </span>
-                        <span className="rounded-full border border-amber-200 bg-amber-100/70 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
-                          Pendiente de validar
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm text-[#475569] dark:text-slate-300">
-                        Usalo solo si el articulo no aparece en Bejerman.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={volverABuscarArticulo}
-                      className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
-                    >
-                      Volver a buscar en Bejerman
-                    </button>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label>
-                      <span className={LABEL_CLASS}>Descripcion articulo *</span>
-                      <input
-                        type="text"
-                        {...register("articuloManualDescripcion")}
-                        className={FIELD_CLASS}
-                        placeholder="Ej: Rollizos especiales"
-                      />
-                    </label>
-                    <label>
-                      <span className={LABEL_CLASS}>Codigo articulo</span>
-                      <input
-                        type="text"
-                        {...register("articuloManualCodigo")}
-                        className={FIELD_CLASS}
-                        placeholder="Opcional"
-                      />
-                    </label>
-                    <label className="md:col-span-2">
-                      <span className={LABEL_CLASS}>Observacion articulo</span>
-                      <textarea
-                        {...register("articuloManualObservacion")}
-                        className={TEXTAREA_CLASS}
-                        placeholder="Opcional"
-                      />
-                    </label>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <SearchableSelect
-                    label="Articulo"
-                    value={articuloCodigo}
-                    options={articulos}
-                    onChange={(item) =>
-                      setValue("articuloCodigo", item?.Codigo || "", {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
-                    }
-                    getOptionValue={(item) => item.Codigo}
-                    getOptionLabel={(item) => item.Descripcion}
-                    getSearchText={(item) =>
-                      `${item.Codigo} ${item.Descripcion}`
-                    }
-                    placeholder="Buscar articulo"
-                    loading={cargandoDimensiones.articulo}
-                    modeControl={
-                      <ModoBusquedaInline
-                        value={modoArticulo}
-                        onChange={cambiarModoArticulo}
-                        disabled={cargandoDimensiones.articulo}
-                      />
-                    }
-                  />
-                  <CampoErrorDimension message={dimensionErrors.articulos} />
-                  <button
-                    type="button"
-                    onClick={activarArticuloManual}
-                    className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
-                  >
-                    No encuentro el articulo / Cargar manualmente
-                  </button>
-                </>
-              )}
-            </div>
-
             <div>
-              <label className={LABEL_CLASS}>Cantidad *</label>
+              <label className={LABEL_CLASS}>Cantidad total viaje *</label>
               <input
                 type="text"
                 {...register("cantidad", { required: true })}
@@ -1228,7 +1311,7 @@ export default function IngresoRollizosPage() {
             </div>
 
             <div>
-              <label className={LABEL_CLASS}>Unidad *</label>
+              <label className={LABEL_CLASS}>Unidad total *</label>
               <input
                 type="text"
                 {...register("unidad", { required: true })}
@@ -1236,6 +1319,318 @@ export default function IngresoRollizosPage() {
                 placeholder="Ej: TN"
               />
             </div>
+
+            <div className="md:col-span-2">
+              <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-sm text-[#475569] dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={multiplesArticulos}
+                  onChange={(event) => cambiarMultiplesArticulos(event.target.checked)}
+                  className="mt-1 h-4 w-4 accent-[#F3171B]"
+                />
+                <span>
+                  <span className="block font-bold text-[#0F172A] dark:text-slate-100">
+                    La carga contiene mas de un articulo
+                  </span>
+                  <span>
+                    Use esta opcion cuando un mismo viaje incluya mas de un tipo
+                    de rollizo.
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            {!multiplesArticulos ? (
+              <div className={articuloCargaManual ? "md:col-span-2" : ""}>
+                <input
+                  type="hidden"
+                  {...register("articuloCodigo")}
+                />
+                {articuloCargaManual ? (
+                  <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 dark:border-amber-400/25 dark:bg-slate-800/60">
+                    <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="rounded-full border border-slate-300 bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-200">
+                            Articulo manual
+                          </span>
+                          <span className="rounded-full border border-amber-200 bg-amber-100/70 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+                            Pendiente de validar
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-[#475569] dark:text-slate-300">
+                          Usalo solo si el articulo no aparece en Bejerman.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={volverABuscarArticulo}
+                        className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
+                      >
+                        Volver a buscar en Bejerman
+                      </button>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label>
+                        <span className={LABEL_CLASS}>Descripcion articulo *</span>
+                        <input
+                          type="text"
+                          {...register("articuloManualDescripcion")}
+                          className={FIELD_CLASS}
+                          placeholder="Ej: Rollizos especiales"
+                        />
+                      </label>
+                      <label>
+                        <span className={LABEL_CLASS}>Codigo articulo</span>
+                        <input
+                          type="text"
+                          {...register("articuloManualCodigo")}
+                          className={FIELD_CLASS}
+                          placeholder="Opcional"
+                        />
+                      </label>
+                      <label className="md:col-span-2">
+                        <span className={LABEL_CLASS}>Observacion articulo</span>
+                        <textarea
+                          {...register("articuloManualObservacion")}
+                          className={TEXTAREA_CLASS}
+                          placeholder="Opcional"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <SearchableSelect
+                      label="Articulo"
+                      value={articuloCodigo}
+                      options={articulos}
+                      onChange={(item) =>
+                        setValue("articuloCodigo", item?.Codigo || "", {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                      getOptionValue={(item) => item.Codigo}
+                      getOptionLabel={(item) => item.Descripcion}
+                      getSearchText={(item) =>
+                        `${item.Codigo} ${item.Descripcion}`
+                      }
+                      placeholder="Buscar articulo"
+                      loading={cargandoDimensiones.articulo}
+                      modeControl={
+                        <ModoBusquedaInline
+                          value={modoArticulo}
+                          onChange={cambiarModoArticulo}
+                          disabled={cargandoDimensiones.articulo}
+                        />
+                      }
+                    />
+                    <CampoErrorDimension message={dimensionErrors.articulos} />
+                    <button
+                      type="button"
+                      onClick={activarArticuloManual}
+                      className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                    >
+                      No encuentro el articulo / Cargar manualmente
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="md:col-span-2">
+                <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-900/40">
+                  {itemsRollizos.map((item, index) => {
+                    const articuloItem = articulos.find(
+                      (articuloOption) => articuloOption.Codigo === item.articuloCodigo
+                    )
+                    const porcentaje = Number(
+                      String(item.porcentajeParticipacion || "").replace(",", ".")
+                    )
+                    const cantidadCalculada = cantidadTotalViaje * (Number.isNaN(porcentaje) ? 0 : porcentaje) / 100
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950/60"
+                      >
+                        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <p className="font-bold text-[#0F172A] dark:text-slate-100">
+                            Item {index + 1}
+                          </p>
+                          <div className="flex flex-wrap gap-3">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                item.articuloCargaManual
+                                  ? volverABuscarArticuloItem(item.id)
+                                  : activarArticuloManualItem(item.id)
+                              }
+                              className="text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                            >
+                              {item.articuloCargaManual
+                                ? "Buscar en Bejerman"
+                                : "Cargar articulo manual"}
+                            </button>
+                            {itemsRollizos.length > 1 ? (
+                              <button
+                                type="button"
+                                onClick={() => quitarItemRollizo(item.id)}
+                                className="text-sm font-semibold text-slate-600 hover:text-[#D90F14] dark:text-slate-300 dark:hover:text-red-200"
+                              >
+                                Quitar
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        {item.articuloCargaManual ? (
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <label>
+                              <span className={LABEL_CLASS}>Descripcion articulo *</span>
+                              <input
+                                type="text"
+                                value={item.articuloManualDescripcion}
+                                onChange={(event) =>
+                                  actualizarItemRollizo(item.id, {
+                                    articuloManualDescripcion: event.target.value,
+                                  })
+                                }
+                                className={FIELD_CLASS}
+                                placeholder="Ej: Rollizos especiales"
+                              />
+                            </label>
+                            <label>
+                              <span className={LABEL_CLASS}>Codigo articulo</span>
+                              <input
+                                type="text"
+                                value={item.articuloManualCodigo}
+                                onChange={(event) =>
+                                  actualizarItemRollizo(item.id, {
+                                    articuloManualCodigo: event.target.value,
+                                  })
+                                }
+                                className={FIELD_CLASS}
+                                placeholder="Opcional"
+                              />
+                            </label>
+                            <label className="md:col-span-2">
+                              <span className={LABEL_CLASS}>Observacion articulo</span>
+                              <textarea
+                                value={item.articuloManualObservacion}
+                                onChange={(event) =>
+                                  actualizarItemRollizo(item.id, {
+                                    articuloManualObservacion: event.target.value,
+                                  })
+                                }
+                                className={TEXTAREA_CLASS}
+                                placeholder="Opcional"
+                              />
+                            </label>
+                          </div>
+                        ) : (
+                          <>
+                            <SearchableSelect
+                              label="Articulo"
+                              value={item.articuloCodigo}
+                              options={articulos}
+                              onChange={(articuloOpcion) =>
+                                seleccionarArticuloItem(item.id, articuloOpcion)
+                              }
+                              getOptionValue={(articuloOpcion) => articuloOpcion.Codigo}
+                              getOptionLabel={(articuloOpcion) =>
+                                `${articuloOpcion.Codigo} - ${articuloOpcion.Descripcion}`
+                              }
+                              getSearchText={(articuloOpcion) =>
+                                `${articuloOpcion.Codigo} ${articuloOpcion.Descripcion}`
+                              }
+                              placeholder="Buscar articulo"
+                              loading={cargandoDimensiones.articulo}
+                              modeControl={
+                                <ModoBusquedaInline
+                                  value={modoArticulo}
+                                  onChange={cambiarModoArticulo}
+                                  disabled={cargandoDimensiones.articulo}
+                                />
+                              }
+                            />
+                            <CampoErrorDimension message={dimensionErrors.articulos} />
+                          </>
+                        )}
+
+                        <div className="mt-4 grid gap-3 md:grid-cols-3">
+                          <label>
+                            <span className={LABEL_CLASS}>Porcentaje *</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              value={item.porcentajeParticipacion}
+                              onChange={(event) =>
+                                actualizarItemRollizo(item.id, {
+                                  porcentajeParticipacion: event.target.value,
+                                })
+                              }
+                              className={FIELD_CLASS}
+                              placeholder="Ej: 30"
+                            />
+                          </label>
+                          <label>
+                            <span className={LABEL_CLASS}>Cantidad calculada</span>
+                            <input
+                              type="text"
+                              value={`${formatearCantidad(cantidadCalculada)} ${item.unidad || unidadTotalViaje}`}
+                              readOnly
+                              className={`${FIELD_CLASS} bg-slate-100 font-semibold dark:bg-slate-900`}
+                            />
+                          </label>
+                          <label>
+                            <span className={LABEL_CLASS}>Unidad *</span>
+                            <input
+                              type="text"
+                              value={item.unidad || articuloItem?.Clase || unidadTotalViaje}
+                              onChange={(event) =>
+                                actualizarItemRollizo(item.id, {
+                                  unidad: event.target.value,
+                                })
+                              }
+                              className={FIELD_CLASS}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className={`font-bold ${
+                        porcentajeCorrecto ? "text-emerald-700" : "text-amber-800"
+                      }`}>
+                        Total asignado: {formatearCantidad(porcentajeTotalItems)}%
+                      </p>
+                      <p className="text-sm text-[#475569] dark:text-slate-300">
+                        Cantidad total distribuida:{" "}
+                        {formatearCantidad(cantidadDistribuida)} {unidadTotalViaje}
+                      </p>
+                      {!porcentajeCorrecto ? (
+                        <p className="mt-1 text-sm font-semibold text-amber-800 dark:text-amber-200">
+                          La suma de porcentajes debe ser 100%.
+                        </p>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={agregarItemRollizo}
+                      className="w-fit rounded-lg border border-[#CBD5E1] bg-white px-4 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-800 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
+                    >
+                      Agregar item
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

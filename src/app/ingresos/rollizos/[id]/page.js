@@ -46,6 +46,19 @@ function mostrar(value) {
   return String(value)
 }
 
+function formatearDecimal(value) {
+  if (value === null || value === undefined || value === "") return "-"
+
+  const numero = Number(value)
+
+  if (Number.isNaN(numero)) return String(value)
+
+  return new Intl.NumberFormat("es-AR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  }).format(numero)
+}
+
 function mostrarViaje(ingreso) {
   if (ingreso?.numeroViaje === null || ingreso?.numeroViaje === undefined) {
     return "-"
@@ -154,8 +167,30 @@ export default function DetalleIngresoRollizosPage() {
     () => ingreso?.articulos?.[0] || null,
     [ingreso]
   )
+  const articulosIngreso = useMemo(
+    () => ingreso?.articulos || [],
+    [ingreso]
+  )
+  const cantidadTotalViaje = useMemo(
+    () =>
+      articulosIngreso.reduce(
+        (total, articulo) => total + Number(articulo.cantidad || 0),
+        0
+      ),
+    [articulosIngreso]
+  )
+  const porcentajeDistribucion = useMemo(
+    () =>
+      articulosIngreso.reduce(
+        (total, articulo) =>
+          total + Number(articulo.porcentajeParticipacion ?? 100),
+        0
+      ),
+    [articulosIngreso]
+  )
 
   const ingresoAnulado = ingreso?.estado === "ANULADO"
+  const ingresoConMultiplesArticulos = articulosIngreso.length > 1
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -338,15 +373,22 @@ export default function DetalleIngresoRollizosPage() {
             </div>
 
             {mostrandoEdicion ? (
-              <EditarIngresoPanel
-                ingreso={ingreso}
-                articulo={articuloPrincipal}
-                onCancel={() => setMostrandoEdicion(false)}
-                onUpdated={(ingresoActualizado) => {
-                  setIngreso(ingresoActualizado)
-                  setMostrandoEdicion(false)
-                }}
-              />
+              ingresoConMultiplesArticulos ? (
+                <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
+                  La edicion de distribucion de articulos se implementara en
+                  una etapa posterior.
+                </div>
+              ) : (
+                <EditarIngresoPanel
+                  ingreso={ingreso}
+                  articulo={articuloPrincipal}
+                  onCancel={() => setMostrandoEdicion(false)}
+                  onUpdated={(ingresoActualizado) => {
+                    setIngreso(ingresoActualizado)
+                    setMostrandoEdicion(false)
+                  }}
+                />
+              )
             ) : null}
 
             {mostrandoAnulacion ? (
@@ -441,6 +483,8 @@ export default function DetalleIngresoRollizosPage() {
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Material
           </h2>
+          {false ? (
+          <>
           <ArticuloBadges articulo={articuloPrincipal} ingreso={ingreso} />
           <div className="grid gap-4 md:grid-cols-4">
             <CampoValidado
@@ -455,6 +499,86 @@ export default function DetalleIngresoRollizosPage() {
             />
             <Campo label="Cantidad" value={articuloPrincipal?.cantidad} />
             <Campo label="Unidad" value={articuloPrincipal?.unidad} />
+          </div>
+          </>
+          ) : null}
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <Campo
+              label="Cantidad total del viaje"
+              value={`${formatearDecimal(cantidadTotalViaje)} ${mostrar(
+                articuloPrincipal?.unidad
+              )}`}
+            />
+            <Campo
+              label="Distribucion"
+              value={`${formatearDecimal(porcentajeDistribucion)}%`}
+            />
+            <Campo label="Items" value={articulosIngreso.length || 0} />
+          </div>
+
+          <div className="mt-4 overflow-x-auto rounded-xl border border-[#CBD5E1]">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-[#F5F7FA] text-xs uppercase text-[#475569]">
+                <tr>
+                  <th className="px-4 py-3">Articulo</th>
+                  <th className="px-4 py-3">Codigo</th>
+                  <th className="px-4 py-3">%</th>
+                  <th className="px-4 py-3">Cantidad</th>
+                  <th className="px-4 py-3">Unidad</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#CBD5E1] bg-white">
+                {articulosIngreso.map((articulo) => (
+                  <tr key={articulo.id}>
+                    <td className="px-4 py-3 align-top">
+                      <ArticuloBadges articulo={articulo} ingreso={ingreso} />
+                      <p className="font-bold text-[#0F172A]">
+                        {mostrar(
+                          articulo.articuloDescripcionValidada ||
+                            articulo.articuloDescripcion
+                        )}
+                      </p>
+                      {articulo.articuloDescripcionValidada &&
+                      mostrar(articulo.articuloDescripcionValidada) !==
+                        mostrar(articulo.articuloDescripcion) ? (
+                        <p className="mt-1 text-xs font-medium text-[#64748B]">
+                          Original cargado: {mostrar(articulo.articuloDescripcion)}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <p className="font-semibold text-[#0F172A]">
+                        {mostrar(
+                          articulo.articuloCodigoValidado ||
+                            articulo.articuloCodigo
+                        )}
+                      </p>
+                      {articulo.articuloCodigoValidado &&
+                      mostrar(articulo.articuloCodigoValidado) !==
+                        mostrar(articulo.articuloCodigo) ? (
+                        <p className="mt-1 text-xs font-medium text-[#64748B]">
+                          Original: {mostrar(articulo.articuloCodigo)}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      {formatearDecimal(
+                        articulo.porcentajeParticipacion ??
+                          (articulosIngreso.length === 1 ? 100 : null)
+                      )}
+                      %
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      {formatearDecimal(articulo.cantidad)}
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      {mostrar(articulo.unidad)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 

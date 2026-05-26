@@ -176,6 +176,7 @@ model IngresoArticulo {
   articuloSubgrupo            String?    @map("articulo_subgrupo")
   articuloValidado            Boolean    @default(false) @map("articulo_validado")
   categoriaFormulario         String?    @map("categoria_formulario")
+  porcentajeParticipacion     Decimal?   @map("porcentaje_participacion") @db.Decimal(5, 2)
   cantidad                    Decimal    @db.Decimal(12, 3)
   unidad                      String
   createdAt                   DateTime   @default(now()) @map("created_at")

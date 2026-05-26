@@ -53,6 +53,69 @@ function limpiarTexto(value) {
   return texto === "" ? null : texto
 }
 
+function normalizarPorcentaje(value) {
+  if (value === null || value === undefined || value === "") return 0
+
+  const texto = String(value).trim().replace(",", ".")
+  const numero = Number(texto)
+
+  if (Number.isNaN(numero)) return 0
+
+  return numero
+}
+
+function redondearCantidad(value) {
+  return Number(Number(value).toFixed(3))
+}
+
+function normalizarItemsRollizos(body, cantidadTotal, unidadDefault) {
+  const itemsPayload = Array.isArray(body.items) ? body.items : []
+
+  const items = itemsPayload.length > 0
+    ? itemsPayload
+    : [
+        {
+          articuloCargaManual: body.articuloCargaManual,
+          articuloSeleccionado: body.articuloSeleccionado,
+          articuloManual: body.articuloManual,
+          articuloModoBusqueda: body.articuloModoBusqueda,
+          porcentajeParticipacion: 100,
+          unidad: unidadDefault,
+        },
+      ]
+
+  return items.map((item) => {
+    const porcentajeParticipacion = normalizarPorcentaje(
+      item.porcentajeParticipacion ?? item.porcentaje
+    )
+
+    return {
+      articuloCargaManual: Boolean(item.articuloCargaManual),
+      articulo: item.articuloSeleccionado,
+      articuloManualDescripcion: limpiarTexto(item.articuloManual?.descripcion),
+      articuloManualCodigo: limpiarTexto(item.articuloManual?.codigo),
+      articuloManualObservacion: limpiarTexto(item.articuloManual?.observacion),
+      modoBusquedaArticulo: limpiarTexto(
+        item.articuloModoBusqueda || item.modoBusquedaArticulo
+      ),
+      porcentajeParticipacion,
+      cantidad: redondearCantidad(
+        cantidadTotal * porcentajeParticipacion / 100
+      ),
+      unidad: limpiarTexto(item.unidad) || unidadDefault,
+    }
+  })
+}
+
+function porcentajesValidos(items) {
+  const total = items.reduce(
+    (sum, item) => sum + item.porcentajeParticipacion,
+    0
+  )
+
+  return Math.abs(total - 100) <= 0.01
+}
+
 function esArchivoValido(file) {
   return file && typeof file.arrayBuffer === "function" && file.size > 0
 }
@@ -260,6 +323,7 @@ export async function POST(request) {
     const proveedorManualNombre = limpiarTexto(proveedorManual.nombre)
     const proveedorManualCuit = limpiarTexto(proveedorManual.cuit)
     const proveedorManualObservacion = limpiarTexto(proveedorManual.observacion)
+    const usaItems = Array.isArray(body.items) && body.items.length > 0
     const articuloCargaManual = Boolean(body.articuloCargaManual)
     const articulo = body.articuloSeleccionado
     const articuloManual = body.articuloManual || {}
@@ -326,14 +390,14 @@ export async function POST(request) {
       )
     }
 
-    if (articuloCargaManual && !articuloManualDescripcion) {
+    if (!usaItems && articuloCargaManual && !articuloManualDescripcion) {
       return NextResponse.json(
         { ok: false, message: "Debe indicar la descripcion del articulo manual" },
         { status: 400 }
       )
     }
 
-    if (!articuloCargaManual && !articulo) {
+    if (!usaItems && !articuloCargaManual && !articulo) {
       return NextResponse.json(
         { ok: false, message: "Debe seleccionar un artículo" },
         { status: 400 }
@@ -371,6 +435,55 @@ export async function POST(request) {
       )
     }
 
+    const items = normalizarItemsRollizos(body, cantidadIngreso, unidadIngreso)
+    const itemsInvalidos =
+      items.length === 0 ||
+      items.some(
+        (item) =>
+          !item.porcentajeParticipacion ||
+          item.porcentajeParticipacion <= 0 ||
+          !item.cantidad ||
+          item.cantidad <= 0 ||
+          !item.unidad ||
+          (item.articuloCargaManual
+            ? !item.articuloManualDescripcion
+            : !item.articulo)
+      )
+
+    if (itemsInvalidos) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message:
+            "Debe cargar articulo, porcentaje y unidad en todos los items de Rollizos",
+        },
+        { status: 400 }
+      )
+    }
+
+    if (
+      items.length === 1 &&
+      Math.abs(items[0].porcentajeParticipacion - 100) > 0.01
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "El unico item de Rollizos debe tener 100%",
+        },
+        { status: 400 }
+      )
+    }
+
+    if (items.length > 1 && !porcentajesValidos(items)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "La suma de porcentajes debe ser 100%.",
+        },
+        { status: 400 }
+      )
+    }
+
     if (servicioPropio && !choferResponsablePropio) {
       return NextResponse.json(
         {
@@ -404,6 +517,10 @@ export async function POST(request) {
 
     const usuarioPortero = await obtenerUsuarioPortero(portero)
     const detallesModoBusqueda = []
+    const itemsModoTodos = items.filter(
+      (item) => !item.articuloCargaManual && item.modoBusquedaArticulo === "TODOS"
+    ).length
+    const itemsManuales = items.filter((item) => item.articuloCargaManual).length
 
     if (!proveedorCargaManual && body.proveedorModoBusqueda === "TODOS") {
       detallesModoBusqueda.push("Proveedor seleccionado desde modo Todos.")
@@ -420,11 +537,11 @@ export async function POST(request) {
       }
     }
 
-    if (!articuloCargaManual && body.articuloModoBusqueda === "TODOS") {
+    if (!usaItems && !articuloCargaManual && body.articuloModoBusqueda === "TODOS") {
       detallesModoBusqueda.push("Articulo seleccionado desde modo Todos.")
     }
 
-    if (articuloCargaManual) {
+    if (!usaItems && articuloCargaManual) {
       detallesModoBusqueda.push(
         "Articulo cargado manualmente, pendiente de validar."
       )
@@ -433,6 +550,16 @@ export async function POST(request) {
           `Observacion articulo manual: ${articuloManualObservacion}.`
         )
       }
+    }
+
+    if (usaItems && itemsModoTodos > 0) {
+      detallesModoBusqueda.push(`Items fuera de sugeridos: ${itemsModoTodos}.`)
+    }
+
+    if (usaItems && itemsManuales > 0) {
+      detallesModoBusqueda.push(
+        `Articulos cargados manualmente: ${itemsManuales}. Pendientes de validar.`
+      )
     }
 
     if (
@@ -624,12 +751,12 @@ export async function POST(request) {
         tieneCargaManual:
           (!servicioPropio && body.tipoChofer === "EXTERNO") ||
           proveedorCargaManual ||
-          articuloCargaManual ||
+          itemsManuales > 0 ||
           servicioCargaManualEfectivo ||
           hachadorCargaManual,
         tieneFueraSugerido:
           proveedorCargaManual ||
-          articuloCargaManual ||
+          itemsManuales > 0 ||
           servicioFueraSugeridoEfectivo ||
           hachadorFueraSugerido,
 
@@ -638,38 +765,39 @@ export async function POST(request) {
         registradoPorId: usuarioPortero?.id || null,
 
         articulos: {
-          create: {
-            origenDato: articuloCargaManual ? "MANUAL" : "BEJERMAN",
+          create: items.map((item) => ({
+            origenDato: item.articuloCargaManual ? "MANUAL" : "BEJERMAN",
 
-            articuloGen: articuloCargaManual
+            articuloGen: item.articuloCargaManual
               ? null
-              : articulo.ArticuloGen
-              ? String(articulo.ArticuloGen)
+              : item.articulo.ArticuloGen
+              ? String(item.articulo.ArticuloGen)
               : null,
-            articuloCodigo: articuloCargaManual
-              ? articuloManualCodigo
-              : limpiarTexto(articulo.Codigo),
-            articuloClase: articuloCargaManual
+            articuloCodigo: item.articuloCargaManual
+              ? item.articuloManualCodigo
+              : limpiarTexto(item.articulo.Codigo),
+            articuloClase: item.articuloCargaManual
               ? null
-              : limpiarTexto(articulo.Clase),
-            articuloDescripcion: articuloCargaManual
-              ? articuloManualDescripcion
-              : limpiarTexto(articulo.Descripcion),
-            articuloProceso: articuloCargaManual
+              : limpiarTexto(item.articulo.Clase),
+            articuloDescripcion: item.articuloCargaManual
+              ? item.articuloManualDescripcion
+              : limpiarTexto(item.articulo.Descripcion),
+            articuloProceso: item.articuloCargaManual
               ? null
-              : limpiarTexto(articulo.Proceso),
-            articuloGrupo: articuloCargaManual
+              : limpiarTexto(item.articulo.Proceso),
+            articuloGrupo: item.articuloCargaManual
               ? null
-              : limpiarTexto(articulo.Grupo),
-            articuloSubgrupo: articuloCargaManual
+              : limpiarTexto(item.articulo.Grupo),
+            articuloSubgrupo: item.articuloCargaManual
               ? null
-              : limpiarTexto(articulo.SubGrupo),
+              : limpiarTexto(item.articulo.SubGrupo),
 
             categoriaFormulario: "ROLLIZOS",
 
-            cantidad: cantidadIngreso,
-            unidad: unidadIngreso,
-          },
+            porcentajeParticipacion: item.porcentajeParticipacion,
+            cantidad: item.cantidad,
+            unidad: item.unidad,
+          })),
         },
 
         logs: {
@@ -687,7 +815,7 @@ export async function POST(request) {
                 portero?.NombreCompleto || "Sin portero informado"
               }.${
                 proveedorCargaManual ||
-                articuloCargaManual ||
+                itemsManuales > 0 ||
                 servicioCargaManualEfectivo ||
                 hachadorCargaManual ||
                 hachadorFueraSugerido
