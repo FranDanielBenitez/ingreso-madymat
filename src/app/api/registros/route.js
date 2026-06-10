@@ -53,7 +53,8 @@ export async function GET(request) {
     const estado = limpiar(searchParams.get("estado"))
     const fechaDesde = fechaDesdeParam(searchParams.get("fechaDesde"))
     const fechaHasta = fechaHastaParam(searchParams.get("fechaHasta"))
-    const proveedor = filtroTexto(searchParams.get("proveedor"))
+    const proveedorTexto = limpiar(searchParams.get("proveedor"))
+    const proveedor = filtroTexto(proveedorTexto)
     const porteroTexto = limpiar(searchParams.get("portero"))
     const portero = filtroTexto(porteroTexto)
     const remito = filtroTexto(searchParams.get("remito"))
@@ -80,6 +81,8 @@ export async function GET(request) {
 
     if (proveedor) {
       agregarGrupoOr(where, [
+        { proveedorCodigoBejerman: proveedor },
+        { proveedorCodigoValidado: proveedor },
         { proveedorNombreCargado: proveedor },
         { proveedorNombreValidado: proveedor },
       ])

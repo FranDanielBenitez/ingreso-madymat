@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { canApprovePendientes } from "@/lib/auth/permissions"
 import {
   FiHome,
   FiList,
@@ -22,7 +23,12 @@ const LINKS = [
   { href: "/ingresos/rollizos", label: "Rollizos", icon: GiWoodPile },
   { href: "/ingresos/materiales", label: "Materiales", icon: GiWoodBeam },
   { href: "/registros", label: "Registros", icon: FiList },
-  { href: "/registros/pendientes-validacion", label: "Pendientes", icon: FiAlertTriangle },
+  {
+    href: "/registros/pendientes-validacion",
+    label: "Pendientes",
+    icon: FiAlertTriangle,
+    requiresPendientes: true,
+  },
   { href: "/manual", label: "Manual", icon: FiBookOpen },
 ]
 
@@ -47,6 +53,7 @@ export default function Navbar() {
   const [navbarOculto, setNavbarOculto] = useState(false)
   const [usuario, setUsuario] = useState(null)
   const [cargandoUsuario, setCargandoUsuario] = useState(true)
+  const [pendientesCount, setPendientesCount] = useState(0)
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark")
@@ -103,6 +110,34 @@ export default function Navbar() {
     !cargandoUsuario &&
     (usuario?.roles?.includes("ADMINISTRADOR") ||
       usuario?.roles?.includes("IT_TECNICO"))
+  const puedeVerPendientes = !cargandoUsuario && canApprovePendientes(usuario)
+
+  useEffect(() => {
+    if (pathname === "/login" || !puedeVerPendientes) {
+      return
+    }
+
+    let cancelado = false
+
+    async function cargarPendientesCount() {
+      try {
+        const response = await fetch("/api/registros/pendientes-validacion/count")
+        const result = await response.json()
+
+        if (!cancelado && response.ok && result.ok) {
+          setPendientesCount(Number(result.count || 0))
+        }
+      } catch {
+        if (!cancelado) setPendientesCount(0)
+      }
+    }
+
+    cargarPendientesCount()
+
+    return () => {
+      cancelado = true
+    }
+  }, [pathname, puedeVerPendientes])
 
   async function cerrarSesion() {
     await fetch("/api/auth/logout", { method: "POST" })
@@ -193,6 +228,10 @@ export default function Navbar() {
           <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 pr-12 lg:flex-nowrap">
             <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1 overflow-hidden lg:flex-nowrap">
               {LINKS.map((link) => {
+                if (link.requiresPendientes && !puedeVerPendientes) {
+                  return null
+                }
+
                 const activo =
                   link.href === "/"
                     ? pathname === "/"
@@ -201,6 +240,10 @@ export default function Navbar() {
                       : pathname?.startsWith(link.href)
 
                 const Icon = link.icon
+                const mostrarBadgePendientes =
+                  link.requiresPendientes && pendientesCount > 0
+                const badgePendientes =
+                  pendientesCount > 99 ? "99+" : String(pendientesCount)
 
                 return (
                   <Link
@@ -216,6 +259,14 @@ export default function Navbar() {
                     {!link.iconOnly ? (
                       <span className="hidden whitespace-nowrap xl:inline">
                         {link.label}
+                      </span>
+                    ) : null}
+                    {mostrarBadgePendientes ? (
+                      <span
+                        className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-amber-300 bg-amber-100 px-1.5 text-[11px] font-black leading-none text-amber-950 shadow-sm ring-1 ring-amber-400/20 dark:border-amber-200 dark:bg-amber-300 dark:text-slate-950"
+                        aria-label={`${badgePendientes} pendientes`}
+                      >
+                        {badgePendientes}
                       </span>
                     ) : null}
                   </Link>

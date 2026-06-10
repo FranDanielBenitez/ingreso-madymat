@@ -1898,6 +1898,117 @@ export default function IngresoRollizosPage() {
 
         <section className={SECTION_CLASS}>
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
+            Hachador
+          </h2>
+
+          <div>
+            <input type="hidden" {...register("hachadorCodigo")} />
+            {hachadorCargaManual ? (
+              <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 dark:border-amber-400/25 dark:bg-slate-800/60">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200">
+                        Hachador manual
+                      </span>
+                      <span className="rounded-full border border-amber-200 bg-amber-100/70 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+                        Pendiente de validar
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-[#475569]">
+                      El hachador quedara pendiente de aprobacion.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={volverABuscarHachador}
+                    className="rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-800 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
+                  >
+                    Volver a buscar en Bejerman
+                  </button>
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <label>
+                    <span className={LABEL_CLASS}>
+                      Nombre / Razon social hachador *
+                    </span>
+                    <input
+                      type="text"
+                      {...register("hachadorManualNombre")}
+                      className={FIELD_CLASS}
+                      placeholder="Nombre del hachador"
+                    />
+                  </label>
+                  <label>
+                    <span className={LABEL_CLASS}>CUIT hachador</span>
+                    <input
+                      type="text"
+                      {...register("hachadorManualCuit")}
+                      className={FIELD_CLASS}
+                      placeholder="Opcional"
+                    />
+                  </label>
+                  <label>
+                    <span className={LABEL_CLASS}>Codigo hachador</span>
+                    <input
+                      type="text"
+                      {...register("hachadorManualCodigo")}
+                      className={FIELD_CLASS}
+                      placeholder="Opcional"
+                    />
+                  </label>
+                  <label>
+                    <span className={LABEL_CLASS}>Observacion hachador</span>
+                    <textarea
+                      {...register("hachadorManualObservacion")}
+                      className={TEXTAREA_CLASS}
+                      placeholder="Opcional"
+                    />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <>
+                <SearchableSelect
+                  label="Hachador"
+                  value={hachadorCodigo}
+                  options={hachadores}
+                  onChange={(item) =>
+                    setValue("hachadorCodigo", item?.Codigo || "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  getOptionValue={(item) => item.Codigo}
+                  getOptionLabel={(item) => item.RazonSocial}
+                  getSearchText={(item) =>
+                    `${item.Codigo} ${item.RazonSocial} ${item.CUIT || ""}`
+                  }
+                  placeholder="Buscar hachador"
+                  loading={cargandoDimensiones.hachador}
+                  modeControl={
+                    <ModoBusquedaInline
+                      value={modoHachador}
+                      onChange={cambiarModoHachador}
+                      disabled={cargandoDimensiones.hachador}
+                    />
+                  }
+                />
+                <CampoErrorDimension message={dimensionErrors.hachadores} />
+                <button
+                  type="button"
+                  onClick={activarHachadorManual}
+                  className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                >
+                  No encuentro el hachador / Cargar manualmente
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+
+        <section className={SECTION_CLASS}>
+          <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
             Registro fotográfico
           </h2>
 
@@ -2048,126 +2159,15 @@ export default function IngresoRollizosPage() {
 
         <section className={SECTION_CLASS}>
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
-            Hachador y observaciones
+            Observaciones
           </h2>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <input type="hidden" {...register("hachadorCodigo")} />
-              {hachadorCargaManual ? (
-                <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 dark:border-amber-400/25 dark:bg-slate-800/60">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs font-semibold text-[#475569] dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200">
-                          Hachador manual
-                        </span>
-                        <span className="rounded-full border border-amber-200 bg-amber-100/70 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
-                          Pendiente de validar
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm text-[#475569]">
-                        El hachador quedara pendiente de aprobacion.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={volverABuscarHachador}
-                      className="rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] hover:border-amber-300 hover:text-amber-800 dark:hover:border-amber-400/50 dark:hover:text-amber-200"
-                    >
-                      Volver a buscar en Bejerman
-                    </button>
-                  </div>
-                  <div className="mt-4 grid gap-3">
-                    <label>
-                      <span className={LABEL_CLASS}>
-                        Nombre / Razon social hachador *
-                      </span>
-                      <input
-                        type="text"
-                        {...register("hachadorManualNombre")}
-                        className={FIELD_CLASS}
-                        placeholder="Nombre del hachador"
-                      />
-                    </label>
-                    <label>
-                      <span className={LABEL_CLASS}>CUIT hachador</span>
-                      <input
-                        type="text"
-                        {...register("hachadorManualCuit")}
-                        className={FIELD_CLASS}
-                        placeholder="Opcional"
-                      />
-                    </label>
-                    <label>
-                      <span className={LABEL_CLASS}>Codigo hachador</span>
-                      <input
-                        type="text"
-                        {...register("hachadorManualCodigo")}
-                        className={FIELD_CLASS}
-                        placeholder="Opcional"
-                      />
-                    </label>
-                    <label>
-                      <span className={LABEL_CLASS}>
-                        Observacion hachador
-                      </span>
-                      <textarea
-                        {...register("hachadorManualObservacion")}
-                        className={TEXTAREA_CLASS}
-                        placeholder="Opcional"
-                      />
-                    </label>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <SearchableSelect
-                    label="Hachador"
-                    value={hachadorCodigo}
-                    options={hachadores}
-                    onChange={(item) =>
-                      setValue("hachadorCodigo", item?.Codigo || "", {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
-                    }
-                    getOptionValue={(item) => item.Codigo}
-                    getOptionLabel={(item) => item.RazonSocial}
-                    getSearchText={(item) =>
-                      `${item.Codigo} ${item.RazonSocial} ${item.CUIT || ""}`
-                    }
-                    placeholder="Buscar hachador"
-                    loading={cargandoDimensiones.hachador}
-                    modeControl={
-                      <ModoBusquedaInline
-                        value={modoHachador}
-                        onChange={cambiarModoHachador}
-                        disabled={cargandoDimensiones.hachador}
-                      />
-                    }
-                  />
-                  <CampoErrorDimension message={dimensionErrors.hachadores} />
-                  <button
-                    type="button"
-                    onClick={activarHachadorManual}
-                    className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
-                  >
-                    No encuentro el hachador / Cargar manualmente
-                  </button>
-                </>
-              )}
-            </div>
-
-            <div>
-              <label className={LABEL_CLASS}>Observaciones</label>
-              <textarea
-                {...register("observaciones")}
-                className={TEXTAREA_CLASS}
-                placeholder="Observaciones del ingreso"
-              />
-            </div>
-          </div>
+          <label className={LABEL_CLASS}>Observaciones</label>
+          <textarea
+            {...register("observaciones")}
+            className={TEXTAREA_CLASS}
+            placeholder="Observaciones del ingreso"
+          />
         </section>
 
         {!usuarioCargando && !puedeGuardar && (

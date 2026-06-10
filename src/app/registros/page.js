@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import SearchableSelect from "@/components/forms/SearchableSelect"
 import { mostrarTipoUnidadLogistica } from "@/lib/ingresos/unidad-logistica"
 
 const SECTION_CLASS = "panel-surface"
@@ -165,6 +166,8 @@ export default function RegistrosPage() {
   const [error, setError] = useState("")
   const [porteros, setPorteros] = useState([])
   const [loadingPorteros, setLoadingPorteros] = useState(false)
+  const [proveedoresFiltro, setProveedoresFiltro] = useState([])
+  const [loadingProveedoresFiltro, setLoadingProveedoresFiltro] = useState(false)
   const [paginaActual, setPaginaActual] = useState(1)
   const [itemsPorPagina, setItemsPorPagina] = useState(10)
 
@@ -194,6 +197,15 @@ export default function RegistrosPage() {
     setFiltros((prev) => ({
       ...prev,
       [name]: value,
+    }))
+
+    setPaginaActual(1)
+  }
+
+  function actualizarProveedorFiltro(proveedor) {
+    setFiltros((prev) => ({
+      ...prev,
+      proveedor: proveedor?.value || "",
     }))
 
     setPaginaActual(1)
@@ -248,26 +260,48 @@ export default function RegistrosPage() {
   }
 
   useEffect(() => {
-    async function cargarPorteros() {
+    async function cargarFiltrosAuxiliares() {
       setLoadingPorteros(true)
+      setLoadingProveedoresFiltro(true)
 
-      try {
-        const response = await fetch("/api/dimensiones/porteros")
-        const result = await response.json()
+      const [porterosResult, proveedoresResult] = await Promise.allSettled([
+        fetch("/api/dimensiones/porteros").then(async (response) => {
+          const result = await response.json()
 
-        if (!response.ok || !result.ok) {
-          throw new Error(result.message || "No se pudieron cargar porteros")
-        }
+          if (!response.ok || !result.ok) {
+            throw new Error(result.message || "No se pudieron cargar porteros")
+          }
 
-        setPorteros(result.data || [])
-      } catch {
+          return result.data || []
+        }),
+        fetch("/api/registros/proveedores").then(async (response) => {
+          const result = await response.json()
+
+          if (!response.ok || !result.ok) {
+            throw new Error(result.message || "No se pudieron cargar proveedores")
+          }
+
+          return result.data || []
+        }),
+      ])
+
+      if (porterosResult.status === "fulfilled") {
+        setPorteros(porterosResult.value)
+      } else {
         setPorteros([])
-      } finally {
-        setLoadingPorteros(false)
       }
+
+      if (proveedoresResult.status === "fulfilled") {
+        setProveedoresFiltro(proveedoresResult.value)
+      } else {
+        setProveedoresFiltro([])
+      }
+
+      setLoadingPorteros(false)
+      setLoadingProveedoresFiltro(false)
     }
 
-    cargarPorteros()
+    cargarFiltrosAuxiliares()
   }, [])
 
   useEffect(() => {
@@ -354,17 +388,21 @@ export default function RegistrosPage() {
                 />
               </label>
 
-              <label>
-                <span className={LABEL_CLASS}>Proveedor</span>
-                <input
-                  type="text"
-                  name="proveedor"
+              <div>
+                <SearchableSelect
+                  label="Proveedor"
                   value={filtros.proveedor}
-                  onChange={actualizarFiltro}
-                  className={FIELD_CLASS}
-                  placeholder="Buscar proveedor"
+                  options={proveedoresFiltro}
+                  onChange={actualizarProveedorFiltro}
+                  getOptionValue={(proveedor) => proveedor.value}
+                  getOptionLabel={(proveedor) => proveedor.label}
+                  getSearchText={(proveedor) =>
+                    `${proveedor.codigo || ""} ${proveedor.nombre || ""} ${proveedor.label || ""}`
+                  }
+                  placeholder="Buscar proveedor..."
+                  loading={loadingProveedoresFiltro}
                 />
-              </label>
+              </div>
 
               <label>
                 <span className={LABEL_CLASS}>Portero</span>
