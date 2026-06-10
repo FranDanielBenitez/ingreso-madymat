@@ -64,6 +64,7 @@ export default function Navbar() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(isDark ? "dark" : "light")
     setNavbarOculto(oculto)
+
     if (usuarioGuardado) {
       setUsuario(usuarioGuardado)
     }
@@ -82,17 +83,17 @@ export default function Navbar() {
         const result = await response.json()
 
         if (response.ok && result.ok) {
-          const usuarioActual = normalizarUsuarioNavbar(result.user || result.usuario)
+          const usuarioActual = normalizarUsuarioNavbar(
+            result.user || result.usuario
+          )
 
           setUsuario(usuarioActual)
           guardarUsuarioNavbar(usuarioActual)
-        } else {
-          if (response.status === 401) {
-            setUsuario(null)
-            localStorage.removeItem("ingreso-madymat-user")
-          }
+        } else if (response.status === 401) {
+          setUsuario(null)
+          localStorage.removeItem("ingreso-madymat-user")
         }
-      } catch (error) {
+      } catch {
         const usuarioGuardado = leerUsuarioGuardado()
 
         if (usuarioGuardado) {
@@ -110,6 +111,7 @@ export default function Navbar() {
     !cargandoUsuario &&
     (usuario?.roles?.includes("ADMINISTRADOR") ||
       usuario?.roles?.includes("IT_TECNICO"))
+
   const puedeVerPendientes = !cargandoUsuario && canApprovePendientes(usuario)
 
   useEffect(() => {
@@ -121,14 +123,18 @@ export default function Navbar() {
 
     async function cargarPendientesCount() {
       try {
-        const response = await fetch("/api/registros/pendientes-validacion/count")
+        const response = await fetch(
+          "/api/registros/pendientes-validacion/count"
+        )
         const result = await response.json()
 
         if (!cancelado && response.ok && result.ok) {
           setPendientesCount(Number(result.count || 0))
         }
       } catch {
-        if (!cancelado) setPendientesCount(0)
+        if (!cancelado) {
+          setPendientesCount(0)
+        }
       }
     }
 
@@ -182,7 +188,7 @@ export default function Navbar() {
       <button
         type="button"
         onClick={alternarNavbar}
-        className="fixed right-4 top-4 z-40 grid h-10 w-10 place-items-center rounded-lg border border-[#CBD5E1] bg-white text-xl font-normal leading-none text-[#0F172A] shadow-sm hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:outline-none focus:ring-2 focus:ring-red-100"
+        className="fixed right-4 top-4 z-40 grid h-10 w-10 place-items-center rounded-lg border border-[#CBD5E1] bg-white text-xl font-normal leading-none text-[#0F172A] shadow-sm hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:outline-none focus:ring-2 focus:ring-red-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-[#F3171B] dark:hover:text-red-100"
         aria-label={navbarOculto ? "Mostrar navbar" : "Ocultar navbar"}
         aria-expanded={!navbarOculto}
         title={navbarOculto ? "Mostrar navbar" : "Ocultar navbar"}
@@ -195,17 +201,14 @@ export default function Navbar() {
       </button>
 
       <header
-        className={`sticky top-0 z-30 border-b border-[#CBD5E1] bg-white/95 shadow-sm backdrop-blur transition-[max-height,transform,opacity] duration-300 ease-in-out ${
+        className={`sticky top-0 z-30 border-b border-[#CBD5E1] bg-white/95 shadow-sm backdrop-blur transition-[max-height,transform,opacity] duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-950/95 ${
           navbarOculto
             ? "max-h-0 -translate-y-full overflow-hidden border-transparent opacity-0"
             : "max-h-96 translate-y-0 overflow-visible opacity-100"
         }`}
       >
         <nav className="flex w-full flex-wrap items-center gap-3 px-4 py-2.5 sm:px-6 lg:flex-nowrap">
-          <Link
-            href="/"
-            className="flex shrink-0 items-center gap-3"
-          >
+          <Link href="/" className="flex shrink-0 items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={
@@ -216,17 +219,19 @@ export default function Navbar() {
               alt="Puebla Envases"
               className="h-8 w-auto object-contain object-left xl:h-9"
             />
+
             <span
               aria-hidden="true"
               className="hidden h-9 w-px bg-gradient-to-b from-transparent via-[#F3171B]/45 to-transparent sm:block"
             />
-            <span className="hidden whitespace-nowrap text-sm font-black tracking-tight text-[#0F172A] xl:block 2xl:text-base">
+
+            <span className="hidden whitespace-nowrap text-sm font-black tracking-tight text-[#0F172A] dark:text-slate-100 xl:block 2xl:text-base">
               Ingreso Madymat
             </span>
           </Link>
 
           <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 pr-12 lg:flex-nowrap">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1 overflow-hidden lg:flex-nowrap">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1 overflow-visible lg:flex-nowrap">
               {LINKS.map((link) => {
                 if (link.requiresPendientes && !puedeVerPendientes) {
                   return null
@@ -249,22 +254,25 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`nav-link nav-link-compact shrink-0 ${
+                    className={`nav-link nav-link-compact relative shrink-0 overflow-visible ${
                       link.iconOnly ? "px-3" : ""
                     } ${activo ? "nav-link-active" : ""}`}
                     aria-label={link.iconOnly ? link.label : undefined}
                     title={link.iconOnly ? link.label : undefined}
                   >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+
                     {!link.iconOnly ? (
                       <span className="hidden whitespace-nowrap xl:inline">
                         {link.label}
                       </span>
                     ) : null}
+
                     {mostrarBadgePendientes ? (
                       <span
-                        className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-amber-300 bg-amber-100 px-1.5 text-[11px] font-black leading-none text-amber-950 shadow-sm ring-1 ring-amber-400/20 dark:border-amber-200 dark:bg-amber-300 dark:text-slate-950"
+                        className="absolute -right-2 -top-2 z-20 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#F3171B] px-1.5 text-[10px] font-black leading-none text-white shadow-md shadow-red-950/25 ring-1 ring-red-500/30 dark:border-slate-950 dark:shadow-black/40"
                         aria-label={`${badgePendientes} pendientes`}
+                        title={`${badgePendientes} pendientes de validar`}
                       >
                         {badgePendientes}
                       </span>
@@ -289,11 +297,14 @@ export default function Navbar() {
                   <FiSettings className="h-4 w-4" aria-hidden="true" />
                 </Link>
               )}
+
               <button
                 type="button"
                 onClick={cambiarTema}
                 className="btn-icon shrink-0"
-                aria-label={`Cambiar a modo ${theme === "dark" ? "claro" : "oscuro"}`}
+                aria-label={`Cambiar a modo ${
+                  theme === "dark" ? "claro" : "oscuro"
+                }`}
                 title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
               >
                 <ThemeIcon dark={theme === "dark"} />
@@ -305,16 +316,20 @@ export default function Navbar() {
                 {usuario && (
                   <div
                     className="flex min-w-0 max-w-[11.5rem] items-center gap-2 rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-[#0F172A] shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 2xl:max-w-[16rem]"
-                    title={`${usuario.nombre || nombreVisible(usuario)} - ${(usuario.roles || []).join(", ")}`}
+                    title={`${usuario.nombre || nombreVisible(usuario)} - ${(
+                      usuario.roles || []
+                    ).join(", ")}`}
                   >
                     <span className="min-w-0 truncate text-sm font-black">
                       {nombreVisible(usuario)}
                     </span>
+
                     <span className="hidden shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-bold text-[#475569] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 2xl:inline-flex">
                       {rolPrincipal(usuario)}
                     </span>
                   </div>
                 )}
+
                 <button
                   type="button"
                   onClick={cerrarSesion}
@@ -323,12 +338,14 @@ export default function Navbar() {
                   aria-label="Salir"
                 >
                   <FiLogOut className="h-4 w-4" aria-hidden="true" />
+
                   <span className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-50 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-[#0F172A] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                     Salir
                   </span>
                 </button>
               </div>
             )}
+
             {cargandoUsuario && (
               <div className="h-10 w-40 shrink-0 rounded-xl border border-[#CBD5E1] bg-white/70 dark:border-slate-700 dark:bg-slate-900/70" />
             )}
@@ -391,4 +408,3 @@ function guardarUsuarioNavbar(usuario) {
 
   localStorage.setItem("ingreso-madymat-user", JSON.stringify(usuario))
 }
-
