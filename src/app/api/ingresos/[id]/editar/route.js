@@ -336,7 +336,7 @@ export async function PATCH(request, context) {
         ingresoData.choferNombreCargado = choferNombreCargado
         agregarCambio(
           cambios,
-          "Nombre chofer externo",
+          "Nombre del chofer",
           ingresoExistente.choferNombreCargado,
           choferNombreCargado
         )
@@ -349,7 +349,7 @@ export async function PATCH(request, context) {
         ingresoData.choferDocumentoCargado = choferDocumentoCargado
         agregarCambio(
           cambios,
-          "Documento chofer externo",
+          "Documento del chofer",
           ingresoExistente.choferDocumentoCargado,
           choferDocumentoCargado
         )

@@ -20,6 +20,15 @@ export async function GET(request) {
 
     if (modo === "TODOS") {
       data = await getServiciosLogisticosTodos()
+    } else if (tipo === "EXTERNO") {
+      const [fleteros, transportes] =
+        categoria === "ROLLIZOS"
+          ? await Promise.all([getFleterosRollizos(), getTransportesVarios()])
+          : await Promise.all([getFleterosMateriales(), getTransportesVarios()])
+
+      data = [...fleteros, ...transportes].sort((a, b) =>
+        String(a.RazonSocial || "").localeCompare(String(b.RazonSocial || ""))
+      )
     } else if (tipo === "TRANSPORTE") {
       data = await getTransportesVarios()
     } else if (categoria === "ROLLIZOS") {

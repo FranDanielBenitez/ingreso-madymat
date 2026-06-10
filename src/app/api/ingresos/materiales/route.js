@@ -10,6 +10,10 @@ import {
   mostrarTipoUnidadLogistica,
   normalizarTipoUnidadLogistica,
 } from "@/lib/ingresos/unidad-logistica"
+import {
+  mostrarTipoServicioLogistico,
+  normalizarTipoServicioLogistico,
+} from "@/lib/ingresos/servicio-logistico"
 
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
@@ -280,11 +284,23 @@ export async function POST(request) {
     const chofer = body.choferSeleccionado
     const portero = body.porteroSeleccionado
     const remitoProveedor = limpiarTexto(body.remitoProveedor)
-    const tipoServicioLogistico = limpiarTexto(body.tipoServicio)
+    const tipoServicioLogistico = normalizarTipoServicioLogistico(body.tipoServicio)
+    if (!tipoServicioLogistico) {
+      return NextResponse.json(
+        { ok: false, message: "Debe seleccionar un tipo de servicio logistico valido" },
+        { status: 400 }
+      )
+    }
     const servicioPropio = tipoServicioLogistico === "PROPIO"
     const servicioCargaManualEfectivo = servicioPropio ? false : servicioCargaManual
-    const servicioFueraSugeridoEfectivo = servicioPropio ? false : servicioCargaManual
-    const choferResponsablePropio = limpiarTexto(body.choferNombreExterno)
+    const servicioFueraSugeridoEfectivo = servicioPropio
+      ? false
+      : servicioCargaManual || body.servicioModoBusqueda === "TODOS"
+    const choferNombreManual = limpiarTexto(body.choferNombreExterno)
+    const choferPropioSeleccionado = servicioPropio && chofer?.Legajo
+    const choferNombreCargado = choferPropioSeleccionado
+      ? limpiarTexto(chofer?.NombreCompleto)
+      : choferNombreManual
 
     if (!remitoProveedor) {
       return NextResponse.json(
@@ -346,12 +362,19 @@ export async function POST(request) {
       )
     }
 
-    if (servicioPropio && !choferResponsablePropio) {
+    if (servicioPropio && !choferNombreCargado) {
       return NextResponse.json(
         {
           ok: false,
-          message: "Debe ingresar el chofer o responsable del traslado propio.",
+          message: "Debe seleccionar o ingresar el chofer/responsable propio.",
         },
+        { status: 400 }
+      )
+    }
+
+    if (!servicioPropio && !choferNombreManual) {
+      return NextResponse.json(
+        { ok: false, message: "Debe ingresar el nombre del chofer." },
         { status: 400 }
       )
     }
@@ -410,9 +433,6 @@ export async function POST(request) {
     }
 
     const usuarioPortero = await obtenerUsuarioPortero(portero)
-    const tipoChofer = body.tipoChofer || null
-    const choferInterno = tipoChofer === "INTERNO"
-    const choferExterno = tipoChofer === "EXTERNO"
     const detallesModoBusqueda = []
 
     if (!proveedorCargaManual && body.proveedorModoBusqueda === "TODOS") {
@@ -557,29 +577,23 @@ export async function POST(request) {
           : limpiarTexto(servicio.CUIT),
         servicioValidado: servicioPropio || !servicioCargaManualEfectivo,
 
-        tipoChofer,
-        choferOrigenDato: !servicioPropio && choferInterno ? "SJALA" : "MANUAL",
+        tipoChofer: servicioPropio ? "INTERNO" : "EXTERNO",
+        choferOrigenDato: choferPropioSeleccionado ? "SJALA" : "MANUAL",
         choferLegajoSjala:
-          !servicioPropio && choferInterno && chofer?.Legajo
+          choferPropioSeleccionado
             ? Number(chofer.Legajo)
             : null,
-        choferNombreCargado: !servicioPropio && choferInterno
-          ? limpiarTexto(chofer?.NombreCompleto)
-          : choferResponsablePropio,
-        choferDocumentoCargado: !servicioPropio && choferExterno
-          ? limpiarTexto(body.choferDocumentoExterno)
-          : null,
-        choferCargaManual: !servicioPropio && choferExterno,
+        choferNombreCargado,
+        choferDocumentoCargado: servicioPropio
+          ? null
+          : limpiarTexto(body.choferDocumentoExterno),
+        choferCargaManual: !servicioPropio,
         choferLegajoValidado:
-          !servicioPropio && choferInterno && chofer?.Legajo
+          choferPropioSeleccionado
             ? Number(chofer.Legajo)
             : null,
-        choferNombreValidado: servicioPropio
-          ? choferResponsablePropio
-          : choferInterno
-            ? limpiarTexto(chofer?.NombreCompleto)
-            : null,
-        choferValidado: servicioPropio || choferInterno,
+        choferNombreValidado: servicioPropio ? choferNombreCargado : null,
+        choferValidado: servicioPropio,
 
         patenteCamion: limpiarTexto(body.patenteCamion)?.toUpperCase(),
         patenteAcoplado: limpiarTexto(body.patenteAcoplado)?.toUpperCase(),
@@ -599,7 +613,6 @@ export async function POST(request) {
         hachadorValidado: false,
 
         tieneCargaManual:
-          (!servicioPropio && choferExterno) ||
           proveedorCargaManual ||
           servicioCargaManualEfectivo ||
           itemsManuales > 0,
@@ -657,7 +670,9 @@ export async function POST(request) {
                 viaje.numeroViaje || "-"
               }. Tipo de unidad: ${mostrarTipoUnidadLogistica(
                 tipoUnidadLogistica
-              )}. Portero: ${
+              )}. Tipo de servicio logistico: ${mostrarTipoServicioLogistico(
+                tipoServicioLogistico
+              )}. Chofer / Responsable: ${choferNombreCargado || "-"}. Portero: ${
                 portero?.NombreCompleto || "Sin portero informado"
               }. Items cargados: ${items.length}.${
                 proveedorCargaManual ||

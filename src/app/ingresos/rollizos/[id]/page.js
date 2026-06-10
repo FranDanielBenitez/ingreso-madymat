@@ -8,6 +8,10 @@ import DocumentacionFexCard from "@/components/ingresos/DocumentacionFexCard"
 import PendientesAprobacionCard from "@/components/ingresos/PendientesAprobacionCard"
 import { articuloManualAprobado } from "@/lib/ingresos/pendientes"
 import { mostrarTipoUnidadLogistica } from "@/lib/ingresos/unidad-logistica"
+import {
+  esServicioPropio,
+  mostrarTipoServicioLogistico,
+} from "@/lib/ingresos/servicio-logistico"
 
 const SECTION_CLASS = "panel-surface"
 const LABEL_CLASS = "text-sm font-semibold text-[#475569] dark:text-slate-300"
@@ -191,6 +195,7 @@ export default function DetalleIngresoRollizosPage() {
 
   const ingresoAnulado = ingreso?.estado === "ANULADO"
   const ingresoConMultiplesArticulos = articulosIngreso.length > 1
+  const servicioPropioIngreso = esServicioPropio(ingreso?.tipoServicioLogistico)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -588,21 +593,28 @@ export default function DetalleIngresoRollizosPage() {
           </h2>
           <ServicioBadges ingreso={ingreso} />
           <div className="grid gap-4 md:grid-cols-3">
-            <Campo label="Tipo servicio" value={ingreso.tipoServicioLogistico} />
+            <Campo
+              label="Tipo servicio"
+              value={mostrarTipoServicioLogistico(ingreso.tipoServicioLogistico)}
+            />
             <Campo
               label="Tipo de unidad"
               value={mostrarTipoUnidadLogistica(ingreso.tipoUnidadLogistica)}
             />
-            <CampoValidado
-              label="Servicio logístico"
-              original={ingreso.servicioNombreCargado}
-              validado={ingreso.servicioNombreValidado}
-            />
-            <CampoValidado
-              label="CUIT servicio"
-              original={ingreso.servicioCuitCargado}
-              validado={ingreso.servicioCuitValidado}
-            />
+            {!servicioPropioIngreso ? (
+              <>
+                <CampoValidado
+                  label="Servicio logístico externo"
+                  original={ingreso.servicioNombreCargado}
+                  validado={ingreso.servicioNombreValidado}
+                />
+                <CampoValidado
+                  label="CUIT servicio"
+                  original={ingreso.servicioCuitCargado}
+                  validado={ingreso.servicioCuitValidado}
+                />
+              </>
+            ) : null}
             <Campo label="Patente camión" value={ingreso.patenteCamion} />
             <Campo label="Patente acoplado" value={ingreso.patenteAcoplado} />
           </div>
@@ -610,12 +622,16 @@ export default function DetalleIngresoRollizosPage() {
 
         <section className={SECTION_CLASS}>
           <h2 className="mb-4 text-xl font-bold text-[#0F172A]">
-            Chofer
+            {servicioPropioIngreso ? "Chofer / Responsable propio" : "Chofer"}
           </h2>
-          <div className="grid gap-4 md:grid-cols-4">
-            <Campo label="Tipo chofer" value={ingreso.tipoChofer} />
-            <Campo label="Nombre" value={ingreso.choferNombreCargado} />
-            <Campo label="Documento" value={ingreso.choferDocumentoCargado} />
+          <div className="grid gap-4 md:grid-cols-3">
+            <Campo
+              label={servicioPropioIngreso ? "Chofer / Responsable propio" : "Chofer"}
+              value={ingreso.choferNombreCargado}
+            />
+            {!servicioPropioIngreso ? (
+              <Campo label="Documento" value={ingreso.choferDocumentoCargado} />
+            ) : null}
             <Campo label="Legajo" value={ingreso.choferLegajoSjala} />
           </div>
         </section>

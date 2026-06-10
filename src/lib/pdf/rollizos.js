@@ -19,7 +19,7 @@ const PDF_CONFIG = {
     filename: (id) => `rollizo-${id}-hachador.pdf`,
   },
   fletero: {
-    descripcion: "Flete/Transporte-Rollizo",
+    descripcion: "Servicio Externo-Rollizo",
     template: "teplate_fletero_transporte_rollizo.docx",
     filename: (id) => `rollizo-${id}-fletero.pdf`,
   },

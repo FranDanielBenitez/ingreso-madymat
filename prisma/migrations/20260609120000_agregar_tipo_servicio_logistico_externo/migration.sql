@@ -1,0 +1,1 @@
+ALTER TYPE "TipoServicioLogistico" ADD VALUE IF NOT EXISTS 'EXTERNO';

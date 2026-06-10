@@ -14,7 +14,7 @@ const PDF_CONFIG = {
     filename: (id) => `materiales-${id}-proveedor.pdf`,
   },
   fletero: {
-    descripcion: "Flete/Transporte-Materiales",
+    descripcion: "Servicio Externo-Materiales",
     template: "teplate_fletero_transporte_materiales.docx",
     filename: (id) => `materiales-${id}-fletero.pdf`,
   },

@@ -291,7 +291,7 @@ export default function EditarIngresoPanel({
         {choferManual ? (
           <>
             <label>
-              <span className={LABEL_CLASS}>Nombre chofer externo</span>
+              <span className={LABEL_CLASS}>Nombre del chofer</span>
               <input
                 type="text"
                 name="choferNombreCargado"
@@ -302,7 +302,7 @@ export default function EditarIngresoPanel({
             </label>
 
             <label>
-              <span className={LABEL_CLASS}>Documento chofer externo</span>
+              <span className={LABEL_CLASS}>Documento del chofer</span>
               <input
                 type="text"
                 name="choferDocumentoCargado"

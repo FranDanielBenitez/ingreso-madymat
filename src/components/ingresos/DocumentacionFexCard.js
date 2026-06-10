@@ -3,6 +3,7 @@
 import { FaFilePdf } from "react-icons/fa"
 import { FiDownload, FiLock } from "react-icons/fi"
 import { obtenerMotivosPendientes } from "@/lib/ingresos/pendientes"
+import { esServicioPropio } from "@/lib/ingresos/servicio-logistico"
 
 function tieneDato(value) {
   return value !== null && value !== undefined && value !== ""
@@ -55,6 +56,7 @@ export default function DocumentacionFexCard({ ingreso, tipo }) {
   const ingresoAnulado = ingreso?.estado === "ANULADO"
   const tienePendientes = motivosPendientes.length > 0
   const tieneProcedencia = tieneDato(ingreso?.procedencia?.nombre)
+  const correspondeServicioPdf = !esServicioPropio(ingreso?.tipoServicioLogistico)
   const basePath =
     tipo === "rollizos"
       ? `/api/ingresos/rollizos/${ingreso?.id}/pdf`
@@ -165,19 +167,21 @@ export default function DocumentacionFexCard({ ingreso, tipo }) {
           </PdfAction>
         ) : null}
 
-        <PdfAction
-          href={`${basePath}/fletero`}
-          disabled={bloqueoGeneral || !tieneServicioPdf}
-          reason={
-            !tieneServicioPdf
-              ? "No hay fletero o transporte asociado."
-              : tienePendientes
-                ? motivoBloqueoPendientes
-                : ""
-          }
-        >
-          Descargar PDF Fletero / Transporte
-        </PdfAction>
+        {correspondeServicioPdf ? (
+          <PdfAction
+            href={`${basePath}/fletero`}
+            disabled={bloqueoGeneral || !tieneServicioPdf}
+            reason={
+              !tieneServicioPdf
+                ? "No hay servicio logistico externo asociado."
+                : tienePendientes
+                  ? motivoBloqueoPendientes
+                  : ""
+            }
+          >
+            Descargar PDF Servicio Externo
+          </PdfAction>
+        ) : null}
       </div>
     </section>
   )
