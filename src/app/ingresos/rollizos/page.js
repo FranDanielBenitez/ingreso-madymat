@@ -190,7 +190,6 @@ export default function IngresoRollizosPage() {
   })
   const [multiplesArticulos, setMultiplesArticulos] = useState(false)
   const [itemsRollizos, setItemsRollizos] = useState([crearItemRollizo()])
-  const [cantidadTotalBloqueada, setCantidadTotalBloqueada] = useState(false)
 
   const {
     register,
@@ -229,6 +228,14 @@ export default function IngresoRollizosPage() {
   const cantidadInput = watch("cantidad") || ""
   const cantidadTotalViaje = normalizarCantidad(watch("cantidad"))
   const unidadTotalViaje = UNIDAD_ROLLIZOS
+  const cantidadTotalTieneValor = String(cantidadInput || "").trim() !== ""
+  const cantidadTotalInvalidaPorMaximo =
+    cantidadTotalTieneValor &&
+    cantidadTotalViaje >= MAX_CANTIDAD_TOTAL_ROLLIZOS
+  const cantidadTotalInvalidaPorCero =
+    cantidadTotalTieneValor && cantidadTotalViaje <= 0
+  const cantidadTotalInvalida =
+    cantidadTotalInvalidaPorMaximo || cantidadTotalInvalidaPorCero
 
   const proveedorSeleccionado = useMemo(
     () => proveedores.find((item) => item.Codigo === proveedorCodigo) || null,
@@ -432,25 +439,13 @@ export default function IngresoRollizosPage() {
     })
   }
 
-  function esEntradaCantidadTotalPermitida(value) {
-    const texto = String(value || "").trim().replace(/\./g, ",")
-
-    if (!texto) return true
-    if (!/^\d{0,2}(,\d*)?$/.test(texto)) return false
-
-    return normalizarCantidad(texto) < MAX_CANTIDAD_TOTAL_ROLLIZOS
-  }
-
   function manejarCambioCantidadTotal(event) {
     const value = event.target.value.replace(/\./g, ",")
 
-    if (!esEntradaCantidadTotalPermitida(value)) {
-      setCantidadTotalBloqueada(true)
-      event.preventDefault()
+    if (!/^\d{0,6}(,\d{0,3})?$/.test(value)) {
       return
     }
 
-    setCantidadTotalBloqueada(false)
     setValue("cantidad", value, {
       shouldDirty: true,
       shouldValidate: true,
@@ -848,7 +843,9 @@ export default function IngresoRollizosPage() {
       }
 
       if (cantidadIngreso >= MAX_CANTIDAD_TOTAL_ROLLIZOS) {
-        toast.error("La cantidad total del viaje debe ser menor a 40 TN.")
+        toast.error(
+          "No se puede guardar: la cantidad total del viaje para Rollizos debe ser menor a 40 TN."
+        )
         return
       }
 
@@ -1355,16 +1352,27 @@ export default function IngresoRollizosPage() {
                 {...register("cantidad", { required: true })}
                 value={cantidadInput}
                 onChange={manejarCambioCantidadTotal}
-                className={FIELD_CLASS}
+                className={
+                  cantidadTotalInvalida
+                    ? `${FIELD_CLASS} !border-amber-400 !bg-amber-50 text-amber-950 focus:!border-amber-500 focus:!ring-amber-100 dark:!border-amber-400/70 dark:!bg-amber-950/20 dark:text-amber-100 dark:focus:!ring-amber-950/40`
+                    : FIELD_CLASS
+                }
                 inputMode="decimal"
                 placeholder="Ej: 28,5"
               />
-              <p className="mt-1 text-xs font-medium text-[#64748B] dark:text-slate-400">
-                Máximo permitido: menor a 40 TN.
-              </p>
-              {cantidadTotalBloqueada ? (
+              {!cantidadTotalInvalida ? (
+                <p className="mt-1 text-xs font-medium text-[#64748B] dark:text-slate-400">
+                  Máximo permitido: menor a 40 TN.
+                </p>
+              ) : null}
+              {cantidadTotalInvalidaPorMaximo ? (
                 <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
-                  Para Rollizos, ingresa una cantidad menor a 40 TN.
+                  La cantidad máxima permitida para Rollizos es menor a 40 TN. Ingresá un valor menor para continuar.
+                </p>
+              ) : null}
+              {cantidadTotalInvalidaPorCero ? (
+                <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+                  La cantidad debe ser mayor a cero.
                 </p>
               ) : null}
             </div>
@@ -2214,23 +2222,31 @@ export default function IngresoRollizosPage() {
           </div>
         )}
 
-        <div className={`flex justify-end gap-3 ${SECTION_CLASS}`}>
-          <button
-            type="button"
-            onClick={limpiarFormulario}
-            disabled={guardando}
-            className="rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
-          >
-            Limpiar formulario
-          </button>
+        <div className={`flex flex-col gap-3 ${SECTION_CLASS}`}>
+          {cantidadTotalInvalida ? (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+              No se puede guardar hasta corregir la cantidad total del viaje.
+            </p>
+          ) : null}
 
-          <button
-            type="submit"
-            disabled={guardando || !puedeGuardar}
-            className="rounded-lg bg-[#F3171B] px-5 py-3 font-bold text-white shadow-sm hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {guardando ? "Guardando..." : "Guardar ingreso"}
-          </button>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={limpiarFormulario}
+              disabled={guardando}
+              className="rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 font-semibold text-[#0F172A] hover:border-[#F3171B] hover:text-[#D90F14] focus:border-[#F3171B] focus:ring-2 focus:ring-red-100"
+            >
+              Limpiar formulario
+            </button>
+
+            <button
+              type="submit"
+              disabled={guardando || !puedeGuardar || cantidadTotalInvalida}
+              className="rounded-lg bg-[#F3171B] px-5 py-3 font-bold text-white shadow-sm hover:bg-[#D90F14] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {guardando ? "Guardando..." : "Guardar ingreso"}
+            </button>
+          </div>
         </div>
       </form>
     </main>
