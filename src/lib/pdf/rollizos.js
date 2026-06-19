@@ -41,6 +41,17 @@ function elegir(...values) {
   return values.find((value) => value !== null && value !== undefined && value !== "") || "-"
 }
 
+function formatearCuit(value) {
+  const original = value || "-"
+  const soloNumeros = String(value || "").replace(/\D/g, "")
+
+  if (soloNumeros.length !== 11) {
+    return original
+  }
+
+  return `${soloNumeros.slice(0, 2)}-${soloNumeros.slice(2, 10)}-${soloNumeros.slice(10)}`
+}
+
 function articuloCodigoPdf(articulo) {
   return elegir(articulo?.articuloCodigoValidado, articulo?.articuloCodigo)
 }
@@ -154,7 +165,7 @@ function emisorPorTipo(ingreso, tipoPdf) {
     return {
       razonSocialEmisor: elegir(ingreso.proveedorNombreValidado, ingreso.proveedorNombreCargado),
       codigoProveedor: elegir(ingreso.proveedorCodigoValidado, ingreso.proveedorCodigoBejerman),
-      cuitEmisor: elegir(ingreso.proveedorCuitValidado, ingreso.proveedorCuitCargado),
+      cuitEmisor: formatearCuit(elegir(ingreso.proveedorCuitValidado, ingreso.proveedorCuitCargado)),
     }
   }
 
@@ -168,7 +179,7 @@ function emisorPorTipo(ingreso, tipoPdf) {
       codigoProveedor: elegir(ingreso.servicioCodigoValidado, ingreso.servicioCodigoBejerman),
       dominio: mostrar(ingreso.patenteCamion),
       nombreChofer: mostrar(ingreso.choferNombreCargado),
-      cuitEmisor: elegir(ingreso.servicioCuitValidado, ingreso.servicioCuitCargado),
+      cuitEmisor: formatearCuit(elegir(ingreso.servicioCuitValidado, ingreso.servicioCuitCargado)),
     }
   }
 
@@ -179,7 +190,7 @@ function emisorPorTipo(ingreso, tipoPdf) {
   return {
     razonSocialEmisor: elegir(ingreso.hachadorNombreValidado, ingreso.hachadorNombreCargado),
     codigoProveedor: elegir(ingreso.hachadorCodigoValidado, ingreso.hachadorCodigoBejerman),
-    cuitEmisor: elegir(ingreso.hachadorCuitValidado, ingreso.hachadorCuitCargado),
+    cuitEmisor: formatearCuit(elegir(ingreso.hachadorCuitValidado, ingreso.hachadorCuitCargado)),
   }
 }
 

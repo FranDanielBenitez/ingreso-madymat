@@ -15,6 +15,9 @@ import {
   normalizarTipoServicioLogistico,
 } from "@/lib/ingresos/servicio-logistico"
 
+const UNIDAD_ROLLIZOS = "TN"
+const MAX_CANTIDAD_TOTAL_ROLLIZOS = 40
+
 function normalizarDecimal(value) {
   if (value === null || value === undefined || value === "") return 0
 
@@ -106,7 +109,7 @@ function normalizarItemsRollizos(body, cantidadTotal, unidadDefault) {
       cantidad: redondearCantidad(
         cantidadTotal * porcentajeParticipacion / 100
       ),
-      unidad: limpiarTexto(item.unidad) || unidadDefault,
+      unidad: unidadDefault,
     }
   })
 }
@@ -421,7 +424,7 @@ export async function POST(request) {
     }
 
     const cantidadIngreso = normalizarDecimal(body.cantidad)
-    const unidadIngreso = limpiarTexto(body.unidad)
+    const unidadIngreso = limpiarTexto(body.unidad) || UNIDAD_ROLLIZOS
     const fechaIngreso = body.fechaIngreso
       ? combinarFechaHora(body.fechaIngreso, body.horaIngreso)
       : null
@@ -444,9 +447,16 @@ export async function POST(request) {
       )
     }
 
-    if (!unidadIngreso) {
+    if (cantidadIngreso >= MAX_CANTIDAD_TOTAL_ROLLIZOS) {
       return NextResponse.json(
-        { ok: false, message: "La unidad es obligatoria" },
+        { ok: false, message: "La cantidad total del viaje debe ser menor a 40 TN." },
+        { status: 400 }
+      )
+    }
+
+    if (unidadIngreso !== UNIDAD_ROLLIZOS) {
+      return NextResponse.json(
+        { ok: false, message: "La unidad total de Rollizos debe ser TN." },
         { status: 400 }
       )
     }

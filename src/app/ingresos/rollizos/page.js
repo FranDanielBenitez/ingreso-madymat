@@ -16,6 +16,8 @@ const TEXTAREA_CLASS =
   "min-h-28 w-full rounded-2xl border border-[#CBD5E1] bg-white p-3 text-[#0F172A] placeholder:text-slate-400 outline-none focus:border-[#F3171B] focus:ring-2 focus:ring-red-100 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-red-950/40"
 const MODO_SUGERIDOS = "SUGERIDOS"
 const MODO_TODOS = "TODOS"
+const UNIDAD_ROLLIZOS = "TN"
+const MAX_CANTIDAD_TOTAL_ROLLIZOS = 40
 
 function fechaActual() {
   return new Date().toISOString().slice(0, 10)
@@ -41,7 +43,7 @@ function crearItemRollizo(overrides = {}) {
     articuloManualCodigo: "",
     articuloManualObservacion: "",
     porcentajeParticipacion: "100",
-    unidad: "TN",
+    unidad: UNIDAD_ROLLIZOS,
     ...overrides,
   }
 }
@@ -188,6 +190,7 @@ export default function IngresoRollizosPage() {
   })
   const [multiplesArticulos, setMultiplesArticulos] = useState(false)
   const [itemsRollizos, setItemsRollizos] = useState([crearItemRollizo()])
+  const [cantidadTotalBloqueada, setCantidadTotalBloqueada] = useState(false)
 
   const {
     register,
@@ -223,8 +226,9 @@ export default function IngresoRollizosPage() {
   const fotoMaterialCargado = watch("fotoMaterialCargado")
   const fotoRemitoFisico = watch("fotoRemitoFisico")
   const fotoAdicional = watch("fotoAdicional")
+  const cantidadInput = watch("cantidad") || ""
   const cantidadTotalViaje = normalizarCantidad(watch("cantidad"))
-  const unidadTotalViaje = watch("unidad") || "TN"
+  const unidadTotalViaje = UNIDAD_ROLLIZOS
 
   const proveedorSeleccionado = useMemo(
     () => proveedores.find((item) => item.Codigo === proveedorCodigo) || null,
@@ -364,7 +368,7 @@ export default function IngresoRollizosPage() {
           articuloManualCodigo: articuloManualCodigo || "",
           articuloManualObservacion: articuloManualObservacion || "",
           porcentajeParticipacion: "100",
-          unidad: unidadTotalViaje || "TN",
+          unidad: UNIDAD_ROLLIZOS,
         }),
       ])
       return
@@ -378,7 +382,7 @@ export default function IngresoRollizosPage() {
     setValue("articuloManualDescripcion", primerItem.articuloManualDescripcion || "")
     setValue("articuloManualCodigo", primerItem.articuloManualCodigo || "")
     setValue("articuloManualObservacion", primerItem.articuloManualObservacion || "")
-    setValue("unidad", primerItem.unidad || "TN")
+    setValue("unidad", UNIDAD_ROLLIZOS)
   }
 
   function actualizarItemRollizo(id, cambios) {
@@ -390,7 +394,7 @@ export default function IngresoRollizosPage() {
   function seleccionarArticuloItem(id, articuloItem) {
     actualizarItemRollizo(id, {
       articuloCodigo: articuloItem?.Codigo || "",
-      unidad: articuloItem?.Clase || unidadTotalViaje || "TN",
+      unidad: UNIDAD_ROLLIZOS,
     })
   }
 
@@ -415,7 +419,7 @@ export default function IngresoRollizosPage() {
       ...prev,
       crearItemRollizo({
         porcentajeParticipacion: "",
-        unidad: unidadTotalViaje || "TN",
+        unidad: UNIDAD_ROLLIZOS,
       }),
     ])
   }
@@ -425,6 +429,31 @@ export default function IngresoRollizosPage() {
       if (prev.length === 1) return prev
 
       return prev.filter((item) => item.id !== id)
+    })
+  }
+
+  function esEntradaCantidadTotalPermitida(value) {
+    const texto = String(value || "").trim().replace(/\./g, ",")
+
+    if (!texto) return true
+    if (!/^\d{0,2}(,\d*)?$/.test(texto)) return false
+
+    return normalizarCantidad(texto) < MAX_CANTIDAD_TOTAL_ROLLIZOS
+  }
+
+  function manejarCambioCantidadTotal(event) {
+    const value = event.target.value.replace(/\./g, ",")
+
+    if (!esEntradaCantidadTotalPermitida(value)) {
+      setCantidadTotalBloqueada(true)
+      event.preventDefault()
+      return
+    }
+
+    setCantidadTotalBloqueada(false)
+    setValue("cantidad", value, {
+      shouldDirty: true,
+      shouldValidate: true,
     })
   }
 
@@ -818,8 +847,8 @@ export default function IngresoRollizosPage() {
         return
       }
 
-      if (!String(values.unidad || "").trim()) {
-        toast.error("La unidad es obligatoria")
+      if (cantidadIngreso >= MAX_CANTIDAD_TOTAL_ROLLIZOS) {
+        toast.error("La cantidad total del viaje debe ser menor a 40 TN.")
         return
       }
 
@@ -839,7 +868,7 @@ export default function IngresoRollizosPage() {
               },
               articuloModoBusqueda: modoArticulo,
               porcentajeParticipacion: item.porcentajeParticipacion,
-              unidad: item.unidad || values.unidad || "TN",
+              unidad: UNIDAD_ROLLIZOS,
             }
           })
         : [
@@ -853,7 +882,7 @@ export default function IngresoRollizosPage() {
               },
               articuloModoBusqueda: modoArticulo,
               porcentajeParticipacion: 100,
-              unidad: values.unidad || "TN",
+              unidad: UNIDAD_ROLLIZOS,
             },
           ]
 
@@ -937,6 +966,7 @@ export default function IngresoRollizosPage() {
 
       const ingresoPreparado = {
         ...datosIngreso,
+        unidad: UNIDAD_ROLLIZOS,
         tipoServicio: servicioPropio ? "PROPIO" : "EXTERNO",
         tipoChofer: servicioPropio ? "INTERNO" : "EXTERNO",
         remitoProveedor,
@@ -1323,18 +1353,31 @@ export default function IngresoRollizosPage() {
               <input
                 type="text"
                 {...register("cantidad", { required: true })}
+                value={cantidadInput}
+                onChange={manejarCambioCantidadTotal}
                 className={FIELD_CLASS}
-                placeholder="Ej: 2.500,50"
+                inputMode="decimal"
+                placeholder="Ej: 28,5"
               />
+              <p className="mt-1 text-xs font-medium text-[#64748B] dark:text-slate-400">
+                Máximo permitido: menor a 40 TN.
+              </p>
+              {cantidadTotalBloqueada ? (
+                <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+                  Para Rollizos, ingresa una cantidad menor a 40 TN.
+                </p>
+              ) : null}
             </div>
 
             <div className="lg:col-span-2">
               <label className={LABEL_CLASS}>Unidad total *</label>
+              <input type="hidden" {...register("unidad")} />
               <input
                 type="text"
-                {...register("unidad", { required: true })}
-                className={FIELD_CLASS}
-                placeholder="Ej: TN"
+                value={UNIDAD_ROLLIZOS}
+                readOnly
+                aria-readonly="true"
+                className={`${FIELD_CLASS} cursor-not-allowed bg-slate-100 font-bold text-slate-700 dark:bg-slate-900/70 dark:text-slate-200`}
               />
             </div>
 
@@ -1467,9 +1510,6 @@ export default function IngresoRollizosPage() {
               <div className="lg:col-span-12">
                 <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-900/40">
                   {itemsRollizos.map((item, index) => {
-                    const articuloItem = articulos.find(
-                      (articuloOption) => articuloOption.Codigo === item.articuloCodigo
-                    )
                     const porcentaje = Number(
                       String(item.porcentajeParticipacion || "").replace(",", ".")
                     )
@@ -1615,13 +1655,10 @@ export default function IngresoRollizosPage() {
                             <span className={LABEL_CLASS}>Unidad *</span>
                             <input
                               type="text"
-                              value={item.unidad || articuloItem?.Clase || unidadTotalViaje}
-                              onChange={(event) =>
-                                actualizarItemRollizo(item.id, {
-                                  unidad: event.target.value,
-                                })
-                              }
-                              className={FIELD_CLASS}
+                              value={UNIDAD_ROLLIZOS}
+                              readOnly
+                              aria-readonly="true"
+                              className={`${FIELD_CLASS} cursor-not-allowed bg-slate-100 font-bold text-slate-700 dark:bg-slate-900/70 dark:text-slate-200`}
                             />
                           </label>
                         </div>
