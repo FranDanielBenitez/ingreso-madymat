@@ -214,6 +214,15 @@ export default function Home() {
             No se pudo cargar el dashboard
           </h1>
           <p className="mt-2 text-[#475569]">{error}</p>
+          <p className="mt-3 text-sm font-semibold text-[#475569]">
+            Asegurate que la URL sea{" "}
+            <a
+              href="https://madymat.vercel.app/"
+              className="underline"
+            >
+              https://madymat.vercel.app/
+            </a>
+          </p>
         </section>
       </main>
     )
